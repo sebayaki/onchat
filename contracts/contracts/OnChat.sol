@@ -54,27 +54,14 @@ contract OnChat is Ownable {
         string name; // separate slot (dynamic)
     }
 
-    /**
-     * @notice ChannelInfo struct for view function returns - packed into 4 storage slots
-     */
-    struct ChannelInfo {
-        string slug;
-        address owner;
-        string name;
-        uint40 createdAt; // 5 bytes - sufficient until year 36812
-        uint40 memberCount; // 5 bytes - up to ~1.1 trillion members
-        uint64 messageCount; // 8 bytes - up to ~18 quintillion messages
-    }
-
     // MARK: - Constants
     uint256 public constant OWNER_SHARE_BP = 8000; // 80%
     uint256 public constant TREASURY_SHARE_BP = 2000; // 20%
     uint256 private constant BP_DENOMINATOR = 10000;
 
-    // MARK: - Immutables
-    address public immutable TREASURY_WALLET;
-
     // MARK: - State Variables
+
+    address public treasuryWallet;
 
     uint256 public channelCreationFee;
     uint256 public messageFeeBase;
@@ -172,6 +159,7 @@ contract OnChat is Ownable {
     );
     event OwnerBalanceClaimed(address indexed owner, uint256 amount);
     event TreasuryBalanceClaimed(address indexed treasury, uint256 amount);
+    event TreasuryWalletUpdated(address indexed newTreasury);
     event ChannelCreationFeeUpdated(uint256 newFee);
     event MessageFeeBaseUpdated(uint256 newFee);
     event MessageFeePerCharUpdated(uint256 newFee);
@@ -179,21 +167,17 @@ contract OnChat is Ownable {
     // MARK: - Constructor
     /**
      * @notice Initializes the OnChat contract
-     * @param treasuryWallet Address to receive treasury share of fees
      * @param initialChannelCreationFee Initial fee to create a channel (in Wei)
      * @param initialMessageFeeBase Base fee for sending a message (in Wei)
      * @param initialMessageFeePerChar Fee per character in message (in Wei)
+     * @dev Treasury wallet is initially set to the contract deployer (owner)
      */
     constructor(
-        address treasuryWallet,
         uint256 initialChannelCreationFee,
         uint256 initialMessageFeeBase,
         uint256 initialMessageFeePerChar
     ) Ownable(msg.sender) {
-        if (treasuryWallet == address(0))
-            revert OnChat__InvalidParams("zero treasury");
-
-        TREASURY_WALLET = treasuryWallet;
+        treasuryWallet = msg.sender;
         channelCreationFee = initialChannelCreationFee;
         messageFeeBase = initialMessageFeeBase;
         messageFeePerChar = initialMessageFeePerChar;
@@ -228,6 +212,17 @@ contract OnChat is Ownable {
     }
 
     // MARK: - Admin Functions
+
+    /**
+     * @notice Updates the treasury wallet address
+     * @param newTreasury New treasury wallet address
+     */
+    function setTreasuryWallet(address newTreasury) external onlyOwner {
+        if (newTreasury == address(0))
+            revert OnChat__InvalidParams("zero address");
+        treasuryWallet = newTreasury;
+        emit TreasuryWalletUpdated(newTreasury);
+    }
 
     /**
      * @notice Updates the channel creation fee
@@ -323,29 +318,14 @@ contract OnChat is Ownable {
         _channelMembers[slug].add(msg.sender);
         _userChannelHashes[msg.sender].add(slugHash);
 
-        // Split creation fee: 80% to owner (themselves initially), 20% to treasury
-        if (fee > 0) {
-            uint256 ownerShare;
-            uint256 treasuryShare;
-            unchecked {
-                ownerShare = (fee * OWNER_SHARE_BP) / BP_DENOMINATOR;
-                treasuryShare = fee - ownerShare;
-            }
+        // Emit event before fee distribution
+        emit ChannelCreated(slug, slug, msg.sender, name);
 
-            ownerBalances[msg.sender] += ownerShare;
-            treasuryBalance += treasuryShare;
-        }
+        // Split creation fee: 80% to owner (themselves initially), 20% to treasury
+        _distributeFee(fee, msg.sender);
 
         // Refund excess payment
-        if (msg.value > fee) {
-            unchecked {
-                uint256 refund = msg.value - fee;
-                (bool success, ) = msg.sender.call{value: refund}("");
-                if (!success) revert OnChat__TransferFailed();
-            }
-        }
-
-        emit ChannelCreated(slug, slug, msg.sender, name);
+        _refundExcess(fee);
     }
 
     /**
@@ -404,24 +384,18 @@ contract OnChat is Ownable {
         if (!_channelMembers[slug].contains(msg.sender))
             revert OnChat__NotMember();
 
-        uint256 contentLength = bytes(content).length;
-        if (contentLength == 0) revert OnChat__InvalidParams("empty content");
+        if (bytes(content).length == 0)
+            revert OnChat__InvalidParams("empty content");
 
-        // Cache fees to avoid multiple SLOADs
-        uint256 feeBase = messageFeeBase;
-        uint256 feePerChar = messageFeePerChar;
-
-        // Calculate message fee
-        uint256 messageFee;
-        unchecked {
-            messageFee = feeBase + (contentLength * feePerChar);
-        }
+        // Calculate and validate message fee
+        uint256 messageFee = messageFeeBase +
+            (bytes(content).length * messageFeePerChar);
 
         if (msg.value < messageFee) {
             revert OnChat__InsufficientPayment();
         }
 
-        // Store message (packed struct)
+        // Store message and get index
         uint256 messageIndex = _channelMessages[slug].length;
         _channelMessages[slug].push(
             Message({
@@ -432,30 +406,36 @@ contract OnChat is Ownable {
             })
         );
 
-        // Split fee: 80% to channel owner, 20% to treasury
-        if (messageFee > 0) {
-            address channelOwner = _channels[slug].owner;
-            uint256 ownerShare;
-            uint256 treasuryShare;
-            unchecked {
-                ownerShare = (messageFee * OWNER_SHARE_BP) / BP_DENOMINATOR;
-                treasuryShare = messageFee - ownerShare;
-            }
+        // Emit event before fee distribution to reduce stack depth
+        emit MessageSent(slug, slug, msg.sender, messageIndex, content);
 
-            ownerBalances[channelOwner] += ownerShare;
-            treasuryBalance += treasuryShare;
-        }
+        // Split fee: 80% to channel owner, 20% to treasury
+        _distributeFee(messageFee, _channels[slug].owner);
 
         // Refund excess payment
-        if (msg.value > messageFee) {
-            unchecked {
-                uint256 refund = msg.value - messageFee;
-                (bool success, ) = msg.sender.call{value: refund}("");
-                if (!success) revert OnChat__TransferFailed();
-            }
-        }
+        _refundExcess(messageFee);
+    }
 
-        emit MessageSent(slug, slug, msg.sender, messageIndex, content);
+    /**
+     * @dev Distributes fee between owner and treasury
+     */
+    function _distributeFee(uint256 fee, address channelOwner) private {
+        if (fee > 0) {
+            uint256 ownerShare = (fee * OWNER_SHARE_BP) / BP_DENOMINATOR;
+            ownerBalances[channelOwner] += ownerShare;
+            treasuryBalance += fee - ownerShare;
+        }
+    }
+
+    /**
+     * @dev Refunds excess payment to sender
+     */
+    function _refundExcess(uint256 requiredFee) private {
+        if (msg.value > requiredFee) {
+            uint256 refund = msg.value - requiredFee;
+            (bool success, ) = msg.sender.call{value: refund}("");
+            if (!success) revert OnChat__TransferFailed();
+        }
     }
 
     /**
@@ -608,10 +588,10 @@ contract OnChat is Ownable {
 
     /**
      * @notice Claim treasury balance
-     * @dev Only callable by TREASURY_WALLET
+     * @dev Only callable by treasuryWallet
      */
     function claimTreasuryBalance() external {
-        if (msg.sender != TREASURY_WALLET)
+        if (msg.sender != treasuryWallet)
             revert OnChat__InvalidParams("not treasury");
 
         uint256 amount = treasuryBalance;
@@ -619,13 +599,33 @@ contract OnChat is Ownable {
 
         treasuryBalance = 0;
 
-        (bool success, ) = TREASURY_WALLET.call{value: amount}("");
+        (bool success, ) = treasuryWallet.call{value: amount}("");
         if (!success) revert OnChat__TransferFailed();
 
-        emit TreasuryBalanceClaimed(TREASURY_WALLET, amount);
+        emit TreasuryBalanceClaimed(treasuryWallet, amount);
     }
 
     // MARK: - View Functions
+
+    /**
+     * @notice Get total number of channels
+     * @return Total channel count
+     */
+    function getChannelCount() external view returns (uint256) {
+        return channelSlugs.length;
+    }
+
+    /**
+     * @notice ChannelInfo struct for view function returns
+     */
+    struct ChannelInfo {
+        string slug;
+        address owner;
+        string name;
+        uint40 createdAt;
+        uint256 memberCount;
+        uint256 messageCount;
+    }
 
     /**
      * @notice Get channel information
@@ -644,17 +644,9 @@ contract OnChat is Ownable {
                 owner: channel.owner,
                 name: channel.name,
                 createdAt: channel.createdAt,
-                memberCount: uint40(_channelMembers[slug].length()),
-                messageCount: uint64(_channelMessages[slug].length)
+                memberCount: _channelMembers[slug].length(),
+                messageCount: _channelMessages[slug].length
             });
-    }
-
-    /**
-     * @notice Get total number of channels
-     * @return Total channel count
-     */
-    function getChannelCount() external view returns (uint256) {
-        return channelSlugs.length;
     }
 
     /**
@@ -688,8 +680,8 @@ contract OnChat is Ownable {
                     owner: channel.owner,
                     name: channel.name,
                     createdAt: channel.createdAt,
-                    memberCount: uint40(_channelMembers[slug].length()),
-                    messageCount: uint64(_channelMessages[slug].length)
+                    memberCount: _channelMembers[slug].length(),
+                    messageCount: _channelMessages[slug].length
                 });
             }
         }
