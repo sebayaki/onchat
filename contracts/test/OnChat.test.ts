@@ -16,8 +16,6 @@ const MESSAGE_FEE_PER_CHAR = parseEther("0.0000002"); // ~$0.0006 per char (~$0.
 // Test data
 const TEST_SLUG = "test-channel";
 const TEST_SLUG_2 = "another-channel";
-const TEST_NAME = "Test Channel";
-const TEST_NAME_2 = "Another Channel";
 const TEST_MESSAGE = "Hello, OnChat!";
 const TEST_MESSAGE_2 = "Another message";
 
@@ -250,7 +248,7 @@ describe("OnChat", async function () {
     describe("Parameter validation", function () {
       it("should revert with empty slug", async function () {
         await assert.rejects(
-          onChat.write.createChannel(["", TEST_NAME], {
+          onChat.write.createChannel([""], {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
@@ -260,7 +258,7 @@ describe("OnChat", async function () {
 
       it("should revert with slug longer than 20 characters", async function () {
         await assert.rejects(
-          onChat.write.createChannel(["this-is-a-very-long-slug", TEST_NAME], {
+          onChat.write.createChannel(["this-is-a-very-long-slug"], {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
@@ -270,7 +268,7 @@ describe("OnChat", async function () {
 
       it("should revert with invalid characters in slug (uppercase)", async function () {
         await assert.rejects(
-          onChat.write.createChannel(["Test-Channel", TEST_NAME], {
+          onChat.write.createChannel(["Test-Channel"], {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
@@ -280,7 +278,7 @@ describe("OnChat", async function () {
 
       it("should revert with invalid characters in slug (numbers)", async function () {
         await assert.rejects(
-          onChat.write.createChannel(["test123", TEST_NAME], {
+          onChat.write.createChannel(["test123"], {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
@@ -290,7 +288,7 @@ describe("OnChat", async function () {
 
       it("should revert with invalid characters in slug (underscore)", async function () {
         await assert.rejects(
-          onChat.write.createChannel(["test_channel", TEST_NAME], {
+          onChat.write.createChannel(["test_channel"], {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
@@ -298,24 +296,14 @@ describe("OnChat", async function () {
         );
       });
 
-      it("should revert with empty name", async function () {
-        await assert.rejects(
-          onChat.write.createChannel([TEST_SLUG, ""], {
-            account: alice.account,
-            value: CHANNEL_CREATION_FEE,
-          }),
-          /OnChat__InvalidParams\("empty name"\)/
-        );
-      });
-
       it("should revert if channel already exists", async function () {
-        await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+        await onChat.write.createChannel([TEST_SLUG], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
         });
 
         await assert.rejects(
-          onChat.write.createChannel([TEST_SLUG, "Another Name"], {
+          onChat.write.createChannel([TEST_SLUG], {
             account: bob.account,
             value: CHANNEL_CREATION_FEE,
           }),
@@ -325,7 +313,7 @@ describe("OnChat", async function () {
 
       it("should revert with insufficient payment", async function () {
         await assert.rejects(
-          onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+          onChat.write.createChannel([TEST_SLUG], {
             account: alice.account,
             value: CHANNEL_CREATION_FEE - 1n,
           }),
@@ -336,14 +324,13 @@ describe("OnChat", async function () {
 
     describe("Success cases", function () {
       it("should create channel with valid inputs", async function () {
-        await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+        await onChat.write.createChannel([TEST_SLUG], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
         });
 
         const channel = await onChat.read.getChannel([TEST_SLUG]);
         assert.equal(channel.slug, TEST_SLUG);
-        assert.equal(channel.name, TEST_NAME);
         assert.equal(
           channel.owner.toLowerCase(),
           alice.account.address.toLowerCase()
@@ -351,7 +338,7 @@ describe("OnChat", async function () {
       });
 
       it("should accept slug with only hyphens", async function () {
-        await onChat.write.createChannel(["---", TEST_NAME], {
+        await onChat.write.createChannel(["---"], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
         });
@@ -361,7 +348,7 @@ describe("OnChat", async function () {
       });
 
       it("should accept single character slug", async function () {
-        await onChat.write.createChannel(["a", TEST_NAME], {
+        await onChat.write.createChannel(["a"], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
         });
@@ -372,7 +359,7 @@ describe("OnChat", async function () {
 
       it("should accept 20 character slug", async function () {
         const maxSlug = "abcdefghij-klmnopqr"; // exactly 20 chars
-        await onChat.write.createChannel([maxSlug, TEST_NAME], {
+        await onChat.write.createChannel([maxSlug], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
         });
@@ -382,7 +369,7 @@ describe("OnChat", async function () {
       });
 
       it("should auto-join creator to the channel", async function () {
-        await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+        await onChat.write.createChannel([TEST_SLUG], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
         });
@@ -395,7 +382,7 @@ describe("OnChat", async function () {
       });
 
       it("should add channel to user's joined channels", async function () {
-        await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+        await onChat.write.createChannel([TEST_SLUG], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
         });
@@ -412,7 +399,7 @@ describe("OnChat", async function () {
       it("should increment channel count", async function () {
         const initialCount = await onChat.read.getChannelCount();
 
-        await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+        await onChat.write.createChannel([TEST_SLUG], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
         });
@@ -423,23 +410,18 @@ describe("OnChat", async function () {
 
       it("should emit ChannelCreated event", async function () {
         await viem.assertions.emitWithArgs(
-          onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+          onChat.write.createChannel([TEST_SLUG], {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
           onChat,
           "ChannelCreated",
-          [
-            getSlugHash(TEST_SLUG),
-            TEST_SLUG,
-            getAddress(alice.account.address),
-            TEST_NAME,
-          ]
+          [getSlugHash(TEST_SLUG), TEST_SLUG, getAddress(alice.account.address)]
         );
       });
 
       it("should split fee correctly (80% owner, 20% treasury)", async function () {
-        await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+        await onChat.write.createChannel([TEST_SLUG], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
         });
@@ -462,7 +444,7 @@ describe("OnChat", async function () {
           address: alice.account.address,
         });
 
-        const tx = await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+        const tx = await onChat.write.createChannel([TEST_SLUG], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE + excessAmount,
         });
@@ -483,7 +465,7 @@ describe("OnChat", async function () {
       });
 
       it("should set correct createdAt timestamp", async function () {
-        await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+        await onChat.write.createChannel([TEST_SLUG], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
         });
@@ -501,7 +483,7 @@ describe("OnChat", async function () {
   describe("joinChannel", function () {
     beforeEach(async function () {
       // Create a channel first
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -595,7 +577,7 @@ describe("OnChat", async function () {
   describe("leaveChannel", function () {
     beforeEach(async function () {
       // Create a channel and have bob join
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -697,7 +679,7 @@ describe("OnChat", async function () {
   describe("sendMessage", function () {
     beforeEach(async function () {
       // Create a channel
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -939,7 +921,7 @@ describe("OnChat", async function () {
   describe("hideMessage and unhideMessage", function () {
     beforeEach(async function () {
       // Create a channel and send a message
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -1104,7 +1086,7 @@ describe("OnChat", async function () {
   describe("Moderation functions", function () {
     beforeEach(async function () {
       // Create a channel and have bob join
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -1519,7 +1501,7 @@ describe("OnChat", async function () {
   describe("Claim functions", function () {
     beforeEach(async function () {
       // Create a channel to generate some fees
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -1668,11 +1650,11 @@ describe("OnChat", async function () {
   describe("View functions", function () {
     beforeEach(async function () {
       // Create multiple channels
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
-      await onChat.write.createChannel([TEST_SLUG_2, TEST_NAME_2], {
+      await onChat.write.createChannel([TEST_SLUG_2], {
         account: bob.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -1700,7 +1682,6 @@ describe("OnChat", async function () {
         const channel = await onChat.read.getChannel([TEST_SLUG]);
 
         assert.equal(channel.slug, TEST_SLUG);
-        assert.equal(channel.name, TEST_NAME);
         assert.equal(
           channel.owner.toLowerCase(),
           alice.account.address.toLowerCase()
@@ -2004,7 +1985,7 @@ describe("OnChat", async function () {
       });
 
       // Create channel with no fee
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: 0n,
       });
@@ -2020,7 +2001,7 @@ describe("OnChat", async function () {
     });
 
     it("should handle channel owner joining their own channel (no-op)", async function () {
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -2035,7 +2016,7 @@ describe("OnChat", async function () {
     });
 
     it("should allow unbanned user to rejoin channel", async function () {
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -2061,7 +2042,7 @@ describe("OnChat", async function () {
     });
 
     it("should accumulate balances across multiple operations", async function () {
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -2091,7 +2072,7 @@ describe("OnChat", async function () {
     });
 
     it("should handle unicode characters in messages", async function () {
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
@@ -2116,7 +2097,7 @@ describe("OnChat", async function () {
     });
 
     it("should handle long messages", async function () {
-      await onChat.write.createChannel([TEST_SLUG, TEST_NAME], {
+      await onChat.write.createChannel([TEST_SLUG], {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
