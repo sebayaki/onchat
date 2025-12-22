@@ -1,0 +1,467 @@
+export const ONCHAT_ABI = [
+  // Errors
+  { type: "error", name: "OnChat__ChannelAlreadyExists", inputs: [] },
+  { type: "error", name: "OnChat__ChannelNotFound", inputs: [] },
+  { type: "error", name: "OnChat__InsufficientPayment", inputs: [] },
+  { type: "error", name: "OnChat__NotChannelOwner", inputs: [] },
+  { type: "error", name: "OnChat__NotChannelOwnerOrModerator", inputs: [] },
+  { type: "error", name: "OnChat__UserBanned", inputs: [] },
+  { type: "error", name: "OnChat__UserNotBanned", inputs: [] },
+  { type: "error", name: "OnChat__AlreadyModerator", inputs: [] },
+  { type: "error", name: "OnChat__NotModerator", inputs: [] },
+  { type: "error", name: "OnChat__AlreadyMember", inputs: [] },
+  { type: "error", name: "OnChat__NotMember", inputs: [] },
+  { type: "error", name: "OnChat__MessageNotFound", inputs: [] },
+  { type: "error", name: "OnChat__NothingToClaim", inputs: [] },
+  { type: "error", name: "OnChat__TransferFailed", inputs: [] },
+  { type: "error", name: "OnChat__ZeroAddress", inputs: [] },
+  { type: "error", name: "OnChat__InvalidSlugLength", inputs: [] },
+  { type: "error", name: "OnChat__InvalidSlugChars", inputs: [] },
+  { type: "error", name: "OnChat__EmptyContent", inputs: [] },
+  { type: "error", name: "OnChat__NotTreasury", inputs: [] },
+  { type: "error", name: "OnChat__CannotBanOwner", inputs: [] },
+
+  // Events
+  {
+    type: "event",
+    name: "ChannelCreated",
+    inputs: [
+      { name: "slugHash", type: "bytes32", indexed: true },
+      { name: "slug", type: "string", indexed: false },
+      { name: "owner", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "ChannelJoined",
+    inputs: [
+      { name: "slugHash", type: "bytes32", indexed: true },
+      { name: "user", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "ChannelLeft",
+    inputs: [
+      { name: "slugHash", type: "bytes32", indexed: true },
+      { name: "user", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "MessageSent",
+    inputs: [
+      { name: "slugHash", type: "bytes32", indexed: true },
+      { name: "sender", type: "address", indexed: true },
+      { name: "messageIndex", type: "uint256", indexed: true },
+      { name: "content", type: "string", indexed: false },
+    ],
+  },
+  {
+    type: "event",
+    name: "MessageHidden",
+    inputs: [
+      { name: "slugHash", type: "bytes32", indexed: true },
+      { name: "messageIndex", type: "uint256", indexed: true },
+      { name: "hiddenBy", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "MessageUnhidden",
+    inputs: [
+      { name: "slugHash", type: "bytes32", indexed: true },
+      { name: "messageIndex", type: "uint256", indexed: true },
+      { name: "unhiddenBy", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "UserBanned",
+    inputs: [
+      { name: "slugHash", type: "bytes32", indexed: true },
+      { name: "user", type: "address", indexed: true },
+      { name: "bannedBy", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "UserUnbanned",
+    inputs: [
+      { name: "slugHash", type: "bytes32", indexed: true },
+      { name: "user", type: "address", indexed: true },
+      { name: "unbannedBy", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "ModeratorAdded",
+    inputs: [
+      { name: "slugHash", type: "bytes32", indexed: true },
+      { name: "moderator", type: "address", indexed: true },
+      { name: "addedBy", type: "address", indexed: true },
+    ],
+  },
+  {
+    type: "event",
+    name: "ModeratorRemoved",
+    inputs: [
+      { name: "slugHash", type: "bytes32", indexed: true },
+      { name: "moderator", type: "address", indexed: true },
+      { name: "removedBy", type: "address", indexed: true },
+    ],
+  },
+
+  // Read Functions
+  {
+    type: "function",
+    name: "channelCreationFee",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "messageFeeBase",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "messageFeePerChar",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getChannelCount",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getChannel",
+    inputs: [{ name: "slugHash", type: "bytes32" }],
+    outputs: [
+      {
+        name: "info",
+        type: "tuple",
+        components: [
+          { name: "slugHash", type: "bytes32" },
+          { name: "slug", type: "string" },
+          { name: "owner", type: "address" },
+          { name: "createdAt", type: "uint40" },
+          { name: "memberCount", type: "uint256" },
+          { name: "messageCount", type: "uint256" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getLatestChannels",
+    inputs: [
+      { name: "offset", type: "uint256" },
+      { name: "limit", type: "uint256" },
+    ],
+    outputs: [
+      {
+        name: "channels",
+        type: "tuple[]",
+        components: [
+          { name: "slugHash", type: "bytes32" },
+          { name: "slug", type: "string" },
+          { name: "owner", type: "address" },
+          { name: "createdAt", type: "uint40" },
+          { name: "memberCount", type: "uint256" },
+          { name: "messageCount", type: "uint256" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getMessageCount",
+    inputs: [{ name: "slugHash", type: "bytes32" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getLatestMessages",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "offset", type: "uint256" },
+      { name: "limit", type: "uint256" },
+    ],
+    outputs: [
+      {
+        name: "messages",
+        type: "tuple[]",
+        components: [
+          { name: "sender", type: "address" },
+          { name: "timestamp", type: "uint40" },
+          { name: "isHidden", type: "bool" },
+          { name: "content", type: "string" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getMessagesRange",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "startIndex", type: "uint256" },
+      { name: "endIndex", type: "uint256" },
+    ],
+    outputs: [
+      {
+        name: "messages",
+        type: "tuple[]",
+        components: [
+          { name: "sender", type: "address" },
+          { name: "timestamp", type: "uint40" },
+          { name: "isHidden", type: "bool" },
+          { name: "content", type: "string" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getChannelMembers",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "offset", type: "uint256" },
+      { name: "limit", type: "uint256" },
+    ],
+    outputs: [{ name: "members", type: "address[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getChannelMemberCount",
+    inputs: [{ name: "slugHash", type: "bytes32" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getModeratorCount",
+    inputs: [{ name: "slugHash", type: "bytes32" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getChannelModerators",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "offset", type: "uint256" },
+      { name: "limit", type: "uint256" },
+    ],
+    outputs: [{ name: "moderators", type: "address[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getBannedUserCount",
+    inputs: [{ name: "slugHash", type: "bytes32" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getBannedUsers",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "offset", type: "uint256" },
+      { name: "limit", type: "uint256" },
+    ],
+    outputs: [{ name: "bannedUsers", type: "address[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getUserChannels",
+    inputs: [
+      { name: "user", type: "address" },
+      { name: "offset", type: "uint256" },
+      { name: "limit", type: "uint256" },
+    ],
+    outputs: [{ name: "slugHashes", type: "bytes32[]" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getUserChannelCount",
+    inputs: [{ name: "user", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "isMember",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "user", type: "address" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "isModerator",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "user", type: "address" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "isBanned",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "user", type: "address" },
+    ],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "calculateMessageFee",
+    inputs: [{ name: "contentLength", type: "uint256" }],
+    outputs: [{ name: "fee", type: "uint256" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "computeSlugHash",
+    inputs: [{ name: "slug", type: "string" }],
+    outputs: [{ name: "", type: "bytes32" }],
+    stateMutability: "pure",
+  },
+  {
+    type: "function",
+    name: "getSlug",
+    inputs: [{ name: "slugHash", type: "bytes32" }],
+    outputs: [{ name: "", type: "string" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "ownerBalances",
+    inputs: [{ name: "owner", type: "address" }],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
+  // Write Functions
+  {
+    type: "function",
+    name: "createChannel",
+    inputs: [{ name: "slug", type: "string" }],
+    outputs: [{ name: "slugHash", type: "bytes32" }],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "joinChannel",
+    inputs: [{ name: "slugHash", type: "bytes32" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "leaveChannel",
+    inputs: [{ name: "slugHash", type: "bytes32" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "sendMessage",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "content", type: "string" },
+    ],
+    outputs: [],
+    stateMutability: "payable",
+  },
+  {
+    type: "function",
+    name: "hideMessage",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "messageIndex", type: "uint256" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "unhideMessage",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "messageIndex", type: "uint256" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "banUser",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "user", type: "address" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "unbanUser",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "user", type: "address" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "addModerator",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "moderator", type: "address" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "removeModerator",
+    inputs: [
+      { name: "slugHash", type: "bytes32" },
+      { name: "moderator", type: "address" },
+    ],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "claimOwnerBalance",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+] as const;
