@@ -3,7 +3,7 @@ import { describe, it, beforeEach } from "node:test";
 import { network } from "hardhat";
 import { parseEther, getAddress, keccak256, toHex } from "viem";
 
-// Helper to get slug hash for event assertions
+// Helper to get slug hash
 function getSlugHash(slug: string): `0x${string}` {
   return keccak256(toHex(slug));
 }
@@ -16,6 +16,8 @@ const MESSAGE_FEE_PER_CHAR = parseEther("0.0000002"); // ~$0.0006 per char (~$0.
 // Test data
 const TEST_SLUG = "test-channel";
 const TEST_SLUG_2 = "another-channel";
+const TEST_SLUG_HASH = getSlugHash(TEST_SLUG);
+const TEST_SLUG_HASH_2 = getSlugHash(TEST_SLUG_2);
 const TEST_MESSAGE = "Hello, OnChat!";
 const TEST_MESSAGE_2 = "Another message";
 
@@ -127,7 +129,7 @@ describe("OnChat", async function () {
               account: deployer.account,
             }
           ),
-          /OnChat__InvalidParams\("zero address"\)/
+          /OnChat__ZeroAddress/
         );
       });
 
@@ -252,7 +254,7 @@ describe("OnChat", async function () {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
-          /OnChat__InvalidParams\("slug length must be 1-20"\)/
+          /OnChat__InvalidSlugLength/
         );
       });
 
@@ -262,7 +264,7 @@ describe("OnChat", async function () {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
-          /OnChat__InvalidParams\("slug length must be 1-20"\)/
+          /OnChat__InvalidSlugLength/
         );
       });
 
@@ -272,7 +274,7 @@ describe("OnChat", async function () {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
-          /OnChat__InvalidParams\("slug must be \[a-z-\]"\)/
+          /OnChat__InvalidSlugChars/
         );
       });
 
@@ -282,7 +284,7 @@ describe("OnChat", async function () {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
-          /OnChat__InvalidParams\("slug must be \[a-z-\]"\)/
+          /OnChat__InvalidSlugChars/
         );
       });
 
@@ -292,7 +294,7 @@ describe("OnChat", async function () {
             account: alice.account,
             value: CHANNEL_CREATION_FEE,
           }),
-          /OnChat__InvalidParams\("slug must be \[a-z-\]"\)/
+          /OnChat__InvalidSlugChars/
         );
       });
 
@@ -329,7 +331,7 @@ describe("OnChat", async function () {
           value: CHANNEL_CREATION_FEE,
         });
 
-        const channel = await onChat.read.getChannel([TEST_SLUG]);
+        const channel = await onChat.read.getChannel([TEST_SLUG_HASH]);
         assert.equal(channel.slug, TEST_SLUG);
         assert.equal(
           channel.owner.toLowerCase(),
@@ -343,7 +345,7 @@ describe("OnChat", async function () {
           value: CHANNEL_CREATION_FEE,
         });
 
-        const channel = await onChat.read.getChannel(["---"]);
+        const channel = await onChat.read.getChannel([getSlugHash("---")]);
         assert.equal(channel.slug, "---");
       });
 
@@ -353,7 +355,7 @@ describe("OnChat", async function () {
           value: CHANNEL_CREATION_FEE,
         });
 
-        const channel = await onChat.read.getChannel(["a"]);
+        const channel = await onChat.read.getChannel([getSlugHash("a")]);
         assert.equal(channel.slug, "a");
       });
 
@@ -364,7 +366,7 @@ describe("OnChat", async function () {
           value: CHANNEL_CREATION_FEE,
         });
 
-        const channel = await onChat.read.getChannel([maxSlug]);
+        const channel = await onChat.read.getChannel([getSlugHash(maxSlug)]);
         assert.equal(channel.slug, maxSlug);
       });
 
@@ -375,7 +377,7 @@ describe("OnChat", async function () {
         });
 
         const isMember = await onChat.read.isMember([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           alice.account.address,
         ]);
         assert.equal(isMember, true);
@@ -393,7 +395,7 @@ describe("OnChat", async function () {
           10n,
         ]);
         assert.equal(userChannels.length, 1);
-        assert.equal(userChannels[0], TEST_SLUG);
+        assert.equal(userChannels[0], TEST_SLUG_HASH);
       });
 
       it("should increment channel count", async function () {
@@ -470,7 +472,7 @@ describe("OnChat", async function () {
           value: CHANNEL_CREATION_FEE,
         });
 
-        const channel = await onChat.read.getChannel([TEST_SLUG]);
+        const channel = await onChat.read.getChannel([TEST_SLUG_HASH]);
         const currentTime = await time.latest();
         assert.equal(Number(channel.createdAt), currentTime);
       });
@@ -490,19 +492,19 @@ describe("OnChat", async function () {
     });
 
     it("should allow user to join existing channel", async function () {
-      await onChat.write.joinChannel([TEST_SLUG], {
+      await onChat.write.joinChannel([TEST_SLUG_HASH], {
         account: bob.account,
       });
 
       const isMember = await onChat.read.isMember([
-        TEST_SLUG,
+        TEST_SLUG_HASH,
         bob.account.address,
       ]);
       assert.equal(isMember, true);
     });
 
     it("should add channel to user's joined channels", async function () {
-      await onChat.write.joinChannel([TEST_SLUG], {
+      await onChat.write.joinChannel([TEST_SLUG_HASH], {
         account: bob.account,
       });
 
@@ -512,34 +514,38 @@ describe("OnChat", async function () {
         10n,
       ]);
       assert.equal(userChannels.length, 1);
-      assert.equal(userChannels[0], TEST_SLUG);
+      assert.equal(userChannels[0], TEST_SLUG_HASH);
     });
 
     it("should increment member count", async function () {
-      const initialCount = await onChat.read.getChannelMemberCount([TEST_SLUG]);
+      const initialCount = await onChat.read.getChannelMemberCount([
+        TEST_SLUG_HASH,
+      ]);
 
-      await onChat.write.joinChannel([TEST_SLUG], {
+      await onChat.write.joinChannel([TEST_SLUG_HASH], {
         account: bob.account,
       });
 
-      const newCount = await onChat.read.getChannelMemberCount([TEST_SLUG]);
+      const newCount = await onChat.read.getChannelMemberCount([
+        TEST_SLUG_HASH,
+      ]);
       assert.equal(newCount, initialCount + 1n);
     });
 
     it("should emit ChannelJoined event", async function () {
       await viem.assertions.emitWithArgs(
-        onChat.write.joinChannel([TEST_SLUG], {
+        onChat.write.joinChannel([TEST_SLUG_HASH], {
           account: bob.account,
         }),
         onChat,
         "ChannelJoined",
-        [getSlugHash(TEST_SLUG), TEST_SLUG, getAddress(bob.account.address)]
+        [TEST_SLUG_HASH, getAddress(bob.account.address)]
       );
     });
 
     it("should revert if channel does not exist", async function () {
       await assert.rejects(
-        onChat.write.joinChannel(["nonexistent"], {
+        onChat.write.joinChannel([getSlugHash("nonexistent")], {
           account: bob.account,
         }),
         /OnChat__ChannelNotFound/
@@ -547,12 +553,12 @@ describe("OnChat", async function () {
     });
 
     it("should revert if user is already a member", async function () {
-      await onChat.write.joinChannel([TEST_SLUG], {
+      await onChat.write.joinChannel([TEST_SLUG_HASH], {
         account: bob.account,
       });
 
       await assert.rejects(
-        onChat.write.joinChannel([TEST_SLUG], {
+        onChat.write.joinChannel([TEST_SLUG_HASH], {
           account: bob.account,
         }),
         /OnChat__AlreadyMember/
@@ -561,12 +567,12 @@ describe("OnChat", async function () {
 
     it("should revert if user is banned", async function () {
       // Ban bob
-      await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+      await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
         account: alice.account,
       });
 
       await assert.rejects(
-        onChat.write.joinChannel([TEST_SLUG], {
+        onChat.write.joinChannel([TEST_SLUG_HASH], {
           account: bob.account,
         }),
         /OnChat__UserBanned/
@@ -581,25 +587,25 @@ describe("OnChat", async function () {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
-      await onChat.write.joinChannel([TEST_SLUG], {
+      await onChat.write.joinChannel([TEST_SLUG_HASH], {
         account: bob.account,
       });
     });
 
     it("should allow user to leave channel", async function () {
-      await onChat.write.leaveChannel([TEST_SLUG], {
+      await onChat.write.leaveChannel([TEST_SLUG_HASH], {
         account: bob.account,
       });
 
       const isMember = await onChat.read.isMember([
-        TEST_SLUG,
+        TEST_SLUG_HASH,
         bob.account.address,
       ]);
       assert.equal(isMember, false);
     });
 
     it("should remove channel from user's joined channels", async function () {
-      await onChat.write.leaveChannel([TEST_SLUG], {
+      await onChat.write.leaveChannel([TEST_SLUG_HASH], {
         account: bob.account,
       });
 
@@ -612,51 +618,55 @@ describe("OnChat", async function () {
     });
 
     it("should decrement member count", async function () {
-      const initialCount = await onChat.read.getChannelMemberCount([TEST_SLUG]);
+      const initialCount = await onChat.read.getChannelMemberCount([
+        TEST_SLUG_HASH,
+      ]);
 
-      await onChat.write.leaveChannel([TEST_SLUG], {
+      await onChat.write.leaveChannel([TEST_SLUG_HASH], {
         account: bob.account,
       });
 
-      const newCount = await onChat.read.getChannelMemberCount([TEST_SLUG]);
+      const newCount = await onChat.read.getChannelMemberCount([
+        TEST_SLUG_HASH,
+      ]);
       assert.equal(newCount, initialCount - 1n);
     });
 
     it("should remove moderator status when leaving", async function () {
       // Make bob a moderator
-      await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+      await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
         account: alice.account,
       });
 
       assert.equal(
-        await onChat.read.isModerator([TEST_SLUG, bob.account.address]),
+        await onChat.read.isModerator([TEST_SLUG_HASH, bob.account.address]),
         true
       );
 
-      await onChat.write.leaveChannel([TEST_SLUG], {
+      await onChat.write.leaveChannel([TEST_SLUG_HASH], {
         account: bob.account,
       });
 
       assert.equal(
-        await onChat.read.isModerator([TEST_SLUG, bob.account.address]),
+        await onChat.read.isModerator([TEST_SLUG_HASH, bob.account.address]),
         false
       );
     });
 
     it("should emit ChannelLeft event", async function () {
       await viem.assertions.emitWithArgs(
-        onChat.write.leaveChannel([TEST_SLUG], {
+        onChat.write.leaveChannel([TEST_SLUG_HASH], {
           account: bob.account,
         }),
         onChat,
         "ChannelLeft",
-        [getSlugHash(TEST_SLUG), TEST_SLUG, getAddress(bob.account.address)]
+        [TEST_SLUG_HASH, getAddress(bob.account.address)]
       );
     });
 
     it("should revert if channel does not exist", async function () {
       await assert.rejects(
-        onChat.write.leaveChannel(["nonexistent"], {
+        onChat.write.leaveChannel([getSlugHash("nonexistent")], {
           account: bob.account,
         }),
         /OnChat__ChannelNotFound/
@@ -665,7 +675,7 @@ describe("OnChat", async function () {
 
     it("should revert if user is not a member", async function () {
       await assert.rejects(
-        onChat.write.leaveChannel([TEST_SLUG], {
+        onChat.write.leaveChannel([TEST_SLUG_HASH], {
           account: carol.account,
         }),
         /OnChat__NotMember/
@@ -690,11 +700,11 @@ describe("OnChat", async function () {
         const messageFee = await onChat.read.calculateMessageFee([0n]);
 
         await assert.rejects(
-          onChat.write.sendMessage([TEST_SLUG, ""], {
+          onChat.write.sendMessage([TEST_SLUG_HASH, ""], {
             account: alice.account,
             value: messageFee,
           }),
-          /OnChat__InvalidParams\("empty content"\)/
+          /OnChat__EmptyContent/
         );
       });
 
@@ -704,7 +714,7 @@ describe("OnChat", async function () {
         ]);
 
         await assert.rejects(
-          onChat.write.sendMessage(["nonexistent", TEST_MESSAGE], {
+          onChat.write.sendMessage([getSlugHash("nonexistent"), TEST_MESSAGE], {
             account: alice.account,
             value: messageFee,
           }),
@@ -718,7 +728,7 @@ describe("OnChat", async function () {
         ]);
 
         await assert.rejects(
-          onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+          onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
             account: bob.account,
             value: messageFee,
           }),
@@ -728,8 +738,10 @@ describe("OnChat", async function () {
 
       it("should revert if user is banned", async function () {
         // Bob joins then gets banned
-        await onChat.write.joinChannel([TEST_SLUG], { account: bob.account });
-        await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.joinChannel([TEST_SLUG_HASH], {
+          account: bob.account,
+        });
+        await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
@@ -738,7 +750,7 @@ describe("OnChat", async function () {
         ]);
 
         await assert.rejects(
-          onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+          onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
             account: bob.account,
             value: messageFee,
           }),
@@ -752,7 +764,7 @@ describe("OnChat", async function () {
         ]);
 
         await assert.rejects(
-          onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+          onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
             account: alice.account,
             value: messageFee - 1n,
           }),
@@ -767,12 +779,14 @@ describe("OnChat", async function () {
           BigInt(TEST_MESSAGE.length),
         ]);
 
-        await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+        await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
           account: alice.account,
           value: messageFee,
         });
 
-        const messageCount = await onChat.read.getMessageCount([TEST_SLUG]);
+        const messageCount = await onChat.read.getMessageCount([
+          TEST_SLUG_HASH,
+        ]);
         assert.equal(messageCount, 1n);
       });
 
@@ -781,13 +795,13 @@ describe("OnChat", async function () {
           BigInt(TEST_MESSAGE.length),
         ]);
 
-        await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+        await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
           account: alice.account,
           value: messageFee,
         });
 
         const messages = await onChat.read.getLatestMessages([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           0n,
           10n,
         ]);
@@ -806,19 +820,13 @@ describe("OnChat", async function () {
         ]);
 
         await viem.assertions.emitWithArgs(
-          onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+          onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
             account: alice.account,
             value: messageFee,
           }),
           onChat,
           "MessageSent",
-          [
-            getSlugHash(TEST_SLUG),
-            TEST_SLUG,
-            getAddress(alice.account.address),
-            0n,
-            TEST_MESSAGE,
-          ]
+          [TEST_SLUG_HASH, getAddress(alice.account.address), 0n, TEST_MESSAGE]
         );
       });
 
@@ -843,7 +851,7 @@ describe("OnChat", async function () {
         ]);
         const initialTreasuryBalance = await onChat.read.treasuryBalance();
 
-        await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+        await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
           account: alice.account,
           value: messageFee,
         });
@@ -876,10 +884,13 @@ describe("OnChat", async function () {
           address: alice.account.address,
         });
 
-        const tx = await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
-          account: alice.account,
-          value: messageFee + excessAmount,
-        });
+        const tx = await onChat.write.sendMessage(
+          [TEST_SLUG_HASH, TEST_MESSAGE],
+          {
+            account: alice.account,
+            value: messageFee + excessAmount,
+          }
+        );
 
         const receipt = await publicClient.waitForTransactionReceipt({
           hash: tx,
@@ -900,19 +911,21 @@ describe("OnChat", async function () {
           BigInt(TEST_MESSAGE.length),
         ]);
 
-        await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+        await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
           account: alice.account,
           value: messageFee,
         });
 
-        await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE_2], {
+        await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE_2], {
           account: alice.account,
           value: await onChat.read.calculateMessageFee([
             BigInt(TEST_MESSAGE_2.length),
           ]),
         });
 
-        const messageCount = await onChat.read.getMessageCount([TEST_SLUG]);
+        const messageCount = await onChat.read.getMessageCount([
+          TEST_SLUG_HASH,
+        ]);
         assert.equal(messageCount, 2n);
       });
     }); // Success cases
@@ -929,7 +942,7 @@ describe("OnChat", async function () {
       const messageFee = await onChat.read.calculateMessageFee([
         BigInt(TEST_MESSAGE.length),
       ]);
-      await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+      await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
         account: alice.account,
         value: messageFee,
       });
@@ -937,12 +950,12 @@ describe("OnChat", async function () {
 
     describe("hideMessage", function () {
       it("should allow owner to hide message", async function () {
-        await onChat.write.hideMessage([TEST_SLUG, 0n], {
+        await onChat.write.hideMessage([TEST_SLUG_HASH, 0n], {
           account: alice.account,
         });
 
         const messages = await onChat.read.getLatestMessages([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           0n,
           10n,
         ]);
@@ -950,17 +963,19 @@ describe("OnChat", async function () {
       });
 
       it("should allow moderator to hide message", async function () {
-        await onChat.write.joinChannel([TEST_SLUG], { account: bob.account });
-        await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+        await onChat.write.joinChannel([TEST_SLUG_HASH], {
+          account: bob.account,
+        });
+        await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
-        await onChat.write.hideMessage([TEST_SLUG, 0n], {
+        await onChat.write.hideMessage([TEST_SLUG_HASH, 0n], {
           account: bob.account,
         });
 
         const messages = await onChat.read.getLatestMessages([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           0n,
           10n,
         ]);
@@ -969,23 +984,18 @@ describe("OnChat", async function () {
 
       it("should emit MessageHidden event", async function () {
         await viem.assertions.emitWithArgs(
-          onChat.write.hideMessage([TEST_SLUG, 0n], {
+          onChat.write.hideMessage([TEST_SLUG_HASH, 0n], {
             account: alice.account,
           }),
           onChat,
           "MessageHidden",
-          [
-            getSlugHash(TEST_SLUG),
-            TEST_SLUG,
-            0n,
-            getAddress(alice.account.address),
-          ]
+          [TEST_SLUG_HASH, 0n, getAddress(alice.account.address)]
         );
       });
 
       it("should revert if message does not exist", async function () {
         await assert.rejects(
-          onChat.write.hideMessage([TEST_SLUG, 999n], {
+          onChat.write.hideMessage([TEST_SLUG_HASH, 999n], {
             account: alice.account,
           }),
           /OnChat__MessageNotFound/
@@ -993,10 +1003,12 @@ describe("OnChat", async function () {
       });
 
       it("should revert if called by non-owner/non-moderator", async function () {
-        await onChat.write.joinChannel([TEST_SLUG], { account: bob.account });
+        await onChat.write.joinChannel([TEST_SLUG_HASH], {
+          account: bob.account,
+        });
 
         await assert.rejects(
-          onChat.write.hideMessage([TEST_SLUG, 0n], {
+          onChat.write.hideMessage([TEST_SLUG_HASH, 0n], {
             account: bob.account,
           }),
           /OnChat__NotChannelOwnerOrModerator/
@@ -1006,18 +1018,18 @@ describe("OnChat", async function () {
 
     describe("unhideMessage", function () {
       beforeEach(async function () {
-        await onChat.write.hideMessage([TEST_SLUG, 0n], {
+        await onChat.write.hideMessage([TEST_SLUG_HASH, 0n], {
           account: alice.account,
         });
       });
 
       it("should allow owner to unhide message", async function () {
-        await onChat.write.unhideMessage([TEST_SLUG, 0n], {
+        await onChat.write.unhideMessage([TEST_SLUG_HASH, 0n], {
           account: alice.account,
         });
 
         const messages = await onChat.read.getLatestMessages([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           0n,
           10n,
         ]);
@@ -1025,17 +1037,19 @@ describe("OnChat", async function () {
       });
 
       it("should allow moderator to unhide message", async function () {
-        await onChat.write.joinChannel([TEST_SLUG], { account: bob.account });
-        await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+        await onChat.write.joinChannel([TEST_SLUG_HASH], {
+          account: bob.account,
+        });
+        await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
-        await onChat.write.unhideMessage([TEST_SLUG, 0n], {
+        await onChat.write.unhideMessage([TEST_SLUG_HASH, 0n], {
           account: bob.account,
         });
 
         const messages = await onChat.read.getLatestMessages([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           0n,
           10n,
         ]);
@@ -1044,23 +1058,18 @@ describe("OnChat", async function () {
 
       it("should emit MessageUnhidden event", async function () {
         await viem.assertions.emitWithArgs(
-          onChat.write.unhideMessage([TEST_SLUG, 0n], {
+          onChat.write.unhideMessage([TEST_SLUG_HASH, 0n], {
             account: alice.account,
           }),
           onChat,
           "MessageUnhidden",
-          [
-            getSlugHash(TEST_SLUG),
-            TEST_SLUG,
-            0n,
-            getAddress(alice.account.address),
-          ]
+          [TEST_SLUG_HASH, 0n, getAddress(alice.account.address)]
         );
       });
 
       it("should revert if message does not exist", async function () {
         await assert.rejects(
-          onChat.write.unhideMessage([TEST_SLUG, 999n], {
+          onChat.write.unhideMessage([TEST_SLUG_HASH, 999n], {
             account: alice.account,
           }),
           /OnChat__MessageNotFound/
@@ -1068,10 +1077,12 @@ describe("OnChat", async function () {
       });
 
       it("should revert if called by non-owner/non-moderator", async function () {
-        await onChat.write.joinChannel([TEST_SLUG], { account: bob.account });
+        await onChat.write.joinChannel([TEST_SLUG_HASH], {
+          account: bob.account,
+        });
 
         await assert.rejects(
-          onChat.write.unhideMessage([TEST_SLUG, 0n], {
+          onChat.write.unhideMessage([TEST_SLUG_HASH, 0n], {
             account: bob.account,
           }),
           /OnChat__NotChannelOwnerOrModerator/
@@ -1090,34 +1101,38 @@ describe("OnChat", async function () {
         account: alice.account,
         value: CHANNEL_CREATION_FEE,
       });
-      await onChat.write.joinChannel([TEST_SLUG], { account: bob.account });
-      await onChat.write.joinChannel([TEST_SLUG], { account: carol.account });
+      await onChat.write.joinChannel([TEST_SLUG_HASH], {
+        account: bob.account,
+      });
+      await onChat.write.joinChannel([TEST_SLUG_HASH], {
+        account: carol.account,
+      });
     });
 
     describe("banUser", function () {
       it("should allow owner to ban user", async function () {
-        await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         const isBanned = await onChat.read.isBanned([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           bob.account.address,
         ]);
         assert.equal(isBanned, true);
       });
 
       it("should allow moderator to ban user", async function () {
-        await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+        await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
-        await onChat.write.banUser([TEST_SLUG, carol.account.address], {
+        await onChat.write.banUser([TEST_SLUG_HASH, carol.account.address], {
           account: bob.account,
         });
 
         const isBanned = await onChat.read.isBanned([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           carol.account.address,
         ]);
         assert.equal(isBanned, true);
@@ -1125,44 +1140,44 @@ describe("OnChat", async function () {
 
       it("should remove banned user from members", async function () {
         const isMemberBefore = await onChat.read.isMember([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           bob.account.address,
         ]);
         assert.equal(isMemberBefore, true);
 
-        await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         const isMemberAfter = await onChat.read.isMember([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           bob.account.address,
         ]);
         assert.equal(isMemberAfter, false);
       });
 
       it("should remove banned user from moderators", async function () {
-        await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+        await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         assert.equal(
-          await onChat.read.isModerator([TEST_SLUG, bob.account.address]),
+          await onChat.read.isModerator([TEST_SLUG_HASH, bob.account.address]),
           true
         );
 
-        await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         assert.equal(
-          await onChat.read.isModerator([TEST_SLUG, bob.account.address]),
+          await onChat.read.isModerator([TEST_SLUG_HASH, bob.account.address]),
           false
         );
       });
 
       it("should remove channel from user's joined channels", async function () {
-        await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
@@ -1176,14 +1191,13 @@ describe("OnChat", async function () {
 
       it("should emit UserBanned event", async function () {
         await viem.assertions.emitWithArgs(
-          onChat.write.banUser([TEST_SLUG, bob.account.address], {
+          onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
             account: alice.account,
           }),
           onChat,
           "UserBanned",
           [
-            getSlugHash(TEST_SLUG),
-            TEST_SLUG,
+            TEST_SLUG_HASH,
             getAddress(bob.account.address),
             getAddress(alice.account.address),
           ]
@@ -1193,31 +1207,31 @@ describe("OnChat", async function () {
       it("should revert with zero address", async function () {
         await assert.rejects(
           onChat.write.banUser(
-            [TEST_SLUG, "0x0000000000000000000000000000000000000000"],
+            [TEST_SLUG_HASH, "0x0000000000000000000000000000000000000000"],
             {
               account: alice.account,
             }
           ),
-          /OnChat__InvalidParams/
+          /OnChat__ZeroAddress/
         );
       });
 
       it("should revert when trying to ban owner", async function () {
         await assert.rejects(
-          onChat.write.banUser([TEST_SLUG, alice.account.address], {
+          onChat.write.banUser([TEST_SLUG_HASH, alice.account.address], {
             account: alice.account,
           }),
-          /OnChat__InvalidParams/
+          /OnChat__CannotBanOwner/
         );
       });
 
       it("should revert if user is already banned", async function () {
-        await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         await assert.rejects(
-          onChat.write.banUser([TEST_SLUG, bob.account.address], {
+          onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
             account: alice.account,
           }),
           /OnChat__UserBanned/
@@ -1226,7 +1240,7 @@ describe("OnChat", async function () {
 
       it("should revert if called by non-owner/non-moderator", async function () {
         await assert.rejects(
-          onChat.write.banUser([TEST_SLUG, carol.account.address], {
+          onChat.write.banUser([TEST_SLUG_HASH, carol.account.address], {
             account: bob.account,
           }),
           /OnChat__NotChannelOwnerOrModerator/
@@ -1236,34 +1250,37 @@ describe("OnChat", async function () {
 
     describe("unbanUser", function () {
       beforeEach(async function () {
-        await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
       });
 
       it("should allow owner to unban user", async function () {
-        await onChat.write.unbanUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.unbanUser([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         const isBanned = await onChat.read.isBanned([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           bob.account.address,
         ]);
         assert.equal(isBanned, false);
       });
 
       it("should allow moderator to unban user", async function () {
-        await onChat.write.addModerator([TEST_SLUG, carol.account.address], {
-          account: alice.account,
-        });
+        await onChat.write.addModerator(
+          [TEST_SLUG_HASH, carol.account.address],
+          {
+            account: alice.account,
+          }
+        );
 
-        await onChat.write.unbanUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.unbanUser([TEST_SLUG_HASH, bob.account.address], {
           account: carol.account,
         });
 
         const isBanned = await onChat.read.isBanned([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           bob.account.address,
         ]);
         assert.equal(isBanned, false);
@@ -1271,14 +1288,13 @@ describe("OnChat", async function () {
 
       it("should emit UserUnbanned event", async function () {
         await viem.assertions.emitWithArgs(
-          onChat.write.unbanUser([TEST_SLUG, bob.account.address], {
+          onChat.write.unbanUser([TEST_SLUG_HASH, bob.account.address], {
             account: alice.account,
           }),
           onChat,
           "UserUnbanned",
           [
-            getSlugHash(TEST_SLUG),
-            TEST_SLUG,
+            TEST_SLUG_HASH,
             getAddress(bob.account.address),
             getAddress(alice.account.address),
           ]
@@ -1288,18 +1304,18 @@ describe("OnChat", async function () {
       it("should revert with zero address", async function () {
         await assert.rejects(
           onChat.write.unbanUser(
-            [TEST_SLUG, "0x0000000000000000000000000000000000000000"],
+            [TEST_SLUG_HASH, "0x0000000000000000000000000000000000000000"],
             {
               account: alice.account,
             }
           ),
-          /OnChat__InvalidParams/
+          /OnChat__ZeroAddress/
         );
       });
 
       it("should revert if user is not banned", async function () {
         await assert.rejects(
-          onChat.write.unbanUser([TEST_SLUG, carol.account.address], {
+          onChat.write.unbanUser([TEST_SLUG_HASH, carol.account.address], {
             account: alice.account,
           }),
           /OnChat__UserNotBanned/
@@ -1308,7 +1324,7 @@ describe("OnChat", async function () {
 
       it("should revert if called by non-owner/non-moderator", async function () {
         await assert.rejects(
-          onChat.write.unbanUser([TEST_SLUG, bob.account.address], {
+          onChat.write.unbanUser([TEST_SLUG_HASH, bob.account.address], {
             account: carol.account,
           }),
           /OnChat__NotChannelOwnerOrModerator/
@@ -1318,23 +1334,25 @@ describe("OnChat", async function () {
 
     describe("addModerator", function () {
       it("should allow owner to add moderator", async function () {
-        await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+        await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         const isModerator = await onChat.read.isModerator([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           bob.account.address,
         ]);
         assert.equal(isModerator, true);
       });
 
       it("should add moderator to channel moderators list", async function () {
-        await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+        await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
-        const moderators = await onChat.read.getChannelModerators([TEST_SLUG]);
+        const moderators = await onChat.read.getChannelModerators([
+          TEST_SLUG_HASH,
+        ]);
         assert.equal(moderators.length, 1);
         assert.equal(
           moderators[0].toLowerCase(),
@@ -1344,14 +1362,13 @@ describe("OnChat", async function () {
 
       it("should emit ModeratorAdded event", async function () {
         await viem.assertions.emitWithArgs(
-          onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+          onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
             account: alice.account,
           }),
           onChat,
           "ModeratorAdded",
           [
-            getSlugHash(TEST_SLUG),
-            TEST_SLUG,
+            TEST_SLUG_HASH,
             getAddress(bob.account.address),
             getAddress(alice.account.address),
           ]
@@ -1361,22 +1378,22 @@ describe("OnChat", async function () {
       it("should revert with zero address", async function () {
         await assert.rejects(
           onChat.write.addModerator(
-            [TEST_SLUG, "0x0000000000000000000000000000000000000000"],
+            [TEST_SLUG_HASH, "0x0000000000000000000000000000000000000000"],
             {
               account: alice.account,
             }
           ),
-          /OnChat__InvalidParams/
+          /OnChat__ZeroAddress/
         );
       });
 
       it("should revert if user is already a moderator", async function () {
-        await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+        await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         await assert.rejects(
-          onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+          onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
             account: alice.account,
           }),
           /OnChat__AlreadyModerator/
@@ -1385,16 +1402,19 @@ describe("OnChat", async function () {
 
       it("should revert if user is not a member", async function () {
         await assert.rejects(
-          onChat.write.addModerator([TEST_SLUG, deployer.account.address], {
-            account: alice.account,
-          }),
+          onChat.write.addModerator(
+            [TEST_SLUG_HASH, deployer.account.address],
+            {
+              account: alice.account,
+            }
+          ),
           /OnChat__NotMember/
         );
       });
 
       it("should revert if called by non-owner", async function () {
         await assert.rejects(
-          onChat.write.addModerator([TEST_SLUG, carol.account.address], {
+          onChat.write.addModerator([TEST_SLUG_HASH, carol.account.address], {
             account: bob.account,
           }),
           /OnChat__NotChannelOwner/
@@ -1402,12 +1422,12 @@ describe("OnChat", async function () {
       });
 
       it("should revert if called by moderator (not owner)", async function () {
-        await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+        await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         await assert.rejects(
-          onChat.write.addModerator([TEST_SLUG, carol.account.address], {
+          onChat.write.addModerator([TEST_SLUG_HASH, carol.account.address], {
             account: bob.account,
           }),
           /OnChat__NotChannelOwner/
@@ -1417,42 +1437,49 @@ describe("OnChat", async function () {
 
     describe("removeModerator", function () {
       beforeEach(async function () {
-        await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+        await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
       });
 
       it("should allow owner to remove moderator", async function () {
-        await onChat.write.removeModerator([TEST_SLUG, bob.account.address], {
-          account: alice.account,
-        });
+        await onChat.write.removeModerator(
+          [TEST_SLUG_HASH, bob.account.address],
+          {
+            account: alice.account,
+          }
+        );
 
         const isModerator = await onChat.read.isModerator([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           bob.account.address,
         ]);
         assert.equal(isModerator, false);
       });
 
       it("should remove moderator from channel moderators list", async function () {
-        await onChat.write.removeModerator([TEST_SLUG, bob.account.address], {
-          account: alice.account,
-        });
+        await onChat.write.removeModerator(
+          [TEST_SLUG_HASH, bob.account.address],
+          {
+            account: alice.account,
+          }
+        );
 
-        const moderators = await onChat.read.getChannelModerators([TEST_SLUG]);
+        const moderators = await onChat.read.getChannelModerators([
+          TEST_SLUG_HASH,
+        ]);
         assert.equal(moderators.length, 0);
       });
 
       it("should emit ModeratorRemoved event", async function () {
         await viem.assertions.emitWithArgs(
-          onChat.write.removeModerator([TEST_SLUG, bob.account.address], {
+          onChat.write.removeModerator([TEST_SLUG_HASH, bob.account.address], {
             account: alice.account,
           }),
           onChat,
           "ModeratorRemoved",
           [
-            getSlugHash(TEST_SLUG),
-            TEST_SLUG,
+            TEST_SLUG_HASH,
             getAddress(bob.account.address),
             getAddress(alice.account.address),
           ]
@@ -1462,33 +1489,42 @@ describe("OnChat", async function () {
       it("should revert with zero address", async function () {
         await assert.rejects(
           onChat.write.removeModerator(
-            [TEST_SLUG, "0x0000000000000000000000000000000000000000"],
+            [TEST_SLUG_HASH, "0x0000000000000000000000000000000000000000"],
             {
               account: alice.account,
             }
           ),
-          /OnChat__InvalidParams/
+          /OnChat__ZeroAddress/
         );
       });
 
       it("should revert if user is not a moderator", async function () {
         await assert.rejects(
-          onChat.write.removeModerator([TEST_SLUG, carol.account.address], {
-            account: alice.account,
-          }),
+          onChat.write.removeModerator(
+            [TEST_SLUG_HASH, carol.account.address],
+            {
+              account: alice.account,
+            }
+          ),
           /OnChat__NotModerator/
         );
       });
 
       it("should revert if called by non-owner", async function () {
-        await onChat.write.addModerator([TEST_SLUG, carol.account.address], {
-          account: alice.account,
-        });
+        await onChat.write.addModerator(
+          [TEST_SLUG_HASH, carol.account.address],
+          {
+            account: alice.account,
+          }
+        );
 
         await assert.rejects(
-          onChat.write.removeModerator([TEST_SLUG, carol.account.address], {
-            account: bob.account,
-          }),
+          onChat.write.removeModerator(
+            [TEST_SLUG_HASH, carol.account.address],
+            {
+              account: bob.account,
+            }
+          ),
           /OnChat__NotChannelOwner/
         );
       });
@@ -1624,7 +1660,7 @@ describe("OnChat", async function () {
           onChat.write.claimTreasuryBalance({
             account: alice.account,
           }),
-          /OnChat__InvalidParams\("not treasury"\)/
+          /OnChat__NotTreasury/
         );
       });
 
@@ -1660,16 +1696,18 @@ describe("OnChat", async function () {
       });
 
       // Have users join and send messages
-      await onChat.write.joinChannel([TEST_SLUG], { account: bob.account });
+      await onChat.write.joinChannel([TEST_SLUG_HASH], {
+        account: bob.account,
+      });
 
       const messageFee = await onChat.read.calculateMessageFee([
         BigInt(TEST_MESSAGE.length),
       ]);
-      await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+      await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
         account: alice.account,
         value: messageFee,
       });
-      await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE_2], {
+      await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE_2], {
         account: bob.account,
         value: await onChat.read.calculateMessageFee([
           BigInt(TEST_MESSAGE_2.length),
@@ -1679,7 +1717,7 @@ describe("OnChat", async function () {
 
     describe("getChannel", function () {
       it("should return correct channel info", async function () {
-        const channel = await onChat.read.getChannel([TEST_SLUG]);
+        const channel = await onChat.read.getChannel([TEST_SLUG_HASH]);
 
         assert.equal(channel.slug, TEST_SLUG);
         assert.equal(
@@ -1692,7 +1730,7 @@ describe("OnChat", async function () {
 
       it("should revert for non-existent channel", async function () {
         await assert.rejects(
-          onChat.read.getChannel(["nonexistent"]),
+          onChat.read.getChannel([getSlugHash("nonexistent")]),
           /OnChat__ChannelNotFound/
         );
       });
@@ -1728,7 +1766,7 @@ describe("OnChat", async function () {
     describe("getLatestMessages", function () {
       it("should return messages in reverse chronological order", async function () {
         const messages = await onChat.read.getLatestMessages([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           0n,
           10n,
         ]);
@@ -1740,7 +1778,7 @@ describe("OnChat", async function () {
 
       it("should handle pagination correctly", async function () {
         const messages = await onChat.read.getLatestMessages([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           1n,
           10n,
         ]);
@@ -1751,7 +1789,7 @@ describe("OnChat", async function () {
 
       it("should return empty array for channel with no messages", async function () {
         const messages = await onChat.read.getLatestMessages([
-          TEST_SLUG_2,
+          TEST_SLUG_HASH_2,
           0n,
           10n,
         ]);
@@ -1762,7 +1800,7 @@ describe("OnChat", async function () {
     describe("getMessagesRange", function () {
       it("should return messages in chronological order", async function () {
         const messages = await onChat.read.getMessagesRange([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           0n,
           10n,
         ]);
@@ -1774,7 +1812,7 @@ describe("OnChat", async function () {
 
       it("should handle partial range", async function () {
         const messages = await onChat.read.getMessagesRange([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           0n,
           1n,
         ]);
@@ -1785,7 +1823,7 @@ describe("OnChat", async function () {
 
       it("should cap endIndex at array length", async function () {
         const messages = await onChat.read.getMessagesRange([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           0n,
           100n,
         ]);
@@ -1794,7 +1832,7 @@ describe("OnChat", async function () {
 
       it("should return empty array if startIndex >= endIndex", async function () {
         const messages = await onChat.read.getMessagesRange([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           5n,
           5n,
         ]);
@@ -1805,7 +1843,7 @@ describe("OnChat", async function () {
     describe("getChannelMembers", function () {
       it("should return channel members with pagination", async function () {
         const members = await onChat.read.getChannelMembers([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           0n,
           10n,
         ]);
@@ -1815,7 +1853,7 @@ describe("OnChat", async function () {
 
       it("should handle pagination offset", async function () {
         const members = await onChat.read.getChannelMembers([
-          TEST_SLUG,
+          TEST_SLUG_HASH,
           1n,
           10n,
         ]);
@@ -1833,13 +1871,15 @@ describe("OnChat", async function () {
         ]);
 
         assert.equal(channels.length, 1);
-        assert.equal(channels[0], TEST_SLUG);
+        assert.equal(channels[0], TEST_SLUG_HASH);
       });
 
       it("should return multiple channels if user joined multiple", async function () {
         // Carol joins both channels
-        await onChat.write.joinChannel([TEST_SLUG], { account: carol.account });
-        await onChat.write.joinChannel([TEST_SLUG_2], {
+        await onChat.write.joinChannel([TEST_SLUG_HASH], {
+          account: carol.account,
+        });
+        await onChat.write.joinChannel([TEST_SLUG_HASH_2], {
           account: carol.account,
         });
 
@@ -1854,8 +1894,10 @@ describe("OnChat", async function () {
 
       it("should return channels in reverse order (newest first)", async function () {
         // Carol joins both channels in order
-        await onChat.write.joinChannel([TEST_SLUG], { account: carol.account });
-        await onChat.write.joinChannel([TEST_SLUG_2], {
+        await onChat.write.joinChannel([TEST_SLUG_HASH], {
+          account: carol.account,
+        });
+        await onChat.write.joinChannel([TEST_SLUG_HASH_2], {
           account: carol.account,
         });
 
@@ -1865,18 +1907,18 @@ describe("OnChat", async function () {
           10n,
         ]);
 
-        assert.equal(channels[0], TEST_SLUG_2); // joined second
-        assert.equal(channels[1], TEST_SLUG); // joined first
+        assert.equal(channels[0], TEST_SLUG_HASH_2); // joined second
+        assert.equal(channels[1], TEST_SLUG_HASH); // joined first
       });
     }); // getUserChannels
 
     describe("getBannedUsers", function () {
       it("should return banned users list", async function () {
-        await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
-        const bannedUsers = await onChat.read.getBannedUsers([TEST_SLUG]);
+        const bannedUsers = await onChat.read.getBannedUsers([TEST_SLUG_HASH]);
         assert.equal(bannedUsers.length, 1);
         assert.equal(
           bannedUsers[0].toLowerCase(),
@@ -1885,7 +1927,7 @@ describe("OnChat", async function () {
       });
 
       it("should return empty array if no users are banned", async function () {
-        const bannedUsers = await onChat.read.getBannedUsers([TEST_SLUG]);
+        const bannedUsers = await onChat.read.getBannedUsers([TEST_SLUG_HASH]);
         assert.equal(bannedUsers.length, 0);
       });
     }); // getBannedUsers
@@ -1893,43 +1935,43 @@ describe("OnChat", async function () {
     describe("Helper view functions", function () {
       it("isMember should return correct status", async function () {
         assert.equal(
-          await onChat.read.isMember([TEST_SLUG, alice.account.address]),
+          await onChat.read.isMember([TEST_SLUG_HASH, alice.account.address]),
           true
         );
         assert.equal(
-          await onChat.read.isMember([TEST_SLUG, carol.account.address]),
+          await onChat.read.isMember([TEST_SLUG_HASH, carol.account.address]),
           false
         );
       });
 
       it("isModerator should return correct status", async function () {
         assert.equal(
-          await onChat.read.isModerator([TEST_SLUG, bob.account.address]),
+          await onChat.read.isModerator([TEST_SLUG_HASH, bob.account.address]),
           false
         );
 
-        await onChat.write.addModerator([TEST_SLUG, bob.account.address], {
+        await onChat.write.addModerator([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         assert.equal(
-          await onChat.read.isModerator([TEST_SLUG, bob.account.address]),
+          await onChat.read.isModerator([TEST_SLUG_HASH, bob.account.address]),
           true
         );
       });
 
       it("isBanned should return correct status", async function () {
         assert.equal(
-          await onChat.read.isBanned([TEST_SLUG, bob.account.address]),
+          await onChat.read.isBanned([TEST_SLUG_HASH, bob.account.address]),
           false
         );
 
-        await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+        await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
           account: alice.account,
         });
 
         assert.equal(
-          await onChat.read.isBanned([TEST_SLUG, bob.account.address]),
+          await onChat.read.isBanned([TEST_SLUG_HASH, bob.account.address]),
           true
         );
       });
@@ -1940,12 +1982,12 @@ describe("OnChat", async function () {
       });
 
       it("getMessageCount should return correct count", async function () {
-        const count = await onChat.read.getMessageCount([TEST_SLUG]);
+        const count = await onChat.read.getMessageCount([TEST_SLUG_HASH]);
         assert.equal(count, 2n);
       });
 
       it("getChannelMemberCount should return correct count", async function () {
-        const count = await onChat.read.getChannelMemberCount([TEST_SLUG]);
+        const count = await onChat.read.getChannelMemberCount([TEST_SLUG_HASH]);
         assert.equal(count, 2n);
       });
 
@@ -1991,12 +2033,12 @@ describe("OnChat", async function () {
       });
 
       // Send message with no fee
-      await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+      await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
         account: alice.account,
         value: 0n,
       });
 
-      const messageCount = await onChat.read.getMessageCount([TEST_SLUG]);
+      const messageCount = await onChat.read.getMessageCount([TEST_SLUG_HASH]);
       assert.equal(messageCount, 1n);
     });
 
@@ -2008,7 +2050,7 @@ describe("OnChat", async function () {
 
       // Owner is already a member, should revert
       await assert.rejects(
-        onChat.write.joinChannel([TEST_SLUG], {
+        onChat.write.joinChannel([TEST_SLUG_HASH], {
           account: alice.account,
         }),
         /OnChat__AlreadyMember/
@@ -2021,21 +2063,25 @@ describe("OnChat", async function () {
         value: CHANNEL_CREATION_FEE,
       });
 
-      await onChat.write.joinChannel([TEST_SLUG], { account: bob.account });
+      await onChat.write.joinChannel([TEST_SLUG_HASH], {
+        account: bob.account,
+      });
 
       // Ban and unban bob
-      await onChat.write.banUser([TEST_SLUG, bob.account.address], {
+      await onChat.write.banUser([TEST_SLUG_HASH, bob.account.address], {
         account: alice.account,
       });
-      await onChat.write.unbanUser([TEST_SLUG, bob.account.address], {
+      await onChat.write.unbanUser([TEST_SLUG_HASH, bob.account.address], {
         account: alice.account,
       });
 
       // Bob should be able to rejoin
-      await onChat.write.joinChannel([TEST_SLUG], { account: bob.account });
+      await onChat.write.joinChannel([TEST_SLUG_HASH], {
+        account: bob.account,
+      });
 
       const isMember = await onChat.read.isMember([
-        TEST_SLUG,
+        TEST_SLUG_HASH,
         bob.account.address,
       ]);
       assert.equal(isMember, true);
@@ -2057,7 +2103,7 @@ describe("OnChat", async function () {
       ]);
 
       for (let i = 0; i < 3; i++) {
-        await onChat.write.sendMessage([TEST_SLUG, TEST_MESSAGE], {
+        await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
           account: alice.account,
           value: messageFee,
         });
@@ -2083,13 +2129,13 @@ describe("OnChat", async function () {
         BigInt(contentLength),
       ]);
 
-      await onChat.write.sendMessage([TEST_SLUG, unicodeMessage], {
+      await onChat.write.sendMessage([TEST_SLUG_HASH, unicodeMessage], {
         account: alice.account,
         value: messageFee,
       });
 
       const messages = await onChat.read.getLatestMessages([
-        TEST_SLUG,
+        TEST_SLUG_HASH,
         0n,
         10n,
       ]);
@@ -2107,13 +2153,13 @@ describe("OnChat", async function () {
         BigInt(longMessage.length),
       ]);
 
-      await onChat.write.sendMessage([TEST_SLUG, longMessage], {
+      await onChat.write.sendMessage([TEST_SLUG_HASH, longMessage], {
         account: alice.account,
         value: messageFee,
       });
 
       const messages = await onChat.read.getLatestMessages([
-        TEST_SLUG,
+        TEST_SLUG_HASH,
         0n,
         10n,
       ]);

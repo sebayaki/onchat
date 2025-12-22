@@ -16,7 +16,6 @@ contract OnChat is Ownable {
     using EnumerableSet for EnumerableSet.Bytes32Set;
 
     // MARK: - Errors
-    error OnChat__InvalidParams(string param);
     error OnChat__ChannelAlreadyExists();
     error OnChat__ChannelNotFound();
     error OnChat__InsufficientPayment();
@@ -31,6 +30,12 @@ contract OnChat is Ownable {
     error OnChat__MessageNotFound();
     error OnChat__NothingToClaim();
     error OnChat__TransferFailed();
+    error OnChat__ZeroAddress();
+    error OnChat__InvalidSlugLength();
+    error OnChat__InvalidSlugChars();
+    error OnChat__EmptyContent();
+    error OnChat__NotTreasury();
+    error OnChat__CannotBanOwner();
 
     // MARK: - Structs (Gas-optimized packing)
 
@@ -98,60 +103,45 @@ contract OnChat is Ownable {
 
     // MARK: - Events
     event ChannelCreated(
-        string indexed slugHash,
+        bytes32 indexed slugHash,
         string slug,
         address indexed owner
     );
-    event ChannelJoined(
-        string indexed slugHash,
-        string slug,
-        address indexed user
-    );
-    event ChannelLeft(
-        string indexed slugHash,
-        string slug,
-        address indexed user
-    );
+    event ChannelJoined(bytes32 indexed slugHash, address indexed user);
+    event ChannelLeft(bytes32 indexed slugHash, address indexed user);
     event MessageSent(
-        string indexed slugHash,
-        string slug,
+        bytes32 indexed slugHash,
         address indexed sender,
         uint256 indexed messageIndex,
         string content
     );
     event MessageHidden(
-        string indexed slugHash,
-        string slug,
+        bytes32 indexed slugHash,
         uint256 indexed messageIndex,
         address indexed hiddenBy
     );
     event MessageUnhidden(
-        string indexed slugHash,
-        string slug,
+        bytes32 indexed slugHash,
         uint256 indexed messageIndex,
         address indexed unhiddenBy
     );
     event UserBanned(
-        string indexed slugHash,
-        string slug,
+        bytes32 indexed slugHash,
         address indexed user,
         address indexed bannedBy
     );
     event UserUnbanned(
-        string indexed slugHash,
-        string slug,
+        bytes32 indexed slugHash,
         address indexed user,
         address indexed unbannedBy
     );
     event ModeratorAdded(
-        string indexed slugHash,
-        string slug,
+        bytes32 indexed slugHash,
         address indexed moderator,
         address indexed addedBy
     );
     event ModeratorRemoved(
-        string indexed slugHash,
-        string slug,
+        bytes32 indexed slugHash,
         address indexed moderator,
         address indexed removedBy
     );
@@ -182,6 +172,7 @@ contract OnChat is Ownable {
     }
 
     // MARK: - Modifiers
+
     modifier onlyExistingChannel(bytes32 slugHash) {
         if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
         _;
@@ -209,6 +200,19 @@ contract OnChat is Ownable {
         _;
     }
 
+    modifier onlyMember(bytes32 slugHash) {
+        if (!_channelMembers[slugHash].contains(msg.sender))
+            revert OnChat__NotMember();
+        _;
+    }
+
+    // MARK: - Internal Helpers
+
+    /// @dev Reverts if address is zero
+    function _requireNonZero(address addr) private pure {
+        if (addr == address(0)) revert OnChat__ZeroAddress();
+    }
+
     // MARK: - Admin Functions
 
     /**
@@ -216,8 +220,7 @@ contract OnChat is Ownable {
      * @param newTreasury New treasury wallet address
      */
     function setTreasuryWallet(address newTreasury) external onlyOwner {
-        if (newTreasury == address(0))
-            revert OnChat__InvalidParams("zero address");
+        _requireNonZero(newTreasury);
         treasuryWallet = newTreasury;
         emit TreasuryWalletUpdated(newTreasury);
     }
@@ -254,45 +257,37 @@ contract OnChat is Ownable {
     /**
      * @notice Creates a new channel
      * @param slug Unique channel identifier (lowercase letters and hyphens, 1-20 chars)
+     * @return slugHash The keccak256 hash of the slug for future interactions
      * @dev Requires payment of channelCreationFee
      */
-    function createChannel(string calldata slug) external payable {
+    function createChannel(
+        string calldata slug
+    ) external payable returns (bytes32 slugHash) {
         // Validate slug format: [a-z-]{1,20}
         bytes memory slugBytes = bytes(slug);
         uint256 slugLength = slugBytes.length;
 
-        if (slugLength == 0 || slugLength > 20) {
-            revert OnChat__InvalidParams("slug length must be 1-20");
-        }
+        if (slugLength == 0 || slugLength > 20)
+            revert OnChat__InvalidSlugLength();
 
         for (uint256 i = 0; i < slugLength; ) {
             bytes1 char = slugBytes[i];
             // Must be lowercase letter (a-z) or hyphen (-)
             if (!((char >= 0x61 && char <= 0x7A) || char == 0x2D)) {
-                revert OnChat__InvalidParams("slug must be [a-z-]");
+                revert OnChat__InvalidSlugChars();
             }
             unchecked {
                 ++i;
             }
         }
 
-        // Compute slug hash once for all operations
-        bytes32 slugHash = keccak256(slugBytes);
+        slugHash = keccak256(slugBytes);
 
-        // Check channel doesn't already exist
-        if (_channels[slugHash].exists) {
-            revert OnChat__ChannelAlreadyExists();
-        }
+        if (_channels[slugHash].exists) revert OnChat__ChannelAlreadyExists();
 
-        // Cache fee to avoid multiple SLOADs
         uint256 fee = channelCreationFee;
+        if (msg.value < fee) revert OnChat__InsufficientPayment();
 
-        // Check payment
-        if (msg.value < fee) {
-            revert OnChat__InsufficientPayment();
-        }
-
-        // Create channel (packed struct)
         _channels[slugHash] = Channel({
             owner: msg.sender,
             createdAt: uint40(block.timestamp),
@@ -300,97 +295,73 @@ contract OnChat is Ownable {
         });
 
         channelSlugs.push(slug);
-
-        // Store slug hash mapping for reverse lookup
         _slugHashToSlug[slugHash] = slug;
 
-        // Auto-join creator to the channel (O(1) operations)
+        // Auto-join creator to the channel
         _channelMembers[slugHash].add(msg.sender);
         _userChannelHashes[msg.sender].add(slugHash);
 
-        // Emit event before fee distribution
-        emit ChannelCreated(slug, slug, msg.sender);
+        emit ChannelCreated(slugHash, slug, msg.sender);
 
-        // Split creation fee: 80% to owner (themselves initially), 20% to treasury
         _distributeFee(fee, msg.sender);
-
-        // Refund excess payment
         _refundExcess(fee);
     }
 
     /**
      * @notice Join a channel
-     * @param slug Channel slug to join
+     * @param slugHash Channel slug hash
      */
-    function joinChannel(string calldata slug) external {
-        bytes32 slugHash = keccak256(bytes(slug));
-
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-        if (_channelBannedUsers[slugHash].contains(msg.sender))
-            revert OnChat__UserBanned();
+    function joinChannel(
+        bytes32 slugHash
+    ) external onlyExistingChannel(slugHash) notBanned(slugHash) {
         if (_channelMembers[slugHash].contains(msg.sender))
             revert OnChat__AlreadyMember();
 
-        // O(1) add operations
         _channelMembers[slugHash].add(msg.sender);
         _userChannelHashes[msg.sender].add(slugHash);
 
-        emit ChannelJoined(slug, slug, msg.sender);
+        emit ChannelJoined(slugHash, msg.sender);
     }
 
     /**
      * @notice Leave a channel
-     * @param slug Channel slug to leave
+     * @param slugHash Channel slug hash
      */
-    function leaveChannel(string calldata slug) external {
-        bytes32 slugHash = keccak256(bytes(slug));
-
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-        if (!_channelMembers[slugHash].contains(msg.sender))
-            revert OnChat__NotMember();
-
-        // O(1) remove operations
+    function leaveChannel(
+        bytes32 slugHash
+    ) external onlyExistingChannel(slugHash) onlyMember(slugHash) {
         _channelMembers[slugHash].remove(msg.sender);
         _userChannelHashes[msg.sender].remove(slugHash);
-
-        // Remove moderator status if applicable (O(1))
         _channelModerators[slugHash].remove(msg.sender);
 
-        emit ChannelLeft(slug, slug, msg.sender);
+        emit ChannelLeft(slugHash, msg.sender);
     }
 
     // MARK: - Message Functions
 
     /**
      * @notice Send a message to a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param content Message content
      * @dev Requires payment of messageFeeBase + (content.length * messageFeePerChar)
      */
     function sendMessage(
-        string calldata slug,
+        bytes32 slugHash,
         string calldata content
-    ) external payable {
-        bytes32 slugHash = keccak256(bytes(slug));
+    )
+        external
+        payable
+        onlyExistingChannel(slugHash)
+        notBanned(slugHash)
+        onlyMember(slugHash)
+    {
+        uint256 contentLength = bytes(content).length;
+        if (contentLength == 0) revert OnChat__EmptyContent();
 
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-        if (_channelBannedUsers[slugHash].contains(msg.sender))
-            revert OnChat__UserBanned();
-        if (!_channelMembers[slugHash].contains(msg.sender))
-            revert OnChat__NotMember();
-
-        if (bytes(content).length == 0)
-            revert OnChat__InvalidParams("empty content");
-
-        // Calculate and validate message fee
         uint256 messageFee = messageFeeBase +
-            (bytes(content).length * messageFeePerChar);
+            (contentLength * messageFeePerChar);
+        if (msg.value < messageFee) revert OnChat__InsufficientPayment();
 
-        if (msg.value < messageFee) {
-            revert OnChat__InsufficientPayment();
-        }
-
-        // Store message and get index
         uint256 messageIndex = _channelMessages[slugHash].length;
         _channelMessages[slugHash].push(
             Message({
@@ -401,13 +372,9 @@ contract OnChat is Ownable {
             })
         );
 
-        // Emit event before fee distribution to reduce stack depth
-        emit MessageSent(slug, slug, msg.sender, messageIndex, content);
+        emit MessageSent(slugHash, msg.sender, messageIndex, content);
 
-        // Split fee: 80% to channel owner, 20% to treasury
         _distributeFee(messageFee, _channels[slugHash].owner);
-
-        // Refund excess payment
         _refundExcess(messageFee);
     }
 
@@ -435,162 +402,135 @@ contract OnChat is Ownable {
 
     /**
      * @notice Hide a message (owner or moderator only)
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param messageIndex Index of the message to hide
      */
-    function hideMessage(string calldata slug, uint256 messageIndex) external {
-        bytes32 slugHash = keccak256(bytes(slug));
-
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-        if (
-            _channels[slugHash].owner != msg.sender &&
-            !_channelModerators[slugHash].contains(msg.sender)
-        ) {
-            revert OnChat__NotChannelOwnerOrModerator();
-        }
-        if (messageIndex >= _channelMessages[slugHash].length) {
+    function hideMessage(
+        bytes32 slugHash,
+        uint256 messageIndex
+    )
+        external
+        onlyExistingChannel(slugHash)
+        onlyChannelOwnerOrModerator(slugHash)
+    {
+        if (messageIndex >= _channelMessages[slugHash].length)
             revert OnChat__MessageNotFound();
-        }
 
         _channelMessages[slugHash][messageIndex].isHidden = true;
-
-        emit MessageHidden(slug, slug, messageIndex, msg.sender);
+        emit MessageHidden(slugHash, messageIndex, msg.sender);
     }
 
     /**
      * @notice Unhide a message (owner or moderator only)
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param messageIndex Index of the message to unhide
      */
     function unhideMessage(
-        string calldata slug,
+        bytes32 slugHash,
         uint256 messageIndex
-    ) external {
-        bytes32 slugHash = keccak256(bytes(slug));
-
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-        if (
-            _channels[slugHash].owner != msg.sender &&
-            !_channelModerators[slugHash].contains(msg.sender)
-        ) {
-            revert OnChat__NotChannelOwnerOrModerator();
-        }
-        if (messageIndex >= _channelMessages[slugHash].length) {
+    )
+        external
+        onlyExistingChannel(slugHash)
+        onlyChannelOwnerOrModerator(slugHash)
+    {
+        if (messageIndex >= _channelMessages[slugHash].length)
             revert OnChat__MessageNotFound();
-        }
 
         _channelMessages[slugHash][messageIndex].isHidden = false;
-
-        emit MessageUnhidden(slug, slug, messageIndex, msg.sender);
+        emit MessageUnhidden(slugHash, messageIndex, msg.sender);
     }
 
     // MARK: - Moderation Functions
 
     /**
      * @notice Ban a user from a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param user User address to ban
      */
-    function banUser(string calldata slug, address user) external {
-        bytes32 slugHash = keccak256(bytes(slug));
-
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-        if (
-            _channels[slugHash].owner != msg.sender &&
-            !_channelModerators[slugHash].contains(msg.sender)
-        ) {
-            revert OnChat__NotChannelOwnerOrModerator();
-        }
-        if (user == address(0)) revert OnChat__InvalidParams("zero address");
-        if (user == _channels[slugHash].owner)
-            revert OnChat__InvalidParams("cannot ban owner");
+    function banUser(
+        bytes32 slugHash,
+        address user
+    )
+        external
+        onlyExistingChannel(slugHash)
+        onlyChannelOwnerOrModerator(slugHash)
+    {
+        _requireNonZero(user);
+        if (user == _channels[slugHash].owner) revert OnChat__CannotBanOwner();
         if (_channelBannedUsers[slugHash].contains(user))
             revert OnChat__UserBanned();
 
-        // O(1) add to banned set
         _channelBannedUsers[slugHash].add(user);
 
-        // Remove from members if they are a member (O(1))
+        // Remove from members if they are a member
         if (_channelMembers[slugHash].contains(user)) {
             _channelMembers[slugHash].remove(user);
             _userChannelHashes[user].remove(slugHash);
         }
 
-        // Remove moderator status if applicable (O(1))
         _channelModerators[slugHash].remove(user);
 
-        emit UserBanned(slug, slug, user, msg.sender);
+        emit UserBanned(slugHash, user, msg.sender);
     }
 
     /**
      * @notice Unban a user from a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param user User address to unban
      */
-    function unbanUser(string calldata slug, address user) external {
-        bytes32 slugHash = keccak256(bytes(slug));
-
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-        if (
-            _channels[slugHash].owner != msg.sender &&
-            !_channelModerators[slugHash].contains(msg.sender)
-        ) {
-            revert OnChat__NotChannelOwnerOrModerator();
-        }
-        if (user == address(0)) revert OnChat__InvalidParams("zero address");
+    function unbanUser(
+        bytes32 slugHash,
+        address user
+    )
+        external
+        onlyExistingChannel(slugHash)
+        onlyChannelOwnerOrModerator(slugHash)
+    {
+        _requireNonZero(user);
         if (!_channelBannedUsers[slugHash].contains(user))
             revert OnChat__UserNotBanned();
 
-        // O(1) remove from banned set
         _channelBannedUsers[slugHash].remove(user);
 
-        emit UserUnbanned(slug, slug, user, msg.sender);
+        emit UserUnbanned(slugHash, user, msg.sender);
     }
 
     /**
      * @notice Add a moderator to a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param moderator Address to make moderator
      */
-    function addModerator(string calldata slug, address moderator) external {
-        bytes32 slugHash = keccak256(bytes(slug));
-
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-        if (_channels[slugHash].owner != msg.sender)
-            revert OnChat__NotChannelOwner();
-        if (moderator == address(0))
-            revert OnChat__InvalidParams("zero address");
+    function addModerator(
+        bytes32 slugHash,
+        address moderator
+    ) external onlyExistingChannel(slugHash) onlyChannelOwner(slugHash) {
+        _requireNonZero(moderator);
         if (_channelModerators[slugHash].contains(moderator))
             revert OnChat__AlreadyModerator();
         if (!_channelMembers[slugHash].contains(moderator))
             revert OnChat__NotMember();
 
-        // O(1) add
         _channelModerators[slugHash].add(moderator);
 
-        emit ModeratorAdded(slug, slug, moderator, msg.sender);
+        emit ModeratorAdded(slugHash, moderator, msg.sender);
     }
 
     /**
      * @notice Remove a moderator from a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param moderator Address to remove as moderator
      */
-    function removeModerator(string calldata slug, address moderator) external {
-        bytes32 slugHash = keccak256(bytes(slug));
-
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-        if (_channels[slugHash].owner != msg.sender)
-            revert OnChat__NotChannelOwner();
-        if (moderator == address(0))
-            revert OnChat__InvalidParams("zero address");
+    function removeModerator(
+        bytes32 slugHash,
+        address moderator
+    ) external onlyExistingChannel(slugHash) onlyChannelOwner(slugHash) {
+        _requireNonZero(moderator);
         if (!_channelModerators[slugHash].contains(moderator))
             revert OnChat__NotModerator();
 
-        // O(1) remove
         _channelModerators[slugHash].remove(moderator);
 
-        emit ModeratorRemoved(slug, slug, moderator, msg.sender);
+        emit ModeratorRemoved(slugHash, moderator, msg.sender);
     }
 
     // MARK: - Claim Functions
@@ -616,8 +556,7 @@ contract OnChat is Ownable {
      * @dev Only callable by treasuryWallet
      */
     function claimTreasuryBalance() external {
-        if (msg.sender != treasuryWallet)
-            revert OnChat__InvalidParams("not treasury");
+        if (msg.sender != treasuryWallet) revert OnChat__NotTreasury();
 
         uint256 amount = treasuryBalance;
         if (amount == 0) revert OnChat__NothingToClaim();
@@ -644,6 +583,7 @@ contract OnChat is Ownable {
      * @notice ChannelInfo struct for view function returns
      */
     struct ChannelInfo {
+        bytes32 slugHash;
         string slug;
         address owner;
         uint40 createdAt;
@@ -652,20 +592,24 @@ contract OnChat is Ownable {
     }
 
     /**
-     * @notice Get channel information
-     * @param slug Channel slug
+     * @notice Get channel information by slugHash
+     * @param slugHash Channel slug hash
      * @return info Channel information struct
      */
     function getChannel(
-        string calldata slug
-    ) external view returns (ChannelInfo memory info) {
-        bytes32 slugHash = keccak256(bytes(slug));
+        bytes32 slugHash
+    )
+        external
+        view
+        onlyExistingChannel(slugHash)
+        returns (ChannelInfo memory info)
+    {
         Channel storage channel = _channels[slugHash];
-        if (!channel.exists) revert OnChat__ChannelNotFound();
 
         return
             ChannelInfo({
-                slug: slug,
+                slugHash: slugHash,
+                slug: _slugHashToSlug[slugHash],
                 owner: channel.owner,
                 createdAt: channel.createdAt,
                 memberCount: _channelMembers[slugHash].length(),
@@ -701,6 +645,7 @@ contract OnChat is Ownable {
                 bytes32 slugHash = keccak256(bytes(slug));
                 Channel storage channel = _channels[slugHash];
                 channels[i] = ChannelInfo({
+                    slugHash: slugHash,
                     slug: slug,
                     owner: channel.owner,
                     createdAt: channel.createdAt,
@@ -713,46 +658,43 @@ contract OnChat is Ownable {
 
     /**
      * @notice Get message count for a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @return Message count
      */
     function getMessageCount(
-        string calldata slug
-    ) external view returns (uint256) {
-        bytes32 slugHash = keccak256(bytes(slug));
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
+        bytes32 slugHash
+    ) external view onlyExistingChannel(slugHash) returns (uint256) {
         return _channelMessages[slugHash].length;
     }
 
     /**
      * @notice Get latest messages from a channel with pagination (newest first)
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param offset Number of messages to skip from the end
      * @param limit Maximum number of messages to return
      * @return messages Array of Message structs in reverse chronological order
      */
     function getLatestMessages(
-        string calldata slug,
+        bytes32 slugHash,
         uint256 offset,
         uint256 limit
-    ) external view returns (Message[] memory messages) {
-        bytes32 slugHash = keccak256(bytes(slug));
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-
+    )
+        external
+        view
+        onlyExistingChannel(slugHash)
+        returns (Message[] memory messages)
+    {
         Message[] storage channelMsgs = _channelMessages[slugHash];
         uint256 length = channelMsgs.length;
 
-        if (length == 0 || offset >= length) {
-            return new Message[](0);
-        }
+        if (length == 0 || offset >= length) return new Message[](0);
 
         unchecked {
             uint256 available = length - offset;
             uint256 count = available < limit ? available : limit;
-
-            messages = new Message[](count);
             uint256 startIndex = length - 1 - offset;
 
+            messages = new Message[](count);
             for (uint256 i = 0; i < count; ++i) {
                 messages[i] = channelMsgs[startIndex - i];
             }
@@ -761,25 +703,26 @@ contract OnChat is Ownable {
 
     /**
      * @notice Get messages from a specific range (oldest first)
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param startIndex Start index (inclusive)
      * @param endIndex End index (exclusive)
      * @return messages Array of Message structs
      */
     function getMessagesRange(
-        string calldata slug,
+        bytes32 slugHash,
         uint256 startIndex,
         uint256 endIndex
-    ) external view returns (Message[] memory messages) {
-        bytes32 slugHash = keccak256(bytes(slug));
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-
+    )
+        external
+        view
+        onlyExistingChannel(slugHash)
+        returns (Message[] memory messages)
+    {
         Message[] storage channelMsgs = _channelMessages[slugHash];
         uint256 length = channelMsgs.length;
 
-        if (startIndex >= length || startIndex >= endIndex) {
+        if (startIndex >= length || startIndex >= endIndex)
             return new Message[](0);
-        }
 
         unchecked {
             uint256 actualEnd = endIndex > length ? length : endIndex;
@@ -794,25 +737,25 @@ contract OnChat is Ownable {
 
     /**
      * @notice Get channel members with pagination
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param offset Number of members to skip
      * @param limit Maximum number of members to return
      * @return members Array of member addresses
      */
     function getChannelMembers(
-        string calldata slug,
+        bytes32 slugHash,
         uint256 offset,
         uint256 limit
-    ) external view returns (address[] memory members) {
-        bytes32 slugHash = keccak256(bytes(slug));
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
-
+    )
+        external
+        view
+        onlyExistingChannel(slugHash)
+        returns (address[] memory members)
+    {
         EnumerableSet.AddressSet storage memberSet = _channelMembers[slugHash];
         uint256 length = memberSet.length();
 
-        if (length == 0 || offset >= length) {
-            return new address[](0);
-        }
+        if (length == 0 || offset >= length) return new address[](0);
 
         unchecked {
             uint256 available = length - offset;
@@ -827,40 +770,44 @@ contract OnChat is Ownable {
 
     /**
      * @notice Get channel member count
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @return Member count
      */
     function getChannelMemberCount(
-        string calldata slug
-    ) external view returns (uint256) {
-        bytes32 slugHash = keccak256(bytes(slug));
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
+        bytes32 slugHash
+    ) external view onlyExistingChannel(slugHash) returns (uint256) {
         return _channelMembers[slugHash].length();
     }
 
     /**
      * @notice Get all moderators for a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @return moderators Array of moderator addresses
      */
     function getChannelModerators(
-        string calldata slug
-    ) external view returns (address[] memory moderators) {
-        bytes32 slugHash = keccak256(bytes(slug));
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
+        bytes32 slugHash
+    )
+        external
+        view
+        onlyExistingChannel(slugHash)
+        returns (address[] memory moderators)
+    {
         return _channelModerators[slugHash].values();
     }
 
     /**
      * @notice Get all banned users for a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @return bannedUsers Array of banned user addresses
      */
     function getBannedUsers(
-        string calldata slug
-    ) external view returns (address[] memory bannedUsers) {
-        bytes32 slugHash = keccak256(bytes(slug));
-        if (!_channels[slugHash].exists) revert OnChat__ChannelNotFound();
+        bytes32 slugHash
+    )
+        external
+        view
+        onlyExistingChannel(slugHash)
+        returns (address[] memory bannedUsers)
+    {
         return _channelBannedUsers[slugHash].values();
     }
 
@@ -869,30 +816,29 @@ contract OnChat is Ownable {
      * @param user User address
      * @param offset Number of channels to skip from the end
      * @param limit Maximum number of channels to return
-     * @return channels Array of channel slugs
+     * @return slugHashes Array of channel slug hashes
      */
     function getUserChannels(
         address user,
         uint256 offset,
         uint256 limit
-    ) external view returns (string[] memory channels) {
+    ) external view returns (bytes32[] memory slugHashes) {
         EnumerableSet.Bytes32Set storage hashSet = _userChannelHashes[user];
         uint256 length = hashSet.length();
 
         if (length == 0 || offset >= length) {
-            return new string[](0);
+            return new bytes32[](0);
         }
 
         unchecked {
             uint256 available = length - offset;
             uint256 count = available < limit ? available : limit;
 
-            channels = new string[](count);
+            slugHashes = new bytes32[](count);
             uint256 startIndex = length - 1 - offset;
 
             for (uint256 i = 0; i < count; ++i) {
-                bytes32 slugHash = hashSet.at(startIndex - i);
-                channels[i] = _slugHashToSlug[slugHash];
+                slugHashes[i] = hashSet.at(startIndex - i);
             }
         }
     }
@@ -908,43 +854,40 @@ contract OnChat is Ownable {
 
     /**
      * @notice Check if a user is a member of a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param user User address
      * @return True if user is a member
      */
     function isMember(
-        string calldata slug,
+        bytes32 slugHash,
         address user
     ) external view returns (bool) {
-        bytes32 slugHash = keccak256(bytes(slug));
         return _channelMembers[slugHash].contains(user);
     }
 
     /**
      * @notice Check if a user is a moderator of a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param user User address
      * @return True if user is a moderator
      */
     function isModerator(
-        string calldata slug,
+        bytes32 slugHash,
         address user
     ) external view returns (bool) {
-        bytes32 slugHash = keccak256(bytes(slug));
         return _channelModerators[slugHash].contains(user);
     }
 
     /**
      * @notice Check if a user is banned from a channel
-     * @param slug Channel slug
+     * @param slugHash Channel slug hash
      * @param user User address
      * @return True if user is banned
      */
     function isBanned(
-        string calldata slug,
+        bytes32 slugHash,
         address user
     ) external view returns (bool) {
-        bytes32 slugHash = keccak256(bytes(slug));
         return _channelBannedUsers[slugHash].contains(user);
     }
 
@@ -959,5 +902,26 @@ contract OnChat is Ownable {
         unchecked {
             return messageFeeBase + (contentLength * messageFeePerChar);
         }
+    }
+
+    /**
+     * @notice Compute slug hash from slug string
+     * @param slug Channel slug
+     * @return slugHash The keccak256 hash of the slug
+     * @dev Helper for clients to compute slugHash from slug
+     */
+    function computeSlugHash(
+        string calldata slug
+    ) external pure returns (bytes32) {
+        return keccak256(bytes(slug));
+    }
+
+    /**
+     * @notice Get slug string from slug hash
+     * @param slugHash Channel slug hash
+     * @return slug The original slug string
+     */
+    function getSlug(bytes32 slugHash) external view returns (string memory) {
+        return _slugHashToSlug[slugHash];
     }
 }
