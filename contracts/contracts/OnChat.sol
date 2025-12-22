@@ -287,7 +287,7 @@ contract OnChat is Ownable {
 
         emit ChannelCreated(slugHash, slug, msg.sender);
 
-        _distributeFee(fee, msg.sender);
+        treasuryBalance += fee;
         _refundExcess(fee);
     }
 

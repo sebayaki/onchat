@@ -422,7 +422,7 @@ describe("OnChat", async function () {
         );
       });
 
-      it("should split fee correctly (80% owner, 20% treasury)", async function () {
+      it("should send entire fee to treasury", async function () {
         await onChat.write.createChannel([TEST_SLUG], {
           account: alice.account,
           value: CHANNEL_CREATION_FEE,
@@ -433,11 +433,8 @@ describe("OnChat", async function () {
         ]);
         const treasuryBalance = await onChat.read.treasuryBalance();
 
-        const expectedOwnerShare = (CHANNEL_CREATION_FEE * 8000n) / 10000n;
-        const expectedTreasuryShare = CHANNEL_CREATION_FEE - expectedOwnerShare;
-
-        assert.equal(ownerBalance, expectedOwnerShare);
-        assert.equal(treasuryBalance, expectedTreasuryShare);
+        assert.equal(ownerBalance, 0n);
+        assert.equal(treasuryBalance, CHANNEL_CREATION_FEE);
       });
 
       it("should refund excess payment", async function () {
@@ -1549,6 +1546,15 @@ describe("OnChat", async function () {
 
     describe("claimOwnerBalance", function () {
       it("should allow owner to claim balance", async function () {
+        // Send a message to generate owner balance (message fees split 80/20)
+        const messageFee = await onChat.read.calculateMessageFee([
+          BigInt(TEST_MESSAGE.length),
+        ]);
+        await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
+          account: alice.account,
+          value: messageFee,
+        });
+
         const ownerBalance = await onChat.read.ownerBalances([
           alice.account.address,
         ]);
@@ -1576,6 +1582,15 @@ describe("OnChat", async function () {
       });
 
       it("should reset owner balance to zero after claim", async function () {
+        // Send a message to generate owner balance (message fees split 80/20)
+        const messageFee = await onChat.read.calculateMessageFee([
+          BigInt(TEST_MESSAGE.length),
+        ]);
+        await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
+          account: alice.account,
+          value: messageFee,
+        });
+
         await onChat.write.claimOwnerBalance({
           account: alice.account,
         });
@@ -1587,6 +1602,15 @@ describe("OnChat", async function () {
       });
 
       it("should emit OwnerBalanceClaimed event", async function () {
+        // Send a message to generate owner balance (message fees split 80/20)
+        const messageFee = await onChat.read.calculateMessageFee([
+          BigInt(TEST_MESSAGE.length),
+        ]);
+        await onChat.write.sendMessage([TEST_SLUG_HASH, TEST_MESSAGE], {
+          account: alice.account,
+          value: messageFee,
+        });
+
         const ownerBalance = await onChat.read.ownerBalances([
           alice.account.address,
         ]);
