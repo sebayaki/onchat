@@ -109,10 +109,10 @@ export default function ChatClient() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lines]);
 
-  // Focus input on mount
+  // Focus input on mount and after loading completes
   useEffect(() => {
     inputRef.current?.focus();
-  }, []);
+  }, [isLoading]);
 
   // Load balance data
   const loadBalanceData = useCallback(async () => {

@@ -272,27 +272,27 @@ export function useChat(): UseChatReturn {
 
         switch (command) {
           case "help":
-            addLine("info", "═══ Available Commands ═══");
-            addLine("info", "/list              - List all channels");
-            addLine("info", "/join #channel     - Join a channel");
-            addLine("info", "/part              - Leave current channel");
-            addLine("info", "/create #channel   - Create a new channel");
-            addLine("info", "/who               - List users in channel");
+            addLine("system", "CHANNELS");
+            addLine("info", "  /list              List all channels");
+            addLine("info", "  /join #channel     Join a channel");
+            addLine("info", "  /part              Leave current channel");
+            addLine("info", "  /create #channel   Create a new channel");
+            addLine("system", "CHAT");
+            addLine("info", "  /who               List users in channel");
+            addLine("info", "  /msg message       Send message (or just type)");
+            addLine("info", "  /clear             Clear screen");
+            addLine("system", "REWARDS");
+            addLine("info", "  /balance           Check claimable rewards");
+            addLine("info", "  /claim             Claim creator rewards");
+            addLine("system", "MODERATION");
+            addLine("info", "  /mode              Show moderators & bans");
+            addLine("info", "  /mode +o 0x...     Add moderator (owner only)");
             addLine(
               "info",
-              "/mode              - Show channel moderators & bans"
+              "  /mode -o 0x...     Remove moderator (owner only)"
             );
-            addLine("info", "/mode +o 0x...     - Add moderator (owner only)");
-            addLine(
-              "info",
-              "/mode -o 0x...     - Remove moderator (owner only)"
-            );
-            addLine("info", "/mode +b 0x...     - Ban user");
-            addLine("info", "/mode -b 0x...     - Unban user");
-            addLine("info", "/msg message       - Send message (or just type)");
-            addLine("info", "/balance           - Check claimable rewards");
-            addLine("info", "/claim             - Claim creator rewards");
-            addLine("info", "/clear             - Clear screen");
+            addLine("info", "  /mode +b 0x...     Ban user");
+            addLine("info", "  /mode -b 0x...     Unban user");
             break;
 
           case "list":
