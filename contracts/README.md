@@ -20,4 +20,4 @@ npx hardhat ignition verify chain-8453 --network base
 
 ## 🔵 Deployed Contracts on Base
 
-- OnChat: [0x9e98d93fAa405eE7Bc85C97DD31e0bDd5Ce5747f](https://basescan.org/address/0x9e98d93fAa405eE7Bc85C97DD31e0bDd5Ce5747f#code)
+- OnChat: [0x322974Eec5113bc011F4691aC15D2C1Ffac83505](https://basescan.org/address/0x322974Eec5113bc011F4691aC15D2C1Ffac83505#code)

@@ -1352,6 +1352,8 @@ describe("OnChat", async function () {
 
         const moderators = await onChat.read.getChannelModerators([
           TEST_SLUG_HASH,
+          0n,
+          100n,
         ]);
         assert.equal(moderators.length, 1);
         assert.equal(
@@ -1467,6 +1469,8 @@ describe("OnChat", async function () {
 
         const moderators = await onChat.read.getChannelModerators([
           TEST_SLUG_HASH,
+          0n,
+          100n,
         ]);
         assert.equal(moderators.length, 0);
       });
@@ -1918,7 +1922,11 @@ describe("OnChat", async function () {
           account: alice.account,
         });
 
-        const bannedUsers = await onChat.read.getBannedUsers([TEST_SLUG_HASH]);
+        const bannedUsers = await onChat.read.getBannedUsers([
+          TEST_SLUG_HASH,
+          0n,
+          100n,
+        ]);
         assert.equal(bannedUsers.length, 1);
         assert.equal(
           bannedUsers[0].toLowerCase(),
@@ -1927,7 +1935,11 @@ describe("OnChat", async function () {
       });
 
       it("should return empty array if no users are banned", async function () {
-        const bannedUsers = await onChat.read.getBannedUsers([TEST_SLUG_HASH]);
+        const bannedUsers = await onChat.read.getBannedUsers([
+          TEST_SLUG_HASH,
+          0n,
+          100n,
+        ]);
         assert.equal(bannedUsers.length, 0);
       });
     }); // getBannedUsers

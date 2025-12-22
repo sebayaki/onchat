@@ -3,6 +3,8 @@ pragma solidity ^0.8.28;
 
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+import {Pagination} from "./Pagination.sol";
+import {Message, Channel, ChannelInfo} from "./Types.sol";
 
 /**
  * @title OnChat
@@ -14,6 +16,9 @@ import {EnumerableSet} from "@openzeppelin/contracts/utils/structs/EnumerableSet
 contract OnChat is Ownable {
     using EnumerableSet for EnumerableSet.AddressSet;
     using EnumerableSet for EnumerableSet.Bytes32Set;
+    using Pagination for EnumerableSet.AddressSet;
+    using Pagination for EnumerableSet.Bytes32Set;
+    using Pagination for Message[];
 
     // MARK: - Errors
     error OnChat__ChannelAlreadyExists();
@@ -36,27 +41,6 @@ contract OnChat is Ownable {
     error OnChat__EmptyContent();
     error OnChat__NotTreasury();
     error OnChat__CannotBanOwner();
-
-    // MARK: - Structs (Gas-optimized packing)
-
-    /**
-     * @notice Message struct - packed into 2 storage slots
-     */
-    struct Message {
-        address sender; // 20 bytes
-        uint40 timestamp; // 5 bytes  - sufficient until year 36812
-        bool isHidden; // 1 byte
-        string content; // separate slot (dynamic)
-    }
-
-    /**
-     * @notice Channel struct - packed into 1 storage slot
-     */
-    struct Channel {
-        address owner; // 20 bytes
-        uint40 createdAt; // 5 bytes  - sufficient until year 36812
-        bool exists; // 1 byte
-    }
 
     // MARK: - Constants
     uint256 public constant OWNER_SHARE_BP = 8000; // 80%
@@ -580,18 +564,6 @@ contract OnChat is Ownable {
     }
 
     /**
-     * @notice ChannelInfo struct for view function returns
-     */
-    struct ChannelInfo {
-        bytes32 slugHash;
-        string slug;
-        address owner;
-        uint40 createdAt;
-        uint256 memberCount;
-        uint256 messageCount;
-    }
-
-    /**
      * @notice Get channel information by slugHash
      * @param slugHash Channel slug hash
      * @return info Channel information struct
@@ -627,19 +599,15 @@ contract OnChat is Ownable {
         uint256 offset,
         uint256 limit
     ) external view returns (ChannelInfo[] memory channels) {
-        uint256 length = channelSlugs.length;
+        (uint256 count, uint256 startIndex) = Pagination.calcReverseBounds(
+            channelSlugs.length,
+            offset,
+            limit
+        );
+        if (count == 0) return new ChannelInfo[](0);
 
-        if (length == 0 || offset >= length) {
-            return new ChannelInfo[](0);
-        }
-
+        channels = new ChannelInfo[](count);
         unchecked {
-            uint256 available = length - offset;
-            uint256 count = available < limit ? available : limit;
-
-            channels = new ChannelInfo[](count);
-            uint256 startIndex = length - 1 - offset;
-
             for (uint256 i = 0; i < count; ++i) {
                 string storage slug = channelSlugs[startIndex - i];
                 bytes32 slugHash = keccak256(bytes(slug));
@@ -678,27 +646,8 @@ contract OnChat is Ownable {
         bytes32 slugHash,
         uint256 offset,
         uint256 limit
-    )
-        external
-        view
-        onlyExistingChannel(slugHash)
-        returns (Message[] memory messages)
-    {
-        Message[] storage channelMsgs = _channelMessages[slugHash];
-        uint256 length = channelMsgs.length;
-
-        if (length == 0 || offset >= length) return new Message[](0);
-
-        unchecked {
-            uint256 available = length - offset;
-            uint256 count = available < limit ? available : limit;
-            uint256 startIndex = length - 1 - offset;
-
-            messages = new Message[](count);
-            for (uint256 i = 0; i < count; ++i) {
-                messages[i] = channelMsgs[startIndex - i];
-            }
-        }
+    ) external view onlyExistingChannel(slugHash) returns (Message[] memory) {
+        return _channelMessages[slugHash].paginateReverse(offset, limit);
     }
 
     /**
@@ -712,27 +661,8 @@ contract OnChat is Ownable {
         bytes32 slugHash,
         uint256 startIndex,
         uint256 endIndex
-    )
-        external
-        view
-        onlyExistingChannel(slugHash)
-        returns (Message[] memory messages)
-    {
-        Message[] storage channelMsgs = _channelMessages[slugHash];
-        uint256 length = channelMsgs.length;
-
-        if (startIndex >= length || startIndex >= endIndex)
-            return new Message[](0);
-
-        unchecked {
-            uint256 actualEnd = endIndex > length ? length : endIndex;
-            uint256 count = actualEnd - startIndex;
-
-            messages = new Message[](count);
-            for (uint256 i = 0; i < count; ++i) {
-                messages[i] = channelMsgs[startIndex + i];
-            }
-        }
+    ) external view onlyExistingChannel(slugHash) returns (Message[] memory) {
+        return _channelMessages[slugHash].paginateRange(startIndex, endIndex);
     }
 
     /**
@@ -746,26 +676,8 @@ contract OnChat is Ownable {
         bytes32 slugHash,
         uint256 offset,
         uint256 limit
-    )
-        external
-        view
-        onlyExistingChannel(slugHash)
-        returns (address[] memory members)
-    {
-        EnumerableSet.AddressSet storage memberSet = _channelMembers[slugHash];
-        uint256 length = memberSet.length();
-
-        if (length == 0 || offset >= length) return new address[](0);
-
-        unchecked {
-            uint256 available = length - offset;
-            uint256 count = available < limit ? available : limit;
-
-            members = new address[](count);
-            for (uint256 i = 0; i < count; ++i) {
-                members[i] = memberSet.at(offset + i);
-            }
-        }
+    ) external view onlyExistingChannel(slugHash) returns (address[] memory) {
+        return _channelMembers[slugHash].paginate(offset, limit);
     }
 
     /**
@@ -780,35 +692,55 @@ contract OnChat is Ownable {
     }
 
     /**
-     * @notice Get all moderators for a channel
+     * @notice Get moderator count for a channel
      * @param slugHash Channel slug hash
-     * @return moderators Array of moderator addresses
+     * @return Moderator count
      */
-    function getChannelModerators(
+    function getModeratorCount(
         bytes32 slugHash
-    )
-        external
-        view
-        onlyExistingChannel(slugHash)
-        returns (address[] memory moderators)
-    {
-        return _channelModerators[slugHash].values();
+    ) external view onlyExistingChannel(slugHash) returns (uint256) {
+        return _channelModerators[slugHash].length();
     }
 
     /**
-     * @notice Get all banned users for a channel
+     * @notice Get moderators for a channel with pagination
      * @param slugHash Channel slug hash
+     * @param offset Number of moderators to skip
+     * @param limit Maximum number of moderators to return
+     * @return moderators Array of moderator addresses
+     */
+    function getChannelModerators(
+        bytes32 slugHash,
+        uint256 offset,
+        uint256 limit
+    ) external view onlyExistingChannel(slugHash) returns (address[] memory) {
+        return _channelModerators[slugHash].paginate(offset, limit);
+    }
+
+    /**
+     * @notice Get banned user count for a channel
+     * @param slugHash Channel slug hash
+     * @return Banned user count
+     */
+    function getBannedUserCount(
+        bytes32 slugHash
+    ) external view onlyExistingChannel(slugHash) returns (uint256) {
+        return _channelBannedUsers[slugHash].length();
+    }
+
+    /**
+     * @notice Get banned users for a channel with pagination
+     * @param slugHash Channel slug hash
+     * @param offset Number of banned users to skip
+     * @param limit Maximum number of banned users to return
      * @return bannedUsers Array of banned user addresses
      */
     function getBannedUsers(
-        bytes32 slugHash
-    )
-        external
-        view
-        onlyExistingChannel(slugHash)
-        returns (address[] memory bannedUsers)
-    {
-        return _channelBannedUsers[slugHash].values();
+        bytes32 slugHash,
+        uint256 offset,
+        uint256 limit
+    ) external view onlyExistingChannel(slugHash) returns (address[] memory) {
+        return _channelBannedUsers[slugHash].paginate(offset, limit);
     }
 
     /**
@@ -822,25 +754,8 @@ contract OnChat is Ownable {
         address user,
         uint256 offset,
         uint256 limit
-    ) external view returns (bytes32[] memory slugHashes) {
-        EnumerableSet.Bytes32Set storage hashSet = _userChannelHashes[user];
-        uint256 length = hashSet.length();
-
-        if (length == 0 || offset >= length) {
-            return new bytes32[](0);
-        }
-
-        unchecked {
-            uint256 available = length - offset;
-            uint256 count = available < limit ? available : limit;
-
-            slugHashes = new bytes32[](count);
-            uint256 startIndex = length - 1 - offset;
-
-            for (uint256 i = 0; i < count; ++i) {
-                slugHashes[i] = hashSet.at(startIndex - i);
-            }
-        }
+    ) external view returns (bytes32[] memory) {
+        return _userChannelHashes[user].paginateReverse(offset, limit);
     }
 
     /**
