@@ -247,7 +247,7 @@ function ChatLineComponent({
   }
 }
 
-export default function ChatClient() {
+export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const {
     lines,
     currentChannel,
@@ -257,8 +257,10 @@ export default function ChatClient() {
     isConnected,
     address,
     isLoading,
+    isInitialChannelLoading,
     processCommand,
-  } = useChat();
+    enterChannel,
+  } = useChat(channelSlug);
 
   const { open } = useAppKit();
   const { currentBlock } = useEvents();
@@ -293,6 +295,16 @@ export default function ChatClient() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Check if we are in the initial channel
+  const isJoinedInInitialChannel =
+    channelSlug &&
+    joinedChannels.some((c) => c.slug === channelSlug.toLowerCase());
+  const showJoinButton =
+    channelSlug &&
+    !isJoinedInInitialChannel &&
+    !isInitialChannelLoading &&
+    currentChannel?.slug === channelSlug.toLowerCase();
+
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -302,6 +314,30 @@ export default function ChatClient() {
   useEffect(() => {
     inputRef.current?.focus();
   }, [isLoading]);
+
+  // Update URL when channel changes
+  useEffect(() => {
+    if (currentChannel?.slug) {
+      const newPath = `/${currentChannel.slug}`;
+      if (window.location.pathname !== newPath) {
+        window.history.pushState({}, "", newPath);
+      }
+    } else if (currentChannel === null && window.location.pathname !== "/") {
+      window.history.pushState({}, "", "/");
+    }
+  }, [currentChannel]);
+
+  // Handle browser back/forward buttons
+  useEffect(() => {
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      const slug = path.split("/").filter(Boolean)[0];
+      enterChannel(slug || null);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [enterChannel]);
 
   // Load balance data
   const loadBalanceData = useCallback(async () => {
@@ -519,18 +555,21 @@ export default function ChatClient() {
             </h3>
             <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
               {joinedChannels.length > 0 ? (
-                joinedChannels.map((slug: string) => (
+                joinedChannels.map((channel) => (
                   <li
-                    key={slug}
+                    key={channel.slug}
                     className={`px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--text-secondary)] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] ${
-                      currentChannel?.slug === slug
+                      currentChannel?.slug === channel.slug
                         ? "bg-[var(--bg-tertiary)] text-[var(--color-channel)] border-l-2 border-[var(--color-channel)] !pl-[calc(0.5rem-2px)]"
                         : ""
                     }`}
-                    onClick={() => processCommand(`/join #${slug}`)}
+                    onClick={() => processCommand(`/join #${channel.slug}`)}
                   >
                     <span className="text-[var(--text-muted)]">#</span>
-                    {slug}
+                    {channel.slug}
+                    <span className="ml-1 text-[0.75rem]">
+                      ({channel.memberCount.toString()})
+                    </span>
                   </li>
                 ))
               ) : (
@@ -606,9 +645,21 @@ export default function ChatClient() {
 
           {/* Input */}
           <form
-            className="flex items-center px-4 py-2 bg-[var(--bg-secondary)] border-t border-[var(--bg-tertiary)] gap-2"
+            className="flex items-center px-4 py-2 bg-[var(--bg-secondary)] border-t border-[var(--bg-tertiary)] gap-2 relative"
             onSubmit={handleSubmit}
           >
+            {showJoinButton && (
+              <div className="absolute inset-0 bg-[var(--bg-secondary)] flex items-center justify-center z-10 px-4">
+                <button
+                  type="button"
+                  onClick={() => handleJoinChannel(channelSlug!)}
+                  disabled={isLoading}
+                  className="w-full bg-[var(--color-accent)] border-none text-[var(--bg-primary)] py-2 font-mono text-[0.85rem] font-bold cursor-pointer transition-all hover:bg-[var(--text-primary)] disabled:opacity-50"
+                >
+                  {isLoading ? "Joining..." : `Join #${channelSlug}`}
+                </button>
+              </div>
+            )}
             <div className="text-[var(--color-channel)] text-[0.9rem] shrink-0 font-mono">
               {currentChannel ? `#${currentChannel.slug}>` : ">"}
             </div>
@@ -628,7 +679,7 @@ export default function ChatClient() {
               autoComplete="off"
               spellCheck="false"
             />
-            {isLoading && (
+            {isLoading && !showJoinButton && (
               <div className="text-[var(--color-action)] animate-[blink_1s_infinite]">
                 ...
               </div>
@@ -725,7 +776,9 @@ export default function ChatClient() {
                         onClick={() => handleJoinChannel(ch.slug)}
                         disabled={!isConnected || isLoading}
                       >
-                        {joinedChannels.includes(ch.slug) ? "Enter" : "Join"}
+                        {joinedChannels.some((c) => c.slug === ch.slug)
+                          ? "Enter"
+                          : "Join"}
                       </button>
                     </li>
                   ))}

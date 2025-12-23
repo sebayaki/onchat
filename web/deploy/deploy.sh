@@ -1,3 +1,5 @@
+# sudo certbot certonly --email seb@hunt.town --agree-tos -d onchat.sebayaki.com
+
 #!/bin/bash
 set -e # script will exit if any command fails
 

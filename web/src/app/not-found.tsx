@@ -1,10 +1,9 @@
 "use client";
 
-import React from "react";
 import ChatClient from "@/components/ChatClient";
 import { usePathname } from "next/navigation";
 
-export default function Home() {
+export default function NotFound() {
   const pathname = usePathname();
   const channel = pathname?.split("/").filter(Boolean)[0];
 

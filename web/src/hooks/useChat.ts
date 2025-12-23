@@ -23,7 +23,6 @@ import {
   leaveChannel,
   sendMessage,
   waitForTransaction,
-  getSlugFromHash,
   getOwnerBalance,
   claimOwnerBalance,
   addModerator,
@@ -57,20 +56,21 @@ interface UseChatReturn {
   // State
   lines: ChatLine[];
   currentChannel: ChannelInfo | null;
-  joinedChannels: string[];
+  joinedChannels: ChannelInfo[];
   members: string[];
   moderators: string[];
   isConnected: boolean;
   address: string | undefined;
   isLoading: boolean;
+  isInitialChannelLoading: boolean;
 
   // Actions
   processCommand: (input: string) => Promise<void>;
-  refreshMessages: () => Promise<void>;
   clearLines: () => void;
+  enterChannel: (slug: string | null | undefined) => Promise<void>;
 }
 
-export function useChat(): UseChatReturn {
+export function useChat(initialChannelSlug?: string): UseChatReturn {
   const { address, isConnected } = useAppKitAccount();
   const { data: walletClient } = useWalletClient();
   const { onMessageSent, onChannelEvent } = useEvents();
@@ -79,10 +79,11 @@ export function useChat(): UseChatReturn {
   const [currentChannel, setCurrentChannel] = useState<ChannelInfo | null>(
     null
   );
-  const [joinedChannels, setJoinedChannels] = useState<string[]>([]);
+  const [joinedChannels, setJoinedChannels] = useState<ChannelInfo[]>([]);
   const [members, setMembers] = useState<string[]>([]);
   const [moderators, setModerators] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitialChannelLoading, setIsInitialChannelLoading] = useState(false);
 
   const lineIdCounter = useRef(0);
   // Track processed tx hashes to avoid duplicates from optimistic updates
@@ -117,12 +118,12 @@ export function useChat(): UseChatReturn {
 
     try {
       const hashes = await getUserChannels(address as `0x${string}`, 0, 100);
-      const slugs: string[] = [];
+      const channels: ChannelInfo[] = [];
       for (const hash of hashes) {
-        const slug = await getSlugFromHash(hash);
-        if (slug) slugs.push(slug);
+        const info = await getChannel(hash);
+        if (info) channels.push(info);
       }
-      setJoinedChannels(slugs);
+      setJoinedChannels(channels);
     } catch (err) {
       console.error("Failed to load joined channels:", err);
     }
@@ -142,33 +143,59 @@ export function useChat(): UseChatReturn {
     }
   }, []);
 
-  // Refresh messages for current channel
-  const refreshMessages = useCallback(async () => {
-    if (!currentChannel) return;
-
-    try {
-      const messages = await getLatestMessages(currentChannel.slugHash, 0, 50);
-      // Messages come newest first, reverse for display
-      const orderedMessages = [...messages].reverse();
-
-      // Clear old messages and add new ones
-      setLines((prev) => prev.filter((l) => l.type !== "message"));
-
-      for (const msg of orderedMessages) {
-        if (!msg.isHidden) {
-          addLine(
-            "message",
-            msg.content,
-            formatAddress(msg.sender),
-            msg.sender,
-            currentChannel.slug
-          );
-        }
+  // Enter a channel (fetch info and messages) without necessarily joining on-chain
+  const enterChannel = useCallback(
+    async (slug: string | null | undefined) => {
+      if (!slug) {
+        setCurrentChannel(null);
+        setMembers([]);
+        setModerators([]);
+        // Clear messages when going to home
+        setLines((prev) => prev.filter((l) => l.type !== "message"));
+        return;
       }
-    } catch (err) {
-      console.error("Failed to refresh messages:", err);
-    }
-  }, [currentChannel, addLine]);
+
+      const cleanSlug = slug.replace("#", "").toLowerCase();
+      setIsInitialChannelLoading(true);
+      try {
+        const channelInfo = await getChannelBySlug(cleanSlug);
+        const slugHash = computeSlugHash(cleanSlug);
+
+        setCurrentChannel(channelInfo);
+        await loadMembers(slugHash);
+
+        // Load recent messages
+        const messages = await getLatestMessages(slugHash, 0, 20);
+        const orderedMessages = [...messages].reverse();
+
+        // Clear existing messages when switching channels
+        setLines((prev) => prev.filter((l) => l.type !== "message"));
+
+        for (const msg of orderedMessages) {
+          if (!msg.isHidden) {
+            addLine(
+              "message",
+              msg.content,
+              formatAddress(msg.sender),
+              msg.sender,
+              cleanSlug
+            );
+          }
+        }
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (errorMessage.includes("OnChat__ChannelNotFound")) {
+          console.warn(`[OnChat] Channel "${cleanSlug}" does not exist.`);
+          addLine("error", `Channel "#${cleanSlug}" does not exist.`);
+        } else {
+          console.error("Failed to enter channel:", err);
+        }
+      } finally {
+        setIsInitialChannelLoading(false);
+      }
+    },
+    [loadMembers, addLine]
+  );
 
   // Welcome message on mount (only once)
   useEffect(() => {
@@ -190,6 +217,11 @@ export function useChat(): UseChatReturn {
     );
     addLine("info", "Type /help for available commands");
     addLine("info", "Connect your wallet to start chatting");
+
+    // If an initial channel is provided, enter it
+    if (initialChannelSlug) {
+      enterChannel(initialChannelSlug);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -451,6 +483,7 @@ export function useChat(): UseChatReturn {
               // Load recent messages
               const messages = await getLatestMessages(slugHash, 0, 20);
               const orderedMessages = [...messages].reverse();
+              setLines((prev) => prev.filter((l) => l.type !== "message"));
               for (const msg of orderedMessages) {
                 if (!msg.isHidden) {
                   addLine(
@@ -468,6 +501,9 @@ export function useChat(): UseChatReturn {
                 if (isUserRejectedError(err)) {
                   addLine("error", errorMessage);
                 } else if (errorMessage.includes("ChannelNotFound")) {
+                  console.warn(
+                    `[OnChat] Channel "${channelToJoin}" does not exist.`
+                  );
                   addLine(
                     "error",
                     `Channel #${channelToJoin} does not exist. Create it with /create #${channelToJoin}`
@@ -960,7 +996,10 @@ export function useChat(): UseChatReturn {
                 } else if (errorMessage.includes("CannotBanOwner")) {
                   addLine("error", "Cannot ban the channel owner");
                 } else if (errorMessage.includes("ChannelNotFound")) {
-                  addLine("error", `Channel not found`);
+                  console.warn(
+                    `[OnChat] Channel "${channelSlug}" does not exist.`
+                  );
+                  addLine("error", `Channel #${channelSlug} not found`);
                 } else {
                   addLine("error", `Failed: ${errorMessage}`);
                 }
@@ -1050,8 +1089,9 @@ export function useChat(): UseChatReturn {
     isConnected,
     address,
     isLoading,
+    isInitialChannelLoading,
     processCommand,
-    refreshMessages,
     clearLines,
+    enterChannel,
   };
 }
