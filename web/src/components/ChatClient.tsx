@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import Image from "next/image";
+import AppIcon from "@/assets/app-icon.png";
 import { useChat, type ChatLine } from "@/hooks/useChat";
 import { useAppKit } from "@reown/appkit/react";
 import { useEvents } from "@/context/EventContext";
@@ -28,42 +30,56 @@ function ChatLineComponent({ line }: { line: ChatLine }) {
   switch (line.type) {
     case "system":
       return (
-        <div className="chat-line system">
-          <span className="timestamp">[{timeStr}]</span>
-          <span className="content">{line.content}</span>
+        <div className="chat-line text-[var(--color-system)]">
+          <span className="chat-timestamp">[{timeStr}]</span>
+          <span className="chat-content">{line.content}</span>
         </div>
       );
     case "error":
       return (
-        <div className="chat-line error">
-          <span className="timestamp">[{timeStr}]</span>
-          <span className="prefix">!</span>
-          <span className="content">{line.content}</span>
+        <div className="chat-line text-[var(--color-error)]">
+          <span className="chat-timestamp">[{timeStr}]</span>
+          <span className="chat-prefix font-bold text-[var(--color-error)]">
+            !
+          </span>
+          <span className="chat-content">{line.content}</span>
         </div>
       );
     case "info":
       return (
-        <div className="chat-line info">
-          <span className="timestamp">[{timeStr}]</span>
-          <span className="prefix">*</span>
-          <span className="content">{line.content}</span>
+        <div className="chat-line text-[var(--color-info)]">
+          <span className="chat-timestamp">[{timeStr}]</span>
+          <span className="chat-prefix text-[var(--color-info)]">*</span>
+          <span className="chat-content">{line.content}</span>
         </div>
       );
     case "action":
       return (
-        <div className="chat-line action">
-          <span className="timestamp">[{timeStr}]</span>
-          <span className="prefix">→</span>
-          <span className="content">{line.content}</span>
+        <div className="chat-line text-[var(--color-action)]">
+          <span className="chat-timestamp">[{timeStr}]</span>
+          <span className="chat-prefix text-[var(--color-action)]">→</span>
+          <span className="chat-content">{line.content}</span>
+        </div>
+      );
+    case "command":
+      return (
+        <div className="chat-line text-[var(--color-content)] font-mono">
+          <span className="chat-timestamp">[{timeStr}]</span>
+          <span className="text-[var(--color-channel)] mr-1">
+            {line.channel ? `#${line.channel}>` : ">"}
+          </span>
+          <span className="chat-content">{line.content}</span>
         </div>
       );
     case "message":
       return (
-        <div className="chat-line message">
-          <span className="timestamp">[{timeStr}]</span>
-          {line.channel && <span className="channel">#{line.channel}</span>}
-          <span className="sender">&lt;{line.sender}&gt;</span>
-          <span className="content">{line.content}</span>
+        <div className="chat-line chat-line-message text-[var(--text-primary)]">
+          <span className="chat-timestamp">[{timeStr}]</span>
+          {line.channel && (
+            <span className="chat-channel">#{line.channel}</span>
+          )}
+          <span className="chat-sender">&lt;{line.sender}&gt;</span>
+          <span className="chat-content">{line.content}</span>
         </div>
       );
     default:
@@ -235,25 +251,36 @@ export default function ChatClient() {
   );
 
   return (
-    <div className="chat-container">
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden chat-container">
       {/* Header */}
-      <header className="chat-header">
-        <div className="header-left">
-          <h1 className="logo">OnChat</h1>
+      <header className="flex justify-between items-center px-4 py-2 bg-[var(--bg-secondary)] border-b border-[var(--color-accent-dim)] shrink-0">
+        <div className="flex items-center gap-2">
+          <Image
+            src={AppIcon}
+            alt="OnChat Logo"
+            width={32}
+            height={32}
+            className="pixelated"
+          />
+          <h1 className="text-xl font-bold text-[var(--color-accent)] m-0 tracking-[2px] uppercase">
+            OnChat
+          </h1>
           {currentChannel && (
-            <span className="current-channel">#{currentChannel.slug}</span>
+            <span className="text-[var(--color-channel)] text-[0.9rem]">
+              #{currentChannel.slug}
+            </span>
           )}
         </div>
-        <div className="header-right">
+        <div className="flex items-center gap-3">
           {/* Claimable balance */}
           {isConnected && address && ownerBalance > BigInt(0) && (
-            <div className="balance-claim">
-              <span className="balance-label">Creator Rewards:</span>
-              <span className="balance-amount">
+            <div className="flex items-center gap-2 px-[10px] py-1 bg-[var(--bg-tertiary)] border border-[var(--color-accent-dim)] rounded font-mono text-[0.8rem]">
+              <span className="text-[var(--text-dim)]">Creator Rewards:</span>
+              <span className="text-[var(--color-accent)] font-medium">
                 {formatNumber(ownerBalance, { fromDecimals: 18 })} ETH
               </span>
               <button
-                className="claim-btn"
+                className="bg-[var(--color-accent)] text-[var(--bg-primary)] border-none px-2 py-[2px] text-[0.75rem] font-mono cursor-pointer rounded-sm font-semibold hover:not-disabled:bg-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
                 onClick={handleClaim}
                 disabled={claimingBalance}
               >
@@ -263,34 +290,39 @@ export default function ChatClient() {
           )}
 
           {/* Wallet connection */}
-          {isConnected && address ? (
-            <button className="wallet-button connected" onClick={() => open()}>
-              <span className="status-dot" />
-              {formatAddress(address)}
-            </button>
-          ) : (
-            <button className="wallet-button" onClick={() => open()}>
-              Connect Wallet
-            </button>
-          )}
+          <button
+            className={`bg-transparent border border-[var(--color-accent-dim)] ${
+              isConnected && address
+                ? "text-[var(--color-accent)]"
+                : "text-[var(--text-primary)]"
+            } px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--color-accent)]`}
+            onClick={() => open()}
+          >
+            <div
+              className={`w-2 h-2 rounded-full bg-[var(--color-accent)] ${
+                isConnected ? "animate-pulse" : "opacity-50"
+              }`}
+            />
+            {isConnected && address ? formatAddress(address) : "Connect Wallet"}
+          </button>
         </div>
       </header>
 
       {/* Main content */}
-      <div className="chat-main">
+      <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Sidebar */}
-        <aside className="chat-sidebar">
+        <aside className="w-[180px] bg-[var(--bg-secondary)] border-r border-[var(--bg-tertiary)] flex flex-col shrink-0 overflow-hidden max-md:w-[140px] max-sm:hidden">
           {/* Action buttons */}
-          <div className="sidebar-actions">
+          <div className="flex gap-2 p-2 border-b border-[var(--bg-tertiary)]">
             <button
-              className="sidebar-btn"
+              className="flex-1 bg-transparent border border-[var(--color-accent-dim)] text-[var(--color-accent)] px-2 py-[0.4rem] font-mono text-[0.7rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--color-accent-dim)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
               onClick={() => setShowChannelBrowser(true)}
               title="Browse channels"
             >
               + Join
             </button>
             <button
-              className="sidebar-btn"
+              className="flex-1 bg-transparent border border-[var(--color-accent-dim)] text-[var(--color-accent)] px-2 py-[0.4rem] font-mono text-[0.7rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--color-accent-dim)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
               onClick={() => setShowCreateChannel(true)}
               title="Create channel"
               disabled={!isConnected}
@@ -300,40 +332,53 @@ export default function ChatClient() {
           </div>
 
           {/* Channels */}
-          <div className="sidebar-section">
-            <h3>My Channels</h3>
-            <ul className="channel-list">
+          <div className="p-3 border-b border-[var(--bg-tertiary)] overflow-hidden flex flex-col">
+            <h3 className="text-[0.7rem] uppercase text-[var(--text-muted)] mb-2 tracking-[1px] m-0">
+              My Channels
+            </h3>
+            <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
               {joinedChannels.length > 0 ? (
                 joinedChannels.map((slug) => (
                   <li
                     key={slug}
-                    className={currentChannel?.slug === slug ? "active" : ""}
+                    className={`px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--text-secondary)] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] ${
+                      currentChannel?.slug === slug
+                        ? "bg-[var(--bg-tertiary)] text-[var(--color-channel)] border-l-2 border-[var(--color-channel)] !pl-[calc(0.5rem-2px)]"
+                        : ""
+                    }`}
                     onClick={() => processCommand(`/join #${slug}`)}
                   >
-                    <span className="channel-hash">#</span>
+                    <span className="text-[var(--text-muted)]">#</span>
                     {slug}
                   </li>
                 ))
               ) : (
-                <li className="empty">No channels joined</li>
+                <li className="text-[var(--text-dim)] italic cursor-default px-2 py-1 text-[0.8rem]">
+                  No channels joined
+                </li>
               )}
             </ul>
           </div>
 
           {/* Users */}
           {currentChannel && (
-            <div className="sidebar-section">
-              <h3>Users ({members.length})</h3>
-              <ul className="user-list">
+            <div className="p-3 border-b border-[var(--bg-tertiary)] overflow-hidden flex flex-col">
+              <h3 className="text-[0.7rem] uppercase text-[var(--text-muted)] mb-2 tracking-[1px] m-0">
+                Users ({members.length})
+              </h3>
+              <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
                 {members.map((member) => {
                   const isOwner =
                     formatAddress(currentChannel.owner) === member;
                   const isModerator = moderators.includes(member);
                   return (
-                    <li key={member}>
-                      {isOwner && <span className="role-badge">👸🏻</span>}
+                    <li
+                      key={member}
+                      className="px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--text-secondary)] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                    >
+                      {isOwner && <span className="mr-1 text-[0.9em]">👸🏻</span>}
                       {!isOwner && isModerator && (
-                        <span className="role-badge">👩🏻‍⚖️</span>
+                        <span className="mr-1 text-[0.9em]">👩🏻‍⚖️</span>
                       )}
                       {member}
                     </li>
@@ -345,17 +390,22 @@ export default function ChatClient() {
         </aside>
 
         {/* Messages */}
-        <div className="chat-messages-container">
-          <div className="chat-messages">
-            {lines.map((line) => (
-              <ChatLineComponent key={line.id} line={line} />
-            ))}
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="flex-1 overflow-y-auto px-4 py-2 bg-[var(--bg-primary)] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[var(--bg-tertiary)] hover:scrollbar-thumb-[var(--bg-hover)]">
+            <div className="flex flex-col gap-[2px]">
+              {lines.map((line) => (
+                <ChatLineComponent key={line.id} line={line} />
+              ))}
+            </div>
             <div ref={messagesEndRef} />
           </div>
 
           {/* Input */}
-          <form className="chat-input-form" onSubmit={handleSubmit}>
-            <div className="input-prefix">
+          <form
+            className="flex items-center px-4 py-2 bg-[var(--bg-secondary)] border-t border-[var(--bg-tertiary)] gap-2"
+            onSubmit={handleSubmit}
+          >
+            <div className="text-[var(--color-channel)] text-[0.9rem] shrink-0 font-mono">
               {currentChannel ? `#${currentChannel.slug}>` : ">"}
             </div>
             <input
@@ -370,86 +420,104 @@ export default function ChatClient() {
                   : "Connect wallet to chat"
               }
               disabled={isLoading}
-              className="chat-input"
+              className="flex-1 bg-transparent border-none text-[var(--color-content)] font-mono text-[13px] outline-none caret-[var(--color-accent)] placeholder:text-[var(--text-dim)] disabled:opacity-50"
               autoComplete="off"
               spellCheck="false"
             />
-            {isLoading && <div className="loading-indicator">...</div>}
+            {isLoading && (
+              <div className="text-[var(--color-action)] animate-[blink_1s_infinite]">
+                ...
+              </div>
+            )}
           </form>
         </div>
       </div>
 
       {/* Status bar */}
-      <footer className="chat-status">
-        <span className="status-item">
+      <footer className="flex items-center px-4 py-1 bg-[var(--bg-tertiary)] border-t border-[var(--bg-hover)] text-[0.75rem] text-[var(--text-muted)] shrink-0 gap-2 font-mono max-sm:px-2 max-sm:text-[0.65rem]">
+        <span className="flex items-center gap-[0.4rem]">
           {isConnected ? (
             <>
-              <span className="status-dot connected" />
+              <div className="w-[6px] h-[6px] rounded-full bg-[var(--color-accent)]" />
               Base Network
               {currentBlock > BigInt(0) && (
-                <span className="block-number">
+                <span className="ml-1 text-[#eee] text-[0.85em]">
                   ({currentBlock.toLocaleString()})
                 </span>
               )}
             </>
           ) : (
             <>
-              <span className="status-dot disconnected" />
+              <div className="w-[6px] h-[6px] rounded-full bg-[var(--color-error)]" />
               Disconnected
             </>
           )}
         </span>
         {currentChannel && (
           <>
-            <span className="status-separator">|</span>
-            <span className="status-item">
+            <span className="text-[var(--text-dim)]">|</span>
+            <span className="flex items-center gap-[0.4rem]">
               {currentChannel.memberCount.toString()} users
             </span>
-            <span className="status-separator">|</span>
-            <span className="status-item">
+            <span className="text-[var(--text-dim)]">|</span>
+            <span className="flex items-center gap-[0.4rem]">
               {currentChannel.messageCount.toString()} messages
             </span>
           </>
         )}
-        <span className="status-right">Fully on-chain • Permissionless</span>
+        <span className="ml-auto text-[var(--text-dim)] max-sm:hidden">
+          Fully on-chain • Permissionless
+        </span>
       </footer>
 
       {/* Channel Browser Modal */}
       {showChannelBrowser && (
         <div
-          className="modal-overlay"
+          className="fixed inset-0 bg-black/85 flex items-center justify-center z-[10000] animate-[fadeIn_0.15s_ease-out]"
           onClick={() => setShowChannelBrowser(false)}
         >
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Browse Channels</h2>
+          <div
+            className="bg-[var(--bg-secondary)] border border-[var(--color-accent-dim)] w-[90%] max-w-[400px] max-h-[80vh] flex flex-col animate-[modalSlideIn_0.2s_ease-out]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--bg-tertiary)]">
+              <h2 className="m-0 text-[0.9rem] text-[var(--color-accent)] uppercase tracking-[1px] font-mono font-bold">
+                Browse Channels
+              </h2>
               <button
-                className="modal-close"
+                className="bg-transparent border-none text-[var(--text-muted)] text-2xl cursor-pointer leading-none p-0 hover:text-[var(--color-error)]"
                 onClick={() => setShowChannelBrowser(false)}
               >
                 ×
               </button>
             </div>
-            <div className="modal-content">
+            <div className="p-4 overflow-y-auto flex-1 font-mono">
               {loadingChannels ? (
-                <div className="modal-loading">Loading channels...</div>
+                <div className="text-[var(--text-muted)] text-center py-8 text-[0.85rem]">
+                  Loading channels...
+                </div>
               ) : allChannels.length === 0 ? (
-                <div className="modal-empty">
+                <div className="text-[var(--text-muted)] text-center py-8 text-[0.85rem]">
                   No channels yet. Be the first to create one!
                 </div>
               ) : (
-                <ul className="channel-browser-list">
+                <ul className="list-none p-0 m-0">
                   {allChannels.map((ch) => (
-                    <li key={ch.slugHash} className="channel-browser-item">
-                      <div className="channel-browser-info">
-                        <span className="channel-browser-name">#{ch.slug}</span>
-                        <span className="channel-browser-stats">
+                    <li
+                      key={ch.slugHash}
+                      className="flex items-center justify-between py-2 border-b border-[var(--bg-tertiary)] last:border-none"
+                    >
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[var(--color-channel)] text-[0.9rem]">
+                          #{ch.slug}
+                        </span>
+                        <span className="text-[var(--text-muted)] text-[0.7rem]">
                           {ch.memberCount.toString()} users •{" "}
                           {ch.messageCount.toString()} msgs
                         </span>
                       </div>
                       <button
-                        className="channel-browser-join"
+                        className="bg-transparent border border-[var(--color-accent-dim)] text-[var(--color-accent)] px-3 py-1 font-mono text-[0.75rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--color-accent)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
                         onClick={() => handleJoinChannel(ch.slug)}
                         disabled={!isConnected || isLoading}
                       >
@@ -467,32 +535,44 @@ export default function ChatClient() {
       {/* Create Channel Modal */}
       {showCreateChannel && (
         <div
-          className="modal-overlay"
+          className="fixed inset-0 bg-black/85 flex items-center justify-center z-[10000] animate-[fadeIn_0.15s_ease-out]"
           onClick={() => setShowCreateChannel(false)}
         >
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Create Channel</h2>
+          <div
+            className="bg-[var(--bg-secondary)] border border-[var(--color-accent-dim)] w-[90%] max-w-[400px] max-h-[80vh] flex flex-col animate-[modalSlideIn_0.2s_ease-out]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--bg-tertiary)]">
+              <h2 className="m-0 text-[0.9rem] text-[var(--color-accent)] uppercase tracking-[1px] font-mono font-bold">
+                Create Channel
+              </h2>
               <button
-                className="modal-close"
+                className="bg-transparent border-none text-[var(--text-muted)] text-2xl cursor-pointer leading-none p-0 hover:text-[var(--color-error)]"
                 onClick={() => setShowCreateChannel(false)}
               >
                 ×
               </button>
             </div>
-            <div className="modal-content">
+            <div className="p-4 overflow-y-auto flex-1 font-mono">
               {!isConnected ? (
-                <div className="modal-empty">
+                <div className="text-[var(--text-muted)] text-center py-8 text-[0.85rem]">
                   Connect your wallet to create a channel
                 </div>
               ) : (
                 <form
                   onSubmit={handleCreateChannel}
-                  className="create-channel-form"
+                  className="flex flex-col gap-3"
                 >
-                  <label htmlFor="channel-name">Channel Name</label>
-                  <div className="create-channel-input-wrapper">
-                    <span className="create-channel-hash">#</span>
+                  <label
+                    htmlFor="channel-name"
+                    className="text-[0.75rem] text-[var(--text-muted)] uppercase tracking-[1px]"
+                  >
+                    Channel Name
+                  </label>
+                  <div className="flex items-center bg-[var(--bg-primary)] border border-[var(--bg-tertiary)]">
+                    <span className="text-[var(--color-channel)] px-2 text-base">
+                      #
+                    </span>
                     <input
                       id="channel-name"
                       type="text"
@@ -505,20 +585,20 @@ export default function ChatClient() {
                       placeholder="my-channel"
                       maxLength={20}
                       autoFocus
-                      className="create-channel-input"
+                      className="flex-1 bg-transparent border-none text-[var(--text-primary)] font-mono text-[0.9rem] py-2 outline-none placeholder:text-[var(--text-dim)]"
                     />
                   </div>
-                  <p className="create-channel-hint">
+                  <p className="text-[0.7rem] text-[var(--text-dim)] m-0">
                     Lowercase letters and hyphens only, max 20 chars
                   </p>
                   <button
                     type="submit"
-                    className="create-channel-submit"
+                    className="bg-[var(--color-accent)] border-none text-[var(--bg-primary)] py-2 px-4 font-mono text-[0.85rem] font-bold cursor-pointer transition-all hover:not-disabled:bg-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                     disabled={!newChannelName.trim() || isLoading}
                   >
                     {isLoading ? "Creating..." : "Create Channel"}
                   </button>
-                  <p className="create-channel-fee">
+                  <p className="text-[0.7rem] text-[var(--text-dim)] text-center m-0">
                     Creating a channel requires a small ETH fee
                   </p>
                 </form>

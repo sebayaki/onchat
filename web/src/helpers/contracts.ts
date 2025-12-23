@@ -4,6 +4,7 @@ import { CONTRACTS } from "@/configs/constants";
 import { type WalletClient, keccak256, toBytes } from "viem";
 import { base } from "viem/chains";
 import { formatNumber } from "./format";
+export { waitForTransaction } from "./transactions";
 
 // ============================================================================
 // Types
@@ -703,15 +704,4 @@ export async function claimOwnerBalance(
 
   console.log("📜 claimOwnerBalance tx:", hash);
   return hash;
-}
-
-// ============================================================================
-// Transaction Utilities
-// ============================================================================
-
-/**
- * Wait for a transaction to be confirmed
- */
-export async function waitForTransaction(hash: `0x${string}`): Promise<void> {
-  await basePublicClient.waitForTransactionReceipt({ hash });
 }

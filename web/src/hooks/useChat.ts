@@ -29,6 +29,10 @@ import {
   unbanUser,
 } from "@/helpers/contracts";
 import {
+  handleTransactionError,
+  isUserRejectedError,
+} from "@/helpers/transactions";
+import {
   useEvents,
   type MessageSentEvent,
   type ChannelEvent,
@@ -36,7 +40,7 @@ import {
 
 export interface ChatLine {
   id: string;
-  type: "system" | "error" | "info" | "message" | "action";
+  type: "system" | "error" | "info" | "message" | "action" | "command";
   timestamp: Date;
   content: string;
   sender?: string;
@@ -264,6 +268,9 @@ export function useChat(): UseChatReturn {
       const trimmed = input.trim();
       if (!trimmed) return;
 
+      // Echo command
+      addLine("command", input, undefined, currentChannel?.slug);
+
       // Check if it's a command
       if (trimmed.startsWith("/")) {
         const parts = trimmed.slice(1).split(" ");
@@ -376,15 +383,18 @@ export function useChat(): UseChatReturn {
                 }
               }
             } catch (err: unknown) {
-              const errorMessage =
-                err instanceof Error ? err.message : String(err);
-              if (errorMessage.includes("ChannelNotFound")) {
-                addLine(
-                  "error",
-                  `Channel #${channelToJoin} does not exist. Create it with /create #${channelToJoin}`
-                );
-              } else {
-                addLine("error", `Failed to join channel: ${errorMessage}`);
+              const errorMessage = handleTransactionError(err);
+              if (errorMessage !== null) {
+                if (isUserRejectedError(err)) {
+                  addLine("error", errorMessage);
+                } else if (errorMessage.includes("ChannelNotFound")) {
+                  addLine(
+                    "error",
+                    `Channel #${channelToJoin} does not exist. Create it with /create #${channelToJoin}`
+                  );
+                } else {
+                  addLine("error", `Failed to join channel: ${errorMessage}`);
+                }
               }
             }
             setIsLoading(false);
@@ -415,7 +425,14 @@ export function useChat(): UseChatReturn {
               setMembers([]);
               await loadJoinedChannels();
             } catch (err) {
-              addLine("error", `Failed to leave channel: ${err}`);
+              const errorMessage = handleTransactionError(err);
+              if (errorMessage !== null) {
+                if (isUserRejectedError(err)) {
+                  addLine("error", errorMessage);
+                } else {
+                  addLine("error", `Failed to leave channel: ${errorMessage}`);
+                }
+              }
             }
             setIsLoading(false);
             break;
@@ -457,15 +474,18 @@ export function useChat(): UseChatReturn {
               await loadJoinedChannels();
               addLine("system", `* Now talking in #${newChannel}`);
             } catch (err: unknown) {
-              const errorMessage =
-                err instanceof Error ? err.message : String(err);
-              if (errorMessage.includes("ChannelAlreadyExists")) {
-                addLine(
-                  "error",
-                  `Channel #${newChannel} already exists. Use /join to join it.`
-                );
-              } else {
-                addLine("error", `Failed to create channel: ${errorMessage}`);
+              const errorMessage = handleTransactionError(err);
+              if (errorMessage !== null) {
+                if (isUserRejectedError(err)) {
+                  addLine("error", errorMessage);
+                } else if (errorMessage.includes("ChannelAlreadyExists")) {
+                  addLine(
+                    "error",
+                    `Channel #${newChannel} already exists. Use /join to join it.`
+                  );
+                } else {
+                  addLine("error", `Failed to create channel: ${errorMessage}`);
+                }
               }
             }
             setIsLoading(false);
@@ -554,9 +574,14 @@ export function useChat(): UseChatReturn {
                 addLine("info", "No creator rewards to claim");
               }
             } catch (err: unknown) {
-              const errorMessage =
-                err instanceof Error ? err.message : String(err);
-              addLine("error", `Failed to claim: ${errorMessage}`);
+              const errorMessage = handleTransactionError(err);
+              if (errorMessage !== null) {
+                if (isUserRejectedError(err)) {
+                  addLine("error", errorMessage);
+                } else {
+                  addLine("error", `Failed to claim: ${errorMessage}`);
+                }
+              }
             }
             setIsLoading(false);
             break;
@@ -770,37 +795,42 @@ export function useChat(): UseChatReturn {
                   addLine("error", `Unknown mode flag: ${modeFlag}`);
               }
             } catch (err: unknown) {
-              const errorMessage =
-                err instanceof Error ? err.message : String(err);
-              if (errorMessage.includes("NotChannelOwner")) {
-                addLine(
-                  "error",
-                  "Only the channel owner can add/remove moderators"
-                );
-              } else if (errorMessage.includes("NotChannelOwnerOrModerator")) {
-                addLine(
-                  "error",
-                  "Only the channel owner or moderators can ban/unban users"
-                );
-              } else if (errorMessage.includes("AlreadyModerator")) {
-                addLine("error", "User is already a moderator");
-              } else if (errorMessage.includes("NotModerator")) {
-                addLine("error", "User is not a moderator");
-              } else if (errorMessage.includes("UserBanned")) {
-                addLine("error", "User is already banned");
-              } else if (errorMessage.includes("UserNotBanned")) {
-                addLine("error", "User is not banned");
-              } else if (errorMessage.includes("NotMember")) {
-                addLine(
-                  "error",
-                  "User must be a member of the channel to become a moderator"
-                );
-              } else if (errorMessage.includes("CannotBanOwner")) {
-                addLine("error", "Cannot ban the channel owner");
-              } else if (errorMessage.includes("ChannelNotFound")) {
-                addLine("error", `Channel not found`);
-              } else {
-                addLine("error", `Failed: ${errorMessage}`);
+              const errorMessage = handleTransactionError(err);
+              if (errorMessage !== null) {
+                if (isUserRejectedError(err)) {
+                  addLine("error", errorMessage);
+                } else if (errorMessage.includes("NotChannelOwner")) {
+                  addLine(
+                    "error",
+                    "Only the channel owner can add/remove moderators"
+                  );
+                } else if (
+                  errorMessage.includes("NotChannelOwnerOrModerator")
+                ) {
+                  addLine(
+                    "error",
+                    "Only the channel owner or moderators can ban/unban users"
+                  );
+                } else if (errorMessage.includes("AlreadyModerator")) {
+                  addLine("error", "User is already a moderator");
+                } else if (errorMessage.includes("NotModerator")) {
+                  addLine("error", "User is not a moderator");
+                } else if (errorMessage.includes("UserBanned")) {
+                  addLine("error", "User is already banned");
+                } else if (errorMessage.includes("UserNotBanned")) {
+                  addLine("error", "User is not banned");
+                } else if (errorMessage.includes("NotMember")) {
+                  addLine(
+                    "error",
+                    "User must be a member of the channel to become a moderator"
+                  );
+                } else if (errorMessage.includes("CannotBanOwner")) {
+                  addLine("error", "Cannot ban the channel owner");
+                } else if (errorMessage.includes("ChannelNotFound")) {
+                  addLine("error", `Channel not found`);
+                } else {
+                  addLine("error", `Failed: ${errorMessage}`);
+                }
               }
             }
             setIsLoading(false);
@@ -849,8 +879,14 @@ export function useChat(): UseChatReturn {
           await waitForTransaction(tx);
           // Message already shown optimistically
         } catch (err: unknown) {
-          const errorMessage = err instanceof Error ? err.message : String(err);
-          addLine("error", `Failed to send message: ${errorMessage}`);
+          const errorMessage = handleTransactionError(err);
+          if (errorMessage !== null) {
+            if (isUserRejectedError(err)) {
+              addLine("error", errorMessage);
+            } else {
+              addLine("error", `Failed to send message: ${errorMessage}`);
+            }
+          }
         }
         setIsLoading(false);
       }
