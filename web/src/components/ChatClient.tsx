@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useChat, type ChatLine } from "@/hooks/useChat";
 import { useFarcasterProfiles } from "@/hooks/useFarcasterProfiles";
 import { useAppKit } from "@reown/appkit/react";
 import { useEvents } from "@/context/EventContext";
-import { useSearchParams } from "next/navigation";
 import {
   getLatestChannels,
   getOwnerBalance,
@@ -45,7 +44,6 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const { open } = useAppKit();
   const { currentBlock } = useEvents();
   const { data: walletClient } = useWalletClient();
-  const searchParams = useSearchParams();
 
   // Mobile state
   const [activeTab, setActiveTab] = useState<"chat" | "channels" | "rewards">(
