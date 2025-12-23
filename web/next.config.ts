@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Only use static export in production - allows faster dev with dynamic routes
-  output: process.env.NODE_ENV === "production" ? "export" : undefined,
+  // Static export only - no server/SSR, pure client-side app
+  output: "export",
   images: {
     unoptimized: true,
   },

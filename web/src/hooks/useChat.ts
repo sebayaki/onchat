@@ -63,6 +63,7 @@ interface UseChatReturn {
   address: string | undefined;
   isLoading: boolean;
   isInitialChannelLoading: boolean;
+  isLoadingChannels: boolean;
 
   // Actions
   processCommand: (input: string) => Promise<void>;
@@ -84,6 +85,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
   const [moderators, setModerators] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitialChannelLoading, setIsInitialChannelLoading] = useState(false);
+  const [isLoadingChannels, setIsLoadingChannels] = useState(false);
 
   const lineIdCounter = useRef(0);
   // Track processed tx hashes to avoid duplicates from optimistic updates
@@ -116,6 +118,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
   const loadJoinedChannels = useCallback(async () => {
     if (!address) return;
 
+    setIsLoadingChannels(true);
     try {
       const hashes = await getUserChannels(address as `0x${string}`, 0, 100);
       const channels: ChannelInfo[] = [];
@@ -126,6 +129,8 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       setJoinedChannels(channels);
     } catch (err) {
       console.error("Failed to load joined channels:", err);
+    } finally {
+      setIsLoadingChannels(false);
     }
   }, [address]);
 
@@ -1088,6 +1093,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     address,
     isLoading,
     isInitialChannelLoading,
+    isLoadingChannels,
     processCommand,
     clearLines,
     enterChannel,

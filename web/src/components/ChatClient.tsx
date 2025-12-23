@@ -38,6 +38,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     address,
     isLoading,
     isInitialChannelLoading,
+    isLoadingChannels,
     processCommand,
     enterChannel,
   } = useChat(channelSlug);
@@ -275,6 +276,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
           moderators={moderators}
           profiles={profiles}
           isConnected={isConnected}
+          isLoadingChannels={isLoadingChannels}
           processCommand={processCommand}
           setActiveTab={setActiveTab}
           setShowChannelBrowser={setShowChannelBrowser}

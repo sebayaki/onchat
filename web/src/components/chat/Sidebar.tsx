@@ -13,6 +13,7 @@ export function Sidebar({
   moderators,
   profiles,
   isConnected,
+  isLoadingChannels,
   processCommand,
   setActiveTab,
   setShowChannelBrowser,
@@ -25,6 +26,7 @@ export function Sidebar({
   moderators: string[];
   profiles: Record<string, FarcasterUserProfile | null>;
   isConnected: boolean;
+  isLoadingChannels: boolean;
   processCommand: (cmd: string) => Promise<void>;
   setActiveTab: (tab: "chat" | "channels" | "rewards") => void;
   setShowChannelBrowser: (show: boolean) => void;
@@ -61,7 +63,19 @@ export function Sidebar({
           My Channels
         </h3>
         <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
-          {joinedChannels.length > 0 ? (
+          {isLoadingChannels ? (
+            // Loading skeleton
+            <>
+              {[1, 2, 3].map((i) => (
+                <li key={i} className="px-2 py-1">
+                  <div
+                    className="h-[1rem] bg-[var(--bg-tertiary)] rounded animate-pulse"
+                    style={{ width: `${60 + i * 15}%` }}
+                  />
+                </li>
+              ))}
+            </>
+          ) : joinedChannels.length > 0 ? (
             [...joinedChannels]
               .sort((a, b) => Number(b.memberCount - a.memberCount))
               .map((channel) => (

@@ -109,16 +109,18 @@ function parseUrlState() {
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [urlState, setUrlState] = useState(parseUrlState);
 
-  // Listen to URL changes (popstate for browser back/forward)
+  // Listen to URL changes (popstate for browser back/forward, pushstate-changed for theme changes)
   useEffect(() => {
     const updateUrl = () => {
       setUrlState(parseUrlState());
     };
 
     window.addEventListener("popstate", updateUrl);
+    window.addEventListener("pushstate-changed", updateUrl);
 
     return () => {
       window.removeEventListener("popstate", updateUrl);
+      window.removeEventListener("pushstate-changed", updateUrl);
     };
   }, []);
 
