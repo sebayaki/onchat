@@ -46,11 +46,11 @@ export function AccountDropdown({
         className={`${
           isMobileNav
             ? "bg-transparent border-none p-0 flex items-center justify-center"
-            : "bg-transparent border border-[var(--text-muted)] text-[var(--text-primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--text-primary)]"
+            : "bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--primary)]"
         }`}
       >
         {isMobileNav ? (
-          <MenuIcon size={24} className="text-[var(--text-primary)]" />
+          <MenuIcon size={24} className="text-[var(--primary)]" />
         ) : (
           <>
             {profile ? (
@@ -79,12 +79,12 @@ export function AccountDropdown({
         <div
           className={`absolute ${
             isMobileNav ? "bottom-full right-[-10px] mb-2" : "right-0 mt-2"
-          } w-56 bg-[var(--bg-secondary)] border border-[var(--text-muted)] rounded-sm shadow-2xl z-[10001] overflow-hidden font-mono`}
+          } w-56 bg-[var(--bg-secondary)] border border-[var(--primary-muted)] rounded-sm shadow-2xl z-[10001] overflow-hidden font-mono`}
         >
           {/* Profile Header */}
-          <div className="p-3 border-b border-[var(--text-muted)] bg-[var(--bg-tertiary)]/30">
+          <div className="p-3 border-b border-[var(--primary-muted)] bg-[var(--bg-tertiary)]/30">
             <div className="flex items-center gap-2.5">
-              <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[var(--bg-primary)] border border-[var(--text-muted)] shrink-0">
+              <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[var(--bg-primary)] border border-[var(--primary-muted)] shrink-0">
                 {profile?.pfpUrl ? (
                   <Image
                     src={profile.pfpUrl}
@@ -100,7 +100,7 @@ export function AccountDropdown({
                 )}
               </div>
               <div className="flex flex-col min-w-0">
-                <span className="font-bold text-[var(--text-primary)] text-[0.85rem] truncate leading-tight">
+                <span className="font-bold text-[var(--primary)] text-[0.85rem] truncate leading-tight">
                   {profile ? `@${profile.username}` : "Anonymous"}
                 </span>
                 <div className="flex items-center gap-1 mt-0.5">
@@ -109,7 +109,7 @@ export function AccountDropdown({
                   </span>
                   <CopyButton
                     textToCopy={address}
-                    className="p-0.5 hover:bg-[var(--bg-hover)] rounded text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-all"
+                    className="p-0.5 hover:bg-[var(--bg-hover)] rounded text-[var(--text-dim)] hover:text-[var(--primary)] transition-all"
                     iconClassName="w-2.5 h-2.5"
                   />
                 </div>
@@ -124,21 +124,21 @@ export function AccountDropdown({
                 onRewardsClick();
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-[0.75rem] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] transition-colors flex justify-between items-center cursor-pointer group"
+              className="w-full text-left px-3 py-2 text-[0.75rem] hover:bg-[var(--bg-hover)] text-[var(--primary)] transition-colors flex justify-between items-center cursor-pointer group"
             >
               <span className="group-hover:translate-x-0.5 transition-transform">
                 Creator Rewards
               </span>
             </button>
 
-            <div className="h-[1px] bg-[var(--text-muted)]/20 my-1 mx-3" />
+            <div className="h-[1px] bg-[var(--primary-muted)]/20 my-1 mx-3" />
 
             <button
               onClick={() => {
                 disconnect();
                 setIsOpen(false);
               }}
-              className="w-full text-left px-3 py-2 text-[0.75rem] hover:bg-[var(--bg-hover)] text-[var(--text-primary)] transition-colors cursor-pointer group"
+              className="w-full text-left px-3 py-2 text-[0.75rem] hover:bg-[var(--bg-hover)] text-[var(--primary)] transition-colors cursor-pointer group"
             >
               <span className="group-hover:translate-x-0.5 transition-transform">
                 Disconnect

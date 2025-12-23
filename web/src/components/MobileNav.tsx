@@ -15,7 +15,7 @@ export function MobileNav({
         onClick={() => setActiveTab("channels")}
         className={`flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer ${
           activeTab === "channels"
-            ? "text-[var(--text-primary)]"
+            ? "text-[var(--primary)]"
             : "text-[var(--text-dim)]"
         }`}
       >
@@ -31,7 +31,7 @@ export function MobileNav({
         onClick={() => setActiveTab("chat")}
         className={`flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer ${
           activeTab === "chat"
-            ? "text-[var(--text-primary)]"
+            ? "text-[var(--primary)]"
             : "text-[var(--text-dim)]"
         }`}
       >
@@ -47,7 +47,7 @@ export function MobileNav({
         onClick={() => setActiveTab("rewards")}
         className={`flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer ${
           activeTab === "rewards"
-            ? "text-[var(--text-primary)]"
+            ? "text-[var(--primary)]"
             : "text-[var(--text-dim)]"
         }`}
       >

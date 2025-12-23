@@ -39,14 +39,14 @@ export function Sidebar({
       {/* Action buttons */}
       <div className="flex gap-2 p-2 border-b border-[var(--bg-tertiary)]">
         <button
-          className="flex-1 bg-transparent border border-[var(--text-muted)] text-[var(--text-primary)] px-2 py-[0.4rem] font-mono text-[0.7rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--text-muted)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-2 py-[0.4rem] font-mono text-[0.7rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--primary-muted)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
           onClick={() => setShowChannelBrowser(true)}
           title="Browse channels"
         >
           + Join
         </button>
         <button
-          className="flex-1 bg-transparent border border-[var(--text-muted)] text-[var(--text-primary)] px-2 py-[0.4rem] font-mono text-[0.7rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--text-muted)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-2 py-[0.4rem] font-mono text-[0.7rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--primary-muted)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
           onClick={() => setShowCreateChannel(true)}
           title="Create channel"
           disabled={!isConnected}
@@ -57,7 +57,7 @@ export function Sidebar({
 
       {/* Channels */}
       <div className="p-3 border-b border-[var(--bg-tertiary)] overflow-hidden flex flex-col">
-        <h3 className="text-[0.7rem] uppercase text-[var(--text-muted)] mb-2 tracking-[1px] m-0">
+        <h3 className="text-[0.7rem] uppercase text-[var(--primary-muted)] mb-2 tracking-[1px] m-0">
           My Channels
         </h3>
         <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
@@ -92,7 +92,7 @@ export function Sidebar({
       {/* Users */}
       {currentChannel && (
         <div className="p-3 border-b border-[var(--bg-tertiary)] overflow-hidden flex flex-col">
-          <h3 className="text-[0.7rem] uppercase text-[var(--text-muted)] mb-2 tracking-[1px] m-0">
+          <h3 className="text-[0.7rem] uppercase text-[var(--primary-muted)] mb-2 tracking-[1px] m-0">
             Users ({members.length})
           </h3>
           <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
@@ -106,7 +106,7 @@ export function Sidebar({
               return (
                 <li
                   key={member}
-                  className="px-2 py-1 cursor-pointer text-[0.8rem] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center min-w-0"
+                  className="px-2 py-1 cursor-pointer text-[0.8rem] hover:bg-[var(--bg-hover)] hover:text-[var(--primary)] flex items-center min-w-0"
                 >
                   {isOwner && (
                     <span className="mr-1 text-[0.7rem] text-[var(--color-action)] shrink-0">

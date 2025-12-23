@@ -13,11 +13,11 @@ export function StatusBar({
   currentChannel: ChannelInfo | null;
 }) {
   return (
-    <footer className="flex sm:flex items-center px-4 py-1 bg-[var(--bg-tertiary)] border-t border-[var(--bg-hover)] text-[0.75rem] text-[var(--text-muted)] shrink-0 gap-2 font-mono max-sm:hidden">
+    <footer className="flex sm:flex items-center px-4 py-1 bg-[var(--bg-tertiary)] border-t border-[var(--bg-hover)] text-[0.75rem] text-[var(--primary-muted)] shrink-0 gap-2 font-mono max-sm:hidden">
       <span className="flex items-center gap-[0.4rem]">
         {isConnected ? (
           <>
-            <div className="w-[6px] h-[6px] rounded-full bg-[var(--text-primary)]" />
+            <div className="w-[6px] h-[6px] rounded-full bg-[var(--primary)]" />
             Base Network
             {currentBlock > BigInt(0) && (
               <span className="ml-1 text-[#eee] text-[0.85em]">

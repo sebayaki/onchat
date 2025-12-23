@@ -14,7 +14,7 @@ interface CopyButtonProps {
 export default function CopyButton({
   textToCopy,
   className = "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded cursor-pointer",
-  iconClassName = "text-[var(--text-primary)]",
+  iconClassName = "text-[var(--primary)]",
   title = "Copy",
   onCopySuccess,
 }: CopyButtonProps) {

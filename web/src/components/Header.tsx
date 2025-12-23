@@ -30,7 +30,7 @@ export function Header({
   hideBrand?: boolean;
 }) {
   return (
-    <header className="flex justify-between items-center px-4 py-2 bg-[var(--bg-secondary)] border-b border-[var(--text-muted)] shrink-0">
+    <header className="flex justify-between items-center px-4 py-2 bg-[var(--bg-secondary)] border-b border-[var(--primary-muted)] shrink-0">
       <div className="flex items-center gap-2 overflow-hidden">
         {!hideBrand && (
           <>
@@ -41,7 +41,7 @@ export function Header({
               height={32}
               className="pixelated"
             />
-            <h1 className="text-xl font-bold text-[var(--text-primary)] m-0 tracking-[2px] uppercase max-sm:text-lg shrink-0">
+            <h1 className="text-xl font-bold text-[var(--primary)] m-0 tracking-[2px] uppercase max-sm:text-lg shrink-0">
               OnChat
             </h1>
           </>
@@ -56,7 +56,7 @@ export function Header({
               className="bg-transparent border-none p-1 cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center shrink-0 group"
               title="Share Channel"
             >
-              <ShareIcon size={16} className="text-[var(--text-primary)]" />
+              <ShareIcon size={16} className="text-[var(--primary)]" />
             </button>
           </div>
         )}
@@ -71,7 +71,7 @@ export function Header({
               <span className="text-[var(--text-dim)] uppercase">
                 Creator Rewards:
               </span>
-              <span className="text-[var(--text-primary)] font-bold">
+              <span className="text-[var(--primary)] font-bold">
                 {formatNumber(ownerBalance, { fromDecimals: 18 })} ETH
               </span>
             </button>
@@ -83,10 +83,10 @@ export function Header({
           </>
         ) : (
           <button
-            className="bg-transparent border border-[var(--text-muted)] text-[var(--text-primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--text-primary)]"
+            className="bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--primary)]"
             onClick={openWalletModal}
           >
-            <div className="w-2 h-2 rounded-full bg-[var(--text-primary)] opacity-50" />
+            <div className="w-2 h-2 rounded-full bg-[var(--primary)] opacity-50" />
             Connect
           </button>
         )}

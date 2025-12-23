@@ -97,43 +97,51 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lines]);
 
+  const [hideMobileTabs, setHideMobileTabs] = useState(false);
+  const [hideBrand, setHideBrand] = useState(false);
+
   // Handle theme and control URL parameters
   useEffect(() => {
-    // Apply theme colors
-    const themeVars = [
-      "bg-primary",
-      "bg-secondary",
-      "bg-tertiary",
-      "bg-hover",
-      "text-primary",
-      "text-muted",
-      "text-dim",
-      "color-system",
-      "color-error",
-      "color-info",
-      "color-action",
-      "color-nick",
-      "color-channel",
-      "color-timestamp",
-      "color-content",
-    ];
+    const applyParams = () => {
+      const params = new URLSearchParams(window.location.search);
 
-    themeVars.forEach((v) => {
-      const val = searchParams.get(v);
-      if (val) {
-        document.documentElement.style.setProperty(`--${v}`, val);
-      }
-    });
-  }, [searchParams]);
+      // Apply theme colors
+      const themeVars = [
+        "bg-primary",
+        "bg-secondary",
+        "bg-tertiary",
+        "bg-hover",
+        "primary",
+        "primary-muted",
+        "text-dim",
+        "color-system",
+        "color-error",
+        "color-info",
+        "color-action",
+        "color-nick",
+        "color-channel",
+        "color-timestamp",
+        "color-content",
+      ];
 
-  const hideMobileTabs = useMemo(
-    () => searchParams.get("hide-mobile-tabs") === "true",
-    [searchParams]
-  );
-  const hideBrand = useMemo(
-    () => searchParams.get("hide-brand") === "true",
-    [searchParams]
-  );
+      themeVars.forEach((v) => {
+        const val = params.get(v);
+        if (val) {
+          document.documentElement.style.setProperty(`--${v}`, val);
+        }
+      });
+
+      // Apply controls
+      setHideMobileTabs(params.get("hide-mobile-tabs") === "true");
+      setHideBrand(params.get("hide-brand") === "true");
+    };
+
+    applyParams();
+
+    // Re-apply when URL changes via pushState
+    window.addEventListener("popstate", applyParams);
+    return () => window.removeEventListener("popstate", applyParams);
+  }, []);
 
   // Focus input on mount and after loading completes
   useEffect(() => {
@@ -142,13 +150,19 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
   // Update URL when channel changes
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search).toString();
+    const search = params ? `?${params}` : "";
+
     if (currentChannel?.slug) {
-      const newPath = `/${currentChannel.slug}`;
-      if (window.location.pathname !== newPath) {
+      const newPath = `/${currentChannel.slug}${search}`;
+      if (window.location.pathname + window.location.search !== newPath) {
         window.history.pushState({}, "", newPath);
       }
-    } else if (currentChannel === null && window.location.pathname !== "/") {
-      window.history.pushState({}, "", "/");
+    } else if (
+      currentChannel === null &&
+      window.location.pathname + window.location.search !== `/${search}`
+    ) {
+      window.history.pushState({}, "", `/${search}`);
     }
   }, [currentChannel]);
 

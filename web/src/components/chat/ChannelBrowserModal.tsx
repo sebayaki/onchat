@@ -29,15 +29,15 @@ export function ChannelBrowserModal({
       onClick={() => setShowChannelBrowser(false)}
     >
       <div
-        className="bg-[var(--bg-secondary)] border border-[var(--text-muted)] w-[90%] max-w-[400px] max-h-[80vh] flex flex-col animate-[modalSlideIn_0.2s_ease-out]"
+        className="bg-[var(--bg-secondary)] border border-[var(--primary-muted)] w-[90%] max-w-[400px] max-h-[80vh] flex flex-col animate-[modalSlideIn_0.2s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--bg-tertiary)]">
-          <h2 className="m-0 text-[0.9rem] text-[var(--text-primary)] uppercase tracking-[1px] font-mono font-bold">
+          <h2 className="m-0 text-[0.9rem] text-[var(--primary)] uppercase tracking-[1px] font-mono font-bold">
             Browse Channels
           </h2>
           <button
-            className="bg-transparent border-none text-[var(--text-muted)] text-2xl cursor-pointer leading-none p-0 hover:text-[var(--color-error)]"
+            className="bg-transparent border-none text-[var(--primary-muted)] text-2xl cursor-pointer leading-none p-0 hover:text-[var(--color-error)]"
             onClick={() => setShowChannelBrowser(false)}
           >
             ×
@@ -45,11 +45,11 @@ export function ChannelBrowserModal({
         </div>
         <div className="p-4 overflow-y-auto flex-1 font-mono max-sm:p-3">
           {loadingChannels ? (
-            <div className="text-[var(--text-muted)] text-center py-8 text-[0.85rem]">
+            <div className="text-[var(--primary-muted)] text-center py-8 text-[0.85rem]">
               Loading channels...
             </div>
           ) : allChannels.length === 0 ? (
-            <div className="text-[var(--text-muted)] text-center py-8 text-[0.85rem]">
+            <div className="text-[var(--primary-muted)] text-center py-8 text-[0.85rem]">
               No channels yet. Be the first to create one!
             </div>
           ) : (
@@ -63,13 +63,13 @@ export function ChannelBrowserModal({
                     <span className="text-[var(--color-channel)] text-[0.9rem] truncate">
                       #{ch.slug}
                     </span>
-                    <span className="text-[var(--text-muted)] text-[0.7rem] whitespace-nowrap">
+                    <span className="text-[var(--primary-muted)] text-[0.7rem] whitespace-nowrap">
                       {ch.memberCount.toString()} users •{" "}
                       {ch.messageCount.toString()} msgs
                     </span>
                   </div>
                   <button
-                    className="bg-transparent border border-[var(--text-muted)] text-[var(--text-primary)] px-3 py-1 font-mono text-[0.75rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--text-primary)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                    className="bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-3 py-1 font-mono text-[0.75rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--primary)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                     onClick={() => handleJoinChannel(ch.slug)}
                     disabled={!isConnected || isLoading}
                   >

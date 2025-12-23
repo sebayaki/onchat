@@ -81,19 +81,19 @@ export function RewardsView({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           {/* Creator Rewards Section */}
           <div>
-            <h2 className="text-[var(--text-primary)] uppercase tracking-[2px] mb-6 border-b border-[var(--bg-tertiary)] pb-2">
+            <h2 className="text-[var(--primary)] uppercase tracking-[2px] mb-6 border-b border-[var(--bg-tertiary)] pb-2">
               Creator Rewards
             </h2>
-            <div className="bg-[var(--bg-secondary)] border border-[var(--text-muted)] p-8 rounded-sm mb-8">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--primary-muted)] p-8 rounded-sm mb-8">
               <p className="text-[var(--text-dim)] text-[0.85rem] mb-4 uppercase tracking-[1px]">
                 Claimable Balance
               </p>
-              <div className="text-2xl md:text-4xl font-bold text-[var(--text-primary)] mb-8">
+              <div className="text-2xl md:text-4xl font-bold text-[var(--primary)] mb-8">
                 {formatNumber(ownerBalance, { fromDecimals: 18 })}{" "}
                 <span className="text-xl font-normal opacity-70">ETH</span>
               </div>
               <button
-                className="w-full bg-[var(--text-primary)] text-[var(--bg-primary)] border-none py-4 text-lg font-bold cursor-pointer transition-all hover:bg-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
+                className="w-full bg-[var(--primary)] text-[var(--bg-primary)] border-none py-4 text-lg font-bold cursor-pointer transition-all hover:bg-[var(--primary)] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
                 onClick={handleClaim}
                 disabled={claimingBalance || ownerBalance === BigInt(0)}
               >
@@ -105,9 +105,9 @@ export function RewardsView({
                 </p>
               )}
             </div>
-            <div className="text-[var(--text-muted)] text-[0.85rem] bg-[var(--bg-tertiary)]/30 p-5 border-l-2 border-[var(--text-primary)]">
+            <div className="text-[var(--primary-muted)] text-[0.85rem] bg-[var(--bg-tertiary)]/30 p-5 border-l-2 border-[var(--primary)]">
               <div className="flex items-start gap-2 mb-3">
-                <span className="font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                <span className="font-bold text-[var(--primary)] uppercase tracking-wider">
                   How you earn
                 </span>
               </div>
@@ -116,12 +116,12 @@ export function RewardsView({
                   Rewards are earned from message fees in the channels you
                   created.
                 </p>
-                <div className="bg-[var(--bg-primary)]/50 p-3 rounded-sm border border-[var(--text-muted)]/20 font-mono text-[0.75rem]">
+                <div className="bg-[var(--bg-primary)]/50 p-3 rounded-sm border border-[var(--primary-muted)]/20 font-mono text-[0.75rem]">
                   <p className="text-[var(--text-dim)] mb-1 uppercase text-[0.65rem]">
                     Fee Calculation:
                   </p>
                   <div className="flex flex-col gap-1">
-                    <code className="text-[var(--text-primary)]">
+                    <code className="text-[var(--primary)]">
                       {formatEther(fees.base)} ETH + (Message Length x{" "}
                       {formatEther(fees.perChar)} ETH)
                     </code>
@@ -129,15 +129,11 @@ export function RewardsView({
                 </div>
                 <p className="leading-relaxed">
                   Fees are split{" "}
-                  <span className="text-[var(--text-primary)] font-bold">
-                    80:20
-                  </span>{" "}
+                  <span className="text-[var(--primary)] font-bold">80:20</span>{" "}
                   between the{" "}
-                  <span className="text-[var(--text-primary)]">
-                    Chat Creator
-                  </span>{" "}
+                  <span className="text-[var(--primary)]">Chat Creator</span>{" "}
                   and the protocol. Protocol fees are used for burning{" "}
-                  <span className="text-[var(--text-primary)] font-bold">
+                  <span className="text-[var(--primary)] font-bold">
                     $ONCHAT
                   </span>{" "}
                   tokens.
@@ -219,7 +215,7 @@ export function RewardsView({
               </div>
             )}
 
-            <div className="text-[var(--text-muted)] text-[0.85rem] bg-[var(--bg-tertiary)]/30 p-5 border-l-2 border-[var(--color-action)] mb-12">
+            <div className="text-[var(--primary-muted)] text-[0.85rem] bg-[var(--bg-tertiary)]/30 p-5 border-l-2 border-[var(--color-action)] mb-12">
               <div className="flex items-start gap-2 mb-3">
                 <span className="font-bold text-[var(--color-action)] uppercase tracking-wider">
                   How it works

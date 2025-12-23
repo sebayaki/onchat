@@ -197,7 +197,7 @@ export function ChatLineComponent({
       );
     case "message":
       return (
-        <div className="chat-line chat-line-message text-[var(--text-primary)]">
+        <div className="chat-line chat-line-message text-[var(--primary)]">
           <span className="chat-timestamp">[{timeStr}]</span>
           <span
             className="chat-sender inline-flex items-center gap-0"
