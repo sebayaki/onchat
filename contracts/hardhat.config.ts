@@ -42,6 +42,14 @@ export default defineConfig({
       url: process.env.RPC_BASE!,
       accounts: [configVariable("MINTPAD_TEST_DEPLOYER")],
     },
+    baseFork: {
+      type: "edr-simulated",
+      chainType: "l1",
+      forking: {
+        url: process.env.RPC_BASE!,
+        blockNumber: 39846359,
+      },
+    },
   },
   verify: {
     etherscan: {

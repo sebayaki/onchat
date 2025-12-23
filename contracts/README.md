@@ -13,6 +13,7 @@ npx hardhat test
 ```sh
 npx hardhat keystore set BASE_PRIVATE_KEY
 npx hardhat ignition deploy ignition/modules/OnChat.ts --network base --verify --reset
+npx hardhat ignition deploy ignition/modules/OnChatBuyBackBurner.ts --network base --verify --reset
 
 # if verification failed
 npx hardhat ignition verify chain-8453 --network base
@@ -21,3 +22,4 @@ npx hardhat ignition verify chain-8453 --network base
 ## 🔵 Deployed Contracts on Base
 
 - OnChat: [0x898D291C2160A9CB110398e9dF3693b7f2c4af2D](https://basescan.org/address/0x898D291C2160A9CB110398e9dF3693b7f2c4af2D#code)
+- OnChatBuyBackBurner: [0xb1fc1c145b758dc3cECE71F633b4cAB1a9A7c66d](https://basescan.org/address/0xb1fc1c145b758dc3cECE71F633b4cAB1a9A7c66d#code)
