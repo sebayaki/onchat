@@ -4,7 +4,7 @@ The web client for OnChat, a decentralized messaging platform on Base.
 
 ## Tech Stack
 
-- **Framework**: [Next.js 15+](https://nextjs.org) (App Router)
+- **Framework**: [Next.js 16](https://nextjs.org) (App Router)
 - **Web3**: [Wagmi](https://wagmi.sh), [Viem](https://viem.sh), and [Reown AppKit](https://reown.com/appkit)
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com)
 
@@ -12,7 +12,7 @@ The web client for OnChat, a decentralized messaging platform on Base.
 
 ### Prerequisites
 
-- Node.js (Latest LTS)
+- Node.js
 - npm
 
 ### Installation
