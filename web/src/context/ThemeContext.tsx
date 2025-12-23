@@ -15,7 +15,6 @@ interface ThemeContextType {
   themes: Theme[];
   hideMobileTabs: boolean;
   hideBrand: boolean;
-  pathname: string;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -81,7 +80,6 @@ function applyTheme(theme: Theme, overrides: Record<string, string>) {
 function parseUrlState() {
   if (typeof window === "undefined") {
     return {
-      pathname: "",
       themeId: null as string | null,
       hideMobileTabs: false,
       hideBrand: false,
@@ -101,7 +99,6 @@ function parseUrlState() {
   const themeId = params.get("theme") || localStorage.getItem(STORAGE_KEY);
 
   return {
-    pathname: window.location.pathname,
     themeId,
     hideMobileTabs: params.get(CONTROL_VARS.HIDE_MOBILE_TABS) === "true",
     hideBrand: params.get(CONTROL_VARS.HIDE_BRAND) === "true",
@@ -163,7 +160,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         themes,
         hideMobileTabs: urlState.hideMobileTabs,
         hideBrand: urlState.hideBrand,
-        pathname: urlState.pathname,
       }}
     >
       {children}

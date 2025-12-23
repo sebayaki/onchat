@@ -1,12 +1,16 @@
 "use client";
 
 import { Suspense } from "react";
+import { useState } from "react";
 import ChatClient from "@/components/ChatClient";
-import { useTheme } from "@/context/ThemeContext";
+
+function getChannelFromPath() {
+  if (typeof window === "undefined") return undefined;
+  return window.location.pathname.split("/").filter(Boolean)[0];
+}
 
 export default function NotFound() {
-  const { pathname } = useTheme();
-  const channel = pathname?.split("/").filter(Boolean)[0];
+  const [channel] = useState(getChannelFromPath);
 
   return (
     <Suspense fallback={null}>
