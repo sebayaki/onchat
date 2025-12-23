@@ -13,7 +13,6 @@
 
   /* Text colors */
   --text-primary: #0066ff;
-  --text-secondary: #0055ee;
   --text-muted: #0044cc;
   --text-dim: #555555;
 
@@ -23,13 +22,9 @@
   --color-info: #0055ff;
   --color-action: #ffaa00;
   --color-nick: #ff44ff;
-  --color-channel: #00ffff;
+  --color-channel: #00ffee;
   --color-timestamp: #666666;
   --color-content: #cccccc;
-
-  /* Accent */
-  --color-accent: #0066ff;
-  --color-accent-dim: #0044cc;
 
   /* Fonts */
   --font-mono: 'IBM Plex Mono', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
@@ -142,12 +137,12 @@ body {
    ============================================================================ */
 
 ::selection {
-  background: var(--color-accent);
+  background: var(--text-primary);
   color: var(--bg-primary);
 }
 
 ::-moz-selection {
-  background: var(--color-accent);
+  background: var(--text-primary);
   color: var(--bg-primary);
 }
 

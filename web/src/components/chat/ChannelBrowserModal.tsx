@@ -29,11 +29,11 @@ export function ChannelBrowserModal({
       onClick={() => setShowChannelBrowser(false)}
     >
       <div
-        className="bg-[var(--bg-secondary)] border border-[var(--color-accent-dim)] w-[90%] max-w-[400px] max-h-[80vh] flex flex-col animate-[modalSlideIn_0.2s_ease-out]"
+        className="bg-[var(--bg-secondary)] border border-[var(--text-muted)] w-[90%] max-w-[400px] max-h-[80vh] flex flex-col animate-[modalSlideIn_0.2s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--bg-tertiary)]">
-          <h2 className="m-0 text-[0.9rem] text-[var(--color-accent)] uppercase tracking-[1px] font-mono font-bold">
+          <h2 className="m-0 text-[0.9rem] text-[var(--text-primary)] uppercase tracking-[1px] font-mono font-bold">
             Browse Channels
           </h2>
           <button
@@ -69,7 +69,7 @@ export function ChannelBrowserModal({
                     </span>
                   </div>
                   <button
-                    className="bg-transparent border border-[var(--color-accent-dim)] text-[var(--color-accent)] px-3 py-1 font-mono text-[0.75rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--color-accent)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+                    className="bg-transparent border border-[var(--text-muted)] text-[var(--text-primary)] px-3 py-1 font-mono text-[0.75rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--text-primary)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
                     onClick={() => handleJoinChannel(ch.slug)}
                     disabled={!isConnected || isLoading}
                   >

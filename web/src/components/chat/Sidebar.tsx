@@ -39,14 +39,14 @@ export function Sidebar({
       {/* Action buttons */}
       <div className="flex gap-2 p-2 border-b border-[var(--bg-tertiary)]">
         <button
-          className="flex-1 bg-transparent border border-[var(--color-accent-dim)] text-[var(--color-accent)] px-2 py-[0.4rem] font-mono text-[0.7rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--color-accent-dim)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent border border-[var(--text-muted)] text-[var(--text-primary)] px-2 py-[0.4rem] font-mono text-[0.7rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--text-muted)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
           onClick={() => setShowChannelBrowser(true)}
           title="Browse channels"
         >
           + Join
         </button>
         <button
-          className="flex-1 bg-transparent border border-[var(--color-accent-dim)] text-[var(--color-accent)] px-2 py-[0.4rem] font-mono text-[0.7rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--color-accent-dim)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
+          className="flex-1 bg-transparent border border-[var(--text-muted)] text-[var(--text-primary)] px-2 py-[0.4rem] font-mono text-[0.7rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--text-muted)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed"
           onClick={() => setShowCreateChannel(true)}
           title="Create channel"
           disabled={!isConnected}
@@ -106,7 +106,7 @@ export function Sidebar({
               return (
                 <li
                   key={member}
-                  className="px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center min-w-0"
+                  className="px-2 py-1 cursor-pointer text-[0.8rem] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center min-w-0"
                 >
                   {isOwner && (
                     <span className="mr-1 text-[0.7rem] text-[var(--color-action)] shrink-0">

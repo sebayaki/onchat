@@ -39,7 +39,7 @@ export function ChatInput({
             type="button"
             onClick={() => handleJoinChannel(channelSlug!)}
             disabled={isLoading}
-            className="w-full bg-[var(--color-accent)] border-none text-[var(--bg-primary)] py-2 font-mono text-[0.85rem] font-bold cursor-pointer transition-all hover:bg-[var(--text-primary)] disabled:opacity-50"
+            className="w-full bg-[var(--text-primary)] border-none text-[var(--bg-primary)] py-2 font-mono text-[0.85rem] font-bold cursor-pointer transition-all hover:bg-[var(--text-primary)] disabled:opacity-50"
           >
             {isLoading ? "Joining..." : `Join #${channelSlug}`}
           </button>
@@ -58,7 +58,7 @@ export function ChatInput({
           isConnected ? "Type a message or /help" : "Connect wallet to chat"
         }
         disabled={isLoading}
-        className="flex-1 bg-transparent border-none text-[var(--color-content)] font-mono text-[11px] sm:text-[13px] outline-none caret-[var(--color-accent)] placeholder:text-[var(--text-dim)] disabled:opacity-50"
+        className="flex-1 bg-transparent border-none text-[var(--color-content)] font-mono text-[11px] sm:text-[13px] outline-none caret-[var(--text-primary)] placeholder:text-[var(--text-dim)] disabled:opacity-50"
         autoComplete="off"
         spellCheck="false"
       />

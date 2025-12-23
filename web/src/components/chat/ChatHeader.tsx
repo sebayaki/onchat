@@ -25,7 +25,7 @@ export function ChatHeader({
   profiles: Record<string, FarcasterUserProfile | null>;
 }) {
   return (
-    <header className="flex justify-between items-center px-4 py-2 bg-[var(--bg-secondary)] border-b border-[var(--color-accent-dim)] shrink-0">
+    <header className="flex justify-between items-center px-4 py-2 bg-[var(--bg-secondary)] border-b border-[var(--text-muted)] shrink-0">
       <div className="flex items-center gap-2">
         <Image
           src={AppIcon}
@@ -34,7 +34,7 @@ export function ChatHeader({
           height={32}
           className="pixelated"
         />
-        <h1 className="text-xl font-bold text-[var(--color-accent)] m-0 tracking-[2px] uppercase max-sm:text-lg">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] m-0 tracking-[2px] uppercase max-sm:text-lg">
           OnChat
         </h1>
         {currentChannel && (
@@ -53,7 +53,7 @@ export function ChatHeader({
               <span className="text-[var(--text-dim)] uppercase">
                 Creator Rewards:
               </span>
-              <span className="text-[var(--color-accent)] font-bold">
+              <span className="text-[var(--text-primary)] font-bold">
                 {formatNumber(ownerBalance, { fromDecimals: 18 })} ETH
               </span>
             </button>
@@ -65,10 +65,10 @@ export function ChatHeader({
           </>
         ) : (
           <button
-            className="bg-transparent border border-[var(--color-accent-dim)] text-[var(--text-primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--color-accent)]"
+            className="bg-transparent border border-[var(--text-muted)] text-[var(--text-primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--text-primary)]"
             onClick={openWalletModal}
           >
-            <div className="w-2 h-2 rounded-full bg-[var(--color-accent)] opacity-50" />
+            <div className="w-2 h-2 rounded-full bg-[var(--text-primary)] opacity-50" />
             Connect
           </button>
         )}

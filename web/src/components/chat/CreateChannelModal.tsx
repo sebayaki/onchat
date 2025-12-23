@@ -45,11 +45,11 @@ export function CreateChannelModal({
       onClick={() => setShowCreateChannel(false)}
     >
       <div
-        className="bg-[var(--bg-secondary)] border border-[var(--color-accent-dim)] w-[90%] max-w-[400px] max-h-[80vh] flex flex-col animate-[modalSlideIn_0.2s_ease-out]"
+        className="bg-[var(--bg-secondary)] border border-[var(--text-muted)] w-[90%] max-w-[400px] max-h-[80vh] flex flex-col animate-[modalSlideIn_0.2s_ease-out]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--bg-tertiary)]">
-          <h2 className="m-0 text-[0.9rem] text-[var(--color-accent)] uppercase tracking-[1px] font-mono font-bold">
+          <h2 className="m-0 text-[0.9rem] text-[var(--text-primary)] uppercase tracking-[1px] font-mono font-bold">
             Create Channel
           </h2>
           <button
@@ -99,7 +99,7 @@ export function CreateChannelModal({
               </p>
               <button
                 type="submit"
-                className="bg-[var(--color-accent)] border-none text-[var(--bg-primary)] py-2 px-4 font-mono text-[0.85rem] font-bold cursor-pointer transition-all hover:not-disabled:bg-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+                className="bg-[var(--text-primary)] border-none text-[var(--bg-primary)] py-2 px-4 font-mono text-[0.85rem] font-bold cursor-pointer transition-all hover:not-disabled:bg-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                 disabled={!newChannelName.trim() || isLoading}
               >
                 {isLoading ? "Creating..." : "Create Channel"}
