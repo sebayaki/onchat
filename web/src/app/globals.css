@@ -193,3 +193,18 @@ body {
   0%, 50% { opacity: 1; }
   51%, 100% { opacity: 0; }
 }
+
+@keyframes status-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    box-shadow: 0 0 2px var(--primary);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 8px 2px var(--primary);
+  }
+}
+
+.status-dot-animated {
+  animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}

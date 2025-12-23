@@ -21,7 +21,7 @@ import { RewardsView } from "./RewardsView";
 import { MessageList } from "./chat/MessageList";
 import { ChatInput } from "./chat/ChatInput";
 import { MobileNav } from "./MobileNav";
-import { StatusBar } from "./StatusBar";
+import { FooterBar } from "./FooterBar";
 import { ChannelBrowserModal } from "./chat/ChannelBrowserModal";
 import { CreateChannelModal } from "./chat/CreateChannelModal";
 import { ShareModal } from "./ShareModal";
@@ -362,10 +362,14 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
       </div>
 
       {!hideMobileTabs && (
-        <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} />
+        <MobileNav
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          messageCount={currentChannel?.messageCount}
+        />
       )}
 
-      <StatusBar
+      <FooterBar
         isConnected={isConnected}
         currentBlock={currentBlock}
         currentChannel={currentChannel}
