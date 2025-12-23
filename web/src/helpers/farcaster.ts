@@ -5,6 +5,7 @@ export interface FarcasterUserProfile {
   username: string;
   addresses: string[];
   displayName: string;
+  bio: string | null;
   pfpUrl: string | null;
   proSubscribed: boolean;
   twitter?: string | null;
@@ -52,12 +53,13 @@ export async function fetchUserProfilesBulk(
       const profileMap: Record<string, FarcasterUserProfile | null> = {};
 
       // For each returned profile, map all its addresses to this profile
-      data.forEach((item) => {
+      data.forEach((item: FarcasterUserProfile) => {
         const profile: FarcasterUserProfile = {
           fid: item.fid,
           username: item.username,
           addresses: item.addresses ?? [],
           displayName: item.displayName,
+          bio: (item as FarcasterUserProfile & { bio?: string }).bio ?? null,
           pfpUrl: item.pfpUrl ?? null,
           proSubscribed: item.proSubscribed,
           twitter: item.twitter ?? null,
@@ -71,7 +73,7 @@ export async function fetchUserProfilesBulk(
         // by checking if any queried address is in the profile's addresses array
         originalAddresses.forEach((queriedAddr, index) => {
           const queriedAddrLower = queriedAddr.toLowerCase();
-          const profileAddressesLower = item.addresses.map((addr) =>
+          const profileAddressesLower = item.addresses.map((addr: string) =>
             addr.toLowerCase()
           );
 

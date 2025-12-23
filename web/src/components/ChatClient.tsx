@@ -84,6 +84,7 @@ function UserDisplay({
   className = "",
   showFullAddress = false,
   showActions = false,
+  isSidebar = false,
 }: {
   address?: string;
   formattedAddress: string;
@@ -91,14 +92,23 @@ function UserDisplay({
   className?: string;
   showFullAddress?: boolean;
   showActions?: boolean;
+  isSidebar?: boolean;
 }) {
   const displayAddress =
     showFullAddress && address ? address : formattedAddress;
 
   if (!profile) {
     return (
-      <span className={`inline-flex items-center gap-1 ${className}`}>
-        <span className="text-[var(--color-nick)]">{displayAddress}</span>
+      <span
+        className={`inline-flex items-center gap-1 ${
+          isSidebar ? "min-w-0 flex-1" : ""
+        } ${className}`}
+      >
+        <span
+          className={`text-[var(--color-nick)] ${isSidebar ? "truncate" : ""}`}
+        >
+          {displayAddress}
+        </span>
         {showActions && address && <ActionButtons address={address} />}
       </span>
     );
@@ -106,7 +116,9 @@ function UserDisplay({
 
   return (
     <span
-      className={`inline-flex items-center gap-1.5 vertical-align-middle ${className}`}
+      className={`inline-flex items-center gap-1.5 vertical-align-middle ${
+        isSidebar ? "min-w-0 flex-1" : ""
+      } ${className}`}
       style={{ verticalAlign: "middle" }}
     >
       {profile.pfpUrl && (
@@ -119,11 +131,19 @@ function UserDisplay({
           unoptimized
         />
       )}
-      <span className="font-bold shrink-0 text-[var(--color-nick)]">
+      <span
+        className={`font-bold shrink-0 text-[var(--color-nick)] ${
+          isSidebar ? "truncate max-w-[100px]" : ""
+        }`}
+      >
         @{profile.username}
       </span>
       <span className="text-[var(--text-dim)] shrink-0">-</span>
-      <span className="shrink-0 text-[var(--color-nick)]">
+      <span
+        className={`shrink-0 text-[var(--color-nick)] ${
+          isSidebar ? "truncate" : ""
+        }`}
+      >
         {displayAddress}
       </span>
       {showActions && address && (
@@ -249,9 +269,10 @@ export default function ChatClient() {
     ...(address ? [address] : []),
     ...lines
       .filter(
-        (l) => (l.type === "message" || l.type === "user") && l.senderAddress
+        (l: ChatLine) =>
+          (l.type === "message" || l.type === "user") && l.senderAddress
       )
-      .map((l) => l.senderAddress!),
+      .map((l: ChatLine) => l.senderAddress!),
     ...members,
   ];
   const { profiles } = useFarcasterProfiles(allAddresses);
@@ -460,7 +481,6 @@ export default function ChatClient() {
                 address={address}
                 formattedAddress={formatAddress(address)}
                 profile={profiles[address.toLowerCase()]}
-                showActions={true}
               />
             ) : (
               "Connect Wallet"
@@ -472,7 +492,7 @@ export default function ChatClient() {
       {/* Main content */}
       <div className="flex flex-1 min-h-0 overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-[180px] bg-[var(--bg-secondary)] border-r border-[var(--bg-tertiary)] flex flex-col shrink-0 overflow-hidden max-md:w-[140px] max-sm:hidden">
+        <aside className="w-[220px] bg-[var(--bg-secondary)] border-r border-[var(--bg-tertiary)] flex flex-col shrink-0 overflow-hidden max-md:w-[180px] max-sm:hidden">
           {/* Action buttons */}
           <div className="flex gap-2 p-2 border-b border-[var(--bg-tertiary)]">
             <button
@@ -499,7 +519,7 @@ export default function ChatClient() {
             </h3>
             <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
               {joinedChannels.length > 0 ? (
-                joinedChannels.map((slug) => (
+                joinedChannels.map((slug: string) => (
                   <li
                     key={slug}
                     className={`px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--text-secondary)] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] ${
@@ -528,27 +548,34 @@ export default function ChatClient() {
                 Users ({members.length})
               </h3>
               <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
-                {members.map((member) => {
+                {members.map((member: string) => {
                   const isOwner =
                     currentChannel.owner.toLowerCase() === member.toLowerCase();
                   const isModerator = moderators.some(
-                    (m) => m.toLowerCase() === member.toLowerCase()
+                    (m: string) => m.toLowerCase() === member.toLowerCase()
                   );
                   const profile = profiles[member.toLowerCase()];
                   return (
                     <li
                       key={member}
-                      className="px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--text-secondary)] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)]"
+                      className="px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--text-secondary)] hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] flex items-center min-w-0"
                     >
-                      {isOwner && <span className="mr-1 text-[0.9em]">👸🏻</span>}
+                      {isOwner && (
+                        <span className="mr-1 text-[0.7rem] text-[var(--color-action)] shrink-0">
+                          (owner)
+                        </span>
+                      )}
                       {!isOwner && isModerator && (
-                        <span className="mr-1 text-[0.9em]">👩🏻‍⚖️</span>
+                        <span className="mr-1 text-[0.7rem] text-[var(--color-action)] shrink-0">
+                          (mode)
+                        </span>
                       )}
                       <UserDisplay
                         address={member}
                         formattedAddress={formatAddress(member)}
                         profile={profile}
                         showActions={true}
+                        isSidebar={true}
                       />
                     </li>
                   );
@@ -562,7 +589,7 @@ export default function ChatClient() {
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <div className="flex-1 overflow-y-auto px-4 py-2 bg-[var(--bg-primary)] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[var(--bg-tertiary)] hover:scrollbar-thumb-[var(--bg-hover)]">
             <div className="flex flex-col gap-[2px]">
-              {lines.map((line) => (
+              {lines.map((line: ChatLine) => (
                 <ChatLineComponent
                   key={line.id}
                   line={line}

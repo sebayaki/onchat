@@ -341,6 +341,21 @@ export async function getUserChannels(
 }
 
 /**
+ * Get count of channels joined by a user
+ */
+export async function getUserChannelCount(
+  user: `0x${string}`
+): Promise<bigint> {
+  const result = await basePublicClient.readContract({
+    address: CONTRACTS.ONCHAT_ADDRESS,
+    abi: ONCHAT_ABI,
+    functionName: "getUserChannelCount",
+    args: [user],
+  });
+  return result as bigint;
+}
+
+/**
  * Check if user is a member of a channel
  */
 export async function isMember(
