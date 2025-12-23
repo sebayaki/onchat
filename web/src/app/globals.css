@@ -27,7 +27,7 @@
   --color-content: #cccccc;
 
   /* Fonts */
-  --font-mono: 'IBM Plex Mono', 'Fira Code', 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+  --font-mono: 'JetBrains Mono', monospace;
 }
 
 * {
@@ -42,6 +42,7 @@ html, body {
 
 body {
   font-family: var(--font-mono);
+  font-optical-sizing: auto;
   font-size: 13px;
   line-height: 1.5;
   background: var(--bg-primary);
