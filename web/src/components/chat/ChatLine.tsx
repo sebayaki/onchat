@@ -11,9 +11,11 @@ import { formatTime } from "@/helpers/format";
 export function ActionButtons({
   address,
   username,
+  hideBasescan = false,
 }: {
   address: string;
   username?: string;
+  hideBasescan?: boolean;
 }) {
   return (
     <div className="flex items-center">
@@ -22,20 +24,22 @@ export function ActionButtons({
         className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity cursor-pointer"
         iconClassName="w-3.5 h-3.5"
       />
-      <a
-        href={`https://basescan.org/address/${address}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity"
-      >
-        <Image
-          src={BaseScanIcon}
-          alt="BaseScan"
-          width={14}
-          height={14}
-          className="w-3.5 h-3.5"
-        />
-      </a>
+      {!hideBasescan && (
+        <a
+          href={`https://basescan.org/address/${address}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity"
+        >
+          <Image
+            src={BaseScanIcon}
+            alt="BaseScan"
+            width={14}
+            height={14}
+            className="w-3.5 h-3.5"
+          />
+        </a>
+      )}
       {username && (
         <a
           href={`https://farcaster.xyz/${username}`}
@@ -88,7 +92,9 @@ export function UserDisplay({
         >
           {displayAddress}
         </span>
-        {showActions && address && <ActionButtons address={address} />}
+        {showActions && address && (
+          <ActionButtons address={address} hideBasescan={isSidebar} />
+        )}
       </span>
     );
   }
@@ -126,7 +132,11 @@ export function UserDisplay({
         {displayAddress}
       </span>
       {showActions && address && (
-        <ActionButtons address={address} username={profile.username} />
+        <ActionButtons
+          address={address}
+          username={profile.username}
+          hideBasescan={isSidebar}
+        />
       )}
     </span>
   );

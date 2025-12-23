@@ -62,25 +62,27 @@ export function Sidebar({
         </h3>
         <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
           {joinedChannels.length > 0 ? (
-            joinedChannels.map((channel) => (
-              <li
-                key={channel.slug}
-                className={`px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--color-channel)] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-[var(--bg-hover)] ${
-                  currentChannel?.slug === channel.slug
-                    ? "bg-[var(--bg-tertiary)] text-[var(--color-channel)] border-l-2 border-[var(--color-channel)] !pl-[calc(0.5rem-2px)]"
-                    : ""
-                }`}
-                onClick={() => {
-                  processCommand(`/join #${channel.slug}`);
-                  setActiveTab("chat");
-                }}
-              >
-                #{channel.slug}
-                <span className="ml-1 text-[0.75rem]">
-                  ({channel.memberCount.toString()})
-                </span>
-              </li>
-            ))
+            [...joinedChannels]
+              .sort((a, b) => Number(b.memberCount - a.memberCount))
+              .map((channel) => (
+                <li
+                  key={channel.slug}
+                  className={`px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--color-channel)] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-[var(--bg-hover)] ${
+                    currentChannel?.slug === channel.slug
+                      ? "bg-[var(--bg-tertiary)] text-[var(--color-channel)] border-l-2 border-[var(--color-channel)] !pl-[calc(0.5rem-2px)]"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    processCommand(`/join #${channel.slug}`);
+                    setActiveTab("chat");
+                  }}
+                >
+                  #{channel.slug}
+                  <span className="ml-1 text-[0.75rem]">
+                    ({channel.memberCount.toString()})
+                  </span>
+                </li>
+              ))
           ) : (
             <li className="text-[var(--text-dim)] italic cursor-default px-2 py-1 text-[0.8rem]">
               No channels joined
