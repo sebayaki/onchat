@@ -3,7 +3,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Image from "next/image";
 import AppIcon from "@/assets/app-icon.png";
+import BaseScanIcon from "@/assets/icons/basescan.svg";
+import FarcasterIcon from "@/assets/icons/farcaster.svg";
+import CopyButton from "./CopyButton";
 import { useChat, type ChatLine } from "@/hooks/useChat";
+import { useFarcasterProfiles } from "@/hooks/useFarcasterProfiles";
 import { useAppKit } from "@reown/appkit/react";
 import { useEvents } from "@/context/EventContext";
 import { formatAddress, formatNumber } from "@/helpers/format";
@@ -15,6 +19,7 @@ import {
   type ChannelInfo,
 } from "@/helpers/contracts";
 import { useWalletClient } from "wagmi";
+import { type FarcasterUserProfile } from "@/helpers/farcaster";
 
 function formatTime(date: Date): string {
   return date.toLocaleTimeString("en-US", {
@@ -24,7 +29,117 @@ function formatTime(date: Date): string {
   });
 }
 
-function ChatLineComponent({ line }: { line: ChatLine }) {
+function ActionButtons({
+  address,
+  username,
+}: {
+  address: string;
+  username?: string;
+}) {
+  return (
+    <div className="flex items-center">
+      <CopyButton
+        textToCopy={address}
+        className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity cursor-pointer"
+        iconClassName="w-3.5 h-3.5"
+      />
+      <a
+        href={`https://basescan.org/address/${address}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity"
+      >
+        <Image
+          src={BaseScanIcon}
+          alt="BaseScan"
+          width={14}
+          height={14}
+          className="w-3.5 h-3.5"
+        />
+      </a>
+      {username && (
+        <a
+          href={`https://farcaster.xyz/${username}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity"
+        >
+          <Image
+            src={FarcasterIcon}
+            alt="Farcaster"
+            width={14}
+            height={14}
+            className="w-3.5 h-3.5"
+          />
+        </a>
+      )}
+    </div>
+  );
+}
+
+function UserDisplay({
+  address,
+  formattedAddress,
+  profile,
+  className = "",
+  showFullAddress = false,
+  showActions = false,
+}: {
+  address?: string;
+  formattedAddress: string;
+  profile?: FarcasterUserProfile | null;
+  className?: string;
+  showFullAddress?: boolean;
+  showActions?: boolean;
+}) {
+  const displayAddress =
+    showFullAddress && address ? address : formattedAddress;
+
+  if (!profile) {
+    return (
+      <span className={`inline-flex items-center gap-1 ${className}`}>
+        <span className="text-[var(--color-nick)]">{displayAddress}</span>
+        {showActions && address && <ActionButtons address={address} />}
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 vertical-align-middle ${className}`}
+      style={{ verticalAlign: "middle" }}
+    >
+      {profile.pfpUrl && (
+        <Image
+          src={profile.pfpUrl}
+          alt={profile.username}
+          width={16}
+          height={16}
+          className="w-4 h-4 rounded-full shrink-0"
+          unoptimized
+        />
+      )}
+      <span className="font-bold shrink-0 text-[var(--color-nick)]">
+        @{profile.username}
+      </span>
+      <span className="text-[var(--text-dim)] shrink-0">-</span>
+      <span className="shrink-0 text-[var(--color-nick)]">
+        {displayAddress}
+      </span>
+      {showActions && address && (
+        <ActionButtons address={address} username={profile.username} />
+      )}
+    </span>
+  );
+}
+
+function ChatLineComponent({
+  line,
+  profile,
+}: {
+  line: ChatLine;
+  profile?: FarcasterUserProfile | null;
+}) {
   const timeStr = formatTime(line.timestamp);
 
   switch (line.type) {
@@ -78,8 +193,33 @@ function ChatLineComponent({ line }: { line: ChatLine }) {
           {line.channel && (
             <span className="chat-channel">#{line.channel}</span>
           )}
-          <span className="chat-sender">&lt;{line.sender}&gt;</span>
+          <span
+            className="chat-sender inline-flex items-center gap-0"
+            style={{ verticalAlign: "middle" }}
+          >
+            <span className="mr-[1px]">&lt;</span>
+            <UserDisplay
+              address={line.senderAddress}
+              formattedAddress={line.sender || ""}
+              profile={profile}
+            />
+            <span className="ml-[1px]">&gt;</span>
+          </span>
           <span className="chat-content">{line.content}</span>
+        </div>
+      );
+    case "user":
+      return (
+        <div className="chat-line text-[var(--color-info)] flex items-center">
+          <span className="chat-timestamp">[{timeStr}]</span>
+          <span className="chat-prefix text-[var(--color-info)]">*</span>
+          <UserDisplay
+            address={line.senderAddress}
+            formattedAddress={line.sender || ""}
+            profile={profile}
+            showFullAddress={true}
+            showActions={true}
+          />
         </div>
       );
     default:
@@ -103,6 +243,18 @@ export default function ChatClient() {
   const { open } = useAppKit();
   const { currentBlock } = useEvents();
   const { data: walletClient } = useWalletClient();
+
+  // Fetch Farcaster profiles for all relevant addresses
+  const allAddresses = [
+    ...(address ? [address] : []),
+    ...lines
+      .filter(
+        (l) => (l.type === "message" || l.type === "user") && l.senderAddress
+      )
+      .map((l) => l.senderAddress!),
+    ...members,
+  ];
+  const { profiles } = useFarcasterProfiles(allAddresses);
 
   const [input, setInput] = useState("");
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
@@ -303,7 +455,16 @@ export default function ChatClient() {
                 isConnected ? "animate-pulse" : "opacity-50"
               }`}
             />
-            {isConnected && address ? formatAddress(address) : "Connect Wallet"}
+            {isConnected && address ? (
+              <UserDisplay
+                address={address}
+                formattedAddress={formatAddress(address)}
+                profile={profiles[address.toLowerCase()]}
+                showActions={true}
+              />
+            ) : (
+              "Connect Wallet"
+            )}
           </button>
         </div>
       </header>
@@ -369,8 +530,11 @@ export default function ChatClient() {
               <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
                 {members.map((member) => {
                   const isOwner =
-                    formatAddress(currentChannel.owner) === member;
-                  const isModerator = moderators.includes(member);
+                    currentChannel.owner.toLowerCase() === member.toLowerCase();
+                  const isModerator = moderators.some(
+                    (m) => m.toLowerCase() === member.toLowerCase()
+                  );
+                  const profile = profiles[member.toLowerCase()];
                   return (
                     <li
                       key={member}
@@ -380,7 +544,12 @@ export default function ChatClient() {
                       {!isOwner && isModerator && (
                         <span className="mr-1 text-[0.9em]">👩🏻‍⚖️</span>
                       )}
-                      {member}
+                      <UserDisplay
+                        address={member}
+                        formattedAddress={formatAddress(member)}
+                        profile={profile}
+                        showActions={true}
+                      />
                     </li>
                   );
                 })}
@@ -394,7 +563,15 @@ export default function ChatClient() {
           <div className="flex-1 overflow-y-auto px-4 py-2 bg-[var(--bg-primary)] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[var(--bg-tertiary)] hover:scrollbar-thumb-[var(--bg-hover)]">
             <div className="flex flex-col gap-[2px]">
               {lines.map((line) => (
-                <ChatLineComponent key={line.id} line={line} />
+                <ChatLineComponent
+                  key={line.id}
+                  line={line}
+                  profile={
+                    line.senderAddress
+                      ? profiles[line.senderAddress.toLowerCase()]
+                      : null
+                  }
+                />
               ))}
             </div>
             <div ref={messagesEndRef} />

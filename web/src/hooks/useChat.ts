@@ -37,13 +37,15 @@ import {
   type MessageSentEvent,
   type ChannelEvent,
 } from "@/context/EventContext";
+import { fetchUserProfilesBulk } from "@/helpers/farcaster";
 
 export interface ChatLine {
   id: string;
-  type: "system" | "error" | "info" | "message" | "action" | "command";
+  type: "system" | "error" | "info" | "message" | "action" | "command" | "user";
   timestamp: Date;
   content: string;
   sender?: string;
+  senderAddress?: string;
   channel?: string;
 }
 
@@ -88,6 +90,7 @@ export function useChat(): UseChatReturn {
       type: ChatLine["type"],
       content: string,
       sender?: string,
+      senderAddress?: string,
       channel?: string
     ) => {
       const line: ChatLine = {
@@ -96,6 +99,7 @@ export function useChat(): UseChatReturn {
         timestamp: new Date(),
         content,
         sender,
+        senderAddress,
         channel,
       };
       setLines((prev) => [...prev, line]);
@@ -127,8 +131,8 @@ export function useChat(): UseChatReturn {
         getChannelMembers(slugHash, 0, 100),
         getChannelModerators(slugHash, 0, 100),
       ]);
-      setMembers(memberAddresses.map(formatAddress));
-      setModerators(moderatorAddresses.map(formatAddress));
+      setMembers(memberAddresses as string[]);
+      setModerators(moderatorAddresses as string[]);
     } catch (err) {
       console.error("Failed to load members:", err);
     }
@@ -152,6 +156,7 @@ export function useChat(): UseChatReturn {
             "message",
             msg.content,
             formatAddress(msg.sender),
+            msg.sender,
             currentChannel.slug
           );
         }
@@ -227,6 +232,7 @@ export function useChat(): UseChatReturn {
         timestamp: new Date(),
         content: event.content,
         sender: formatAddress(event.sender),
+        senderAddress: event.sender,
         channel: channel.slug,
       };
       setLines((prev) => [...prev, line]);
@@ -239,14 +245,12 @@ export function useChat(): UseChatReturn {
       if (channel && event.slugHash === channel.slugHash) {
         if (event.type === "joined" && event.user) {
           setMembers((prev) => {
-            const addr = formatAddress(event.user!);
+            const addr = event.user!;
             if (prev.includes(addr)) return prev;
             return [...prev, addr];
           });
         } else if (event.type === "left" && event.user) {
-          setMembers((prev) =>
-            prev.filter((m) => m !== formatAddress(event.user!))
-          );
+          setMembers((prev) => prev.filter((m) => m !== event.user!));
         }
       }
 
@@ -268,6 +272,37 @@ export function useChat(): UseChatReturn {
       const trimmed = input.trim();
       if (!trimmed) return;
 
+      const handleWhois = async (addr: string) => {
+        setIsLoading(true);
+        try {
+          const profiles = await fetchUserProfilesBulk([addr]);
+          const profile = profiles[addr.toLowerCase()];
+
+          if (!profile) {
+            addLine(
+              "info",
+              `No Farcaster profile found for ${formatAddress(addr)}`
+            );
+          } else {
+            addLine("info", `═══ Farcaster Profile: @${profile.username} ═══`);
+            addLine("info", `Display Name: ${profile.displayName}`);
+            addLine("info", `FID: ${profile.fid}`);
+            addLine(
+              "info",
+              `Followers: ${profile.followersCount} | Following: ${profile.followingCount}`
+            );
+            if (profile.twitter)
+              addLine("info", `Twitter: @${profile.twitter}`);
+            if (profile.github) addLine("info", `GitHub: ${profile.github}`);
+            if (profile.proSubscribed)
+              addLine("info", "Badge: Farcaster Pro Subscriber ✅");
+          }
+        } catch (err) {
+          addLine("error", `Failed to fetch profile: ${err}`);
+        }
+        setIsLoading(false);
+      };
+
       // Echo command
       addLine("command", input, undefined, currentChannel?.slug);
 
@@ -286,6 +321,14 @@ export function useChat(): UseChatReturn {
             addLine("info", "  /create #channel   Create a new channel");
             addLine("system", "CHAT");
             addLine("info", "  /who               List users in channel");
+            addLine(
+              "info",
+              "  /whois 0x...       Shows you information about a user"
+            );
+            addLine(
+              "info",
+              "  /whoami            Shows you information about yourself"
+            );
             addLine("info", "  /msg message       Send message (or just type)");
             addLine("info", "  /clear             Clear screen");
             addLine("system", "REWARDS");
@@ -378,6 +421,7 @@ export function useChat(): UseChatReturn {
                     "message",
                     msg.content,
                     formatAddress(msg.sender),
+                    msg.sender,
                     channelToJoin
                   );
                 }
@@ -499,7 +543,60 @@ export function useChat(): UseChatReturn {
             }
 
             addLine("info", `═══ Users in #${currentChannel.slug} ═══`);
-            addLine("info", members.join(" "));
+            setIsLoading(true);
+            try {
+              // Fetch profiles for all members to ensure we have them for the list
+              await fetchUserProfilesBulk(members);
+              for (const member of members) {
+                addLine(
+                  "user",
+                  member, // We'll use the content field to store the address for 'user' type lines
+                  formatAddress(member),
+                  member,
+                  currentChannel.slug
+                );
+              }
+            } catch (err) {
+              console.error("Failed to fetch profiles for /who:", err);
+              // Fallback to just listing addresses if profile fetch fails
+              addLine("info", members.map(formatAddress).join(" "));
+            }
+            setIsLoading(false);
+            break;
+
+          case "whoami":
+            if (!isConnected || !address) {
+              addLine("error", "Connect your wallet first");
+              break;
+            }
+            addLine(
+              "user",
+              address,
+              formatAddress(address),
+              address,
+              currentChannel?.slug
+            );
+            await handleWhois(address);
+            break;
+
+          case "whois":
+            if (args.length === 0) {
+              addLine("error", "Usage: /whois 0xWalletAddress");
+              break;
+            }
+            const target = args[0];
+            if (!target.match(/^0x[a-fA-F0-9]{40}$/)) {
+              addLine("error", "Invalid wallet address. Expected 0x...");
+              break;
+            }
+            addLine(
+              "user",
+              target,
+              formatAddress(target),
+              target,
+              currentChannel?.slug
+            );
+            await handleWhois(target);
             break;
 
           case "msg":
@@ -866,6 +963,7 @@ export function useChat(): UseChatReturn {
             "message",
             content,
             formatAddress(address!),
+            address!,
             currentChannel.slug
           );
 
