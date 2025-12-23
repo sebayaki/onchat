@@ -136,7 +136,7 @@ export function ShareModal({
         <div className="flex-1 flex flex-col min-w-0 order-2 md:order-1 overflow-hidden">
           <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--bg-tertiary)] shrink-0">
             <h2 className="m-0 text-[0.9rem] text-[var(--primary)] uppercase tracking-[1px] font-mono font-bold">
-              Share Channel
+              Embed Chat In Your App
             </h2>
             <button
               className="bg-transparent border-none text-[var(--primary-muted)] text-2xl cursor-pointer leading-none p-0 hover:text-[var(--color-error)] md:hidden"

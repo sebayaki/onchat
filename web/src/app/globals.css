@@ -11,14 +11,14 @@
   --text-dim: #555555;
 
   /* IRC-style semantic colors */
-  --color-system: #ffffff;
-  --color-error: #ff4444;
-  --color-info: #0055ff;
-  --color-action: #ffaa00;
-  --color-nick: #ff44ff;
-  --color-channel: #00ffee;
-  --color-timestamp: #666666;
-  --color-content: #cccccc;
+  --color-system: #f8fafc;
+  --color-error: #ff5c5c;
+  --color-info: #3b82f6;
+  --color-action: #fbbf24;
+  --color-nick: #e879f9;
+  --color-channel: #22d3ee;
+  --color-timestamp: #64748b;
+  --color-content: #cbd5e1;
 
   /* Terminal colors - classic blue on black */
   --bg-primary: #0a0a0a;
