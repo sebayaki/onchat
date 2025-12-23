@@ -1,8 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import AppIcon from "@/assets/logos/app-icon.png";
-import { ShareIcon } from "@/components/Icons";
+import { ShareIcon, LogoIcon } from "@/components/Icons";
 import { formatNumber } from "@/helpers/format";
 import { type ChannelInfo } from "@/helpers/contracts";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
@@ -34,13 +32,7 @@ export function Header({
       <div className="flex items-center gap-2 overflow-hidden">
         {!hideBrand && (
           <>
-            <Image
-              src={AppIcon}
-              alt="OnChat Logo"
-              width={32}
-              height={32}
-              className="pixelated"
-            />
+            <LogoIcon size={32} className="text-[var(--primary)] shrink-0" />
             <h1 className="text-xl font-bold text-[var(--primary)] m-0 tracking-[2px] uppercase max-sm:text-lg shrink-0">
               OnChat
             </h1>

@@ -56,6 +56,26 @@ export const CopyIcon = ({ size = 24, ...props }: IconProps) => (
   </svg>
 );
 
+export const LogoIcon = ({ size = 24, ...props }: IconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 512 512"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    {...props}
+  >
+    <path
+      d="M457.5 111V371C457.5 406 429.5 434 394.5 434H173L85 486.2C75 486.2 68.5 478.2 68.5 478.2C68.5 478.2 87.4 459.2 87.4 441.2V429.2C52.4 428 52.5 400 52.5 371V111C52.5 76 80.5 48 115.5 48H394.5C429.5 48 457.5 76 457.5 111Z"
+      fill="currentColor"
+    />
+    <path
+      d="M250.75 113H216.05L202.15 177H141.45V209H195.25L181.35 273H120.65V305H174.45L160.55 369H195.25L209.15 305H273.15L259.25 369H293.95L307.85 305H368.55V273H314.75L328.65 209H389.35V177H335.55L349.45 113H314.75L300.85 177H236.85L250.75 113ZM289.55 209L275.65 273H232.95L246.85 209H289.55Z"
+      fill="white"
+    />
+  </svg>
+);
+
 export const MenuIcon = ({ size = 24, ...props }: IconProps) => (
   <svg
     width={size}
