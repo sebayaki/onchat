@@ -39,6 +39,7 @@ export const THEME_VARS = [
 ];
 
 const THEME_VAR_IDS = THEME_VARS.map((v) => v.id);
+const STORAGE_KEY = "onchat-theme-id";
 
 export const CONTROL_VARS = {
   HIDE_MOBILE_TABS: "hide-mobile-tabs",
@@ -96,9 +97,12 @@ function parseUrlState() {
     if (val) overrides[id] = val;
   }
 
+  // Priority: URL param > localStorage
+  const themeId = params.get("theme") || localStorage.getItem(STORAGE_KEY);
+
   return {
     pathname: window.location.pathname,
-    themeId: params.get("theme"),
+    themeId,
     hideMobileTabs: params.get(CONTROL_VARS.HIDE_MOBILE_TABS) === "true",
     hideBrand: params.get(CONTROL_VARS.HIDE_BRAND) === "true",
     overrides,
@@ -142,6 +146,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     for (const varId of THEME_VAR_IDS) {
       params.delete(varId);
     }
+
+    // Save to localStorage
+    localStorage.setItem(STORAGE_KEY, id);
 
     const newUrl = `${window.location.pathname}?${params.toString()}`;
     window.history.pushState({}, "", newUrl);
