@@ -2,10 +2,10 @@
 
 import { Suspense } from "react";
 import ChatClient from "@/components/ChatClient";
-import { usePathname } from "next/navigation";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function NotFound() {
-  const pathname = usePathname();
+  const { pathname } = useTheme();
   const channel = pathname?.split("/").filter(Boolean)[0];
 
   return (

@@ -3,28 +3,13 @@
 import { useState, useEffect } from "react";
 import { type ChannelInfo } from "@/helpers/contracts";
 import CopyButton from "./CopyButton";
-
-const THEME_VARS = [
-  { name: "--primary", label: "Primary Color" },
-  { name: "--primary-muted", label: "Primary Muted" },
-  { name: "--bg-primary", label: "Background Primary" },
-  { name: "--bg-secondary", label: "Background Secondary" },
-  { name: "--bg-tertiary", label: "Background Tertiary" },
-  { name: "--bg-hover", label: "Background Hover" },
-  { name: "--text-dim", label: "Text Dim" },
-  { name: "--color-system", label: "System Color" },
-  { name: "--color-error", label: "Error Color" },
-  { name: "--color-info", label: "Info Color" },
-  { name: "--color-action", label: "Action Color" },
-  { name: "--color-nick", label: "Nick Color" },
-  { name: "--color-channel", label: "Channel Color" },
-  { name: "--color-timestamp", label: "Timestamp Color" },
-  { name: "--color-content", label: "Content Color" },
-];
+import { themes } from "@/helpers/themes";
+import { ChevronDownIcon } from "./Icons";
+import { THEME_VARS, CONTROL_VARS } from "@/context/ThemeContext";
 
 function rgbToHex(rgb: string) {
+  if (!rgb) return "#000000";
   if (rgb.startsWith("#")) {
-    // Normalize shorthand hex (#06f -> #0066ff) for the color picker
     if (rgb.length === 4) {
       return (
         "#" +
@@ -65,33 +50,35 @@ export function ShareModal({
   setShowShareModal: (show: boolean) => void;
   currentChannel: ChannelInfo | null;
 }) {
+  const [selectedThemeId, setSelectedThemeId] =
+    useState<string>("classic-blue");
   const [theme, setTheme] = useState<Record<string, string>>({});
   const [controls, setControls] = useState({
-    "hide-mobile-tabs": true,
-    "hide-brand": true,
+    [CONTROL_VARS.HIDE_MOBILE_TABS]: true,
+    [CONTROL_VARS.HIDE_BRAND]: true,
   });
+  const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (showShareModal) {
-      // Get initial values from computed styles
+      const params = new URLSearchParams(window.location.search);
+      const urlTheme = params.get("theme") || "classic-blue";
+
       const initialTheme: Record<string, string> = {};
       const rootStyle = getComputedStyle(document.documentElement);
       THEME_VARS.forEach((v) => {
-        initialTheme[v.name] = rgbToHex(
-          rootStyle.getPropertyValue(v.name).trim()
+        initialTheme[v.id] = rgbToHex(
+          rootStyle.getPropertyValue(`--${v.id}`).trim()
         );
       });
 
-      // Set initial control values to true for sharing
-      const initialControls = {
-        "hide-mobile-tabs": true,
-        "hide-brand": true,
-      };
-
-      // Defer to avoid synchronous setState warning
       const timeoutId = setTimeout(() => {
+        setSelectedThemeId(urlTheme);
         setTheme(initialTheme);
-        setControls(initialControls);
+        setControls({
+          [CONTROL_VARS.HIDE_MOBILE_TABS]: true,
+          [CONTROL_VARS.HIDE_BRAND]: true,
+        });
       }, 0);
       return () => clearTimeout(timeoutId);
     }
@@ -103,21 +90,26 @@ export function ShareModal({
   const channelSlug = currentChannel?.slug || "";
   const shareUrl = new URL(`${baseUrl}/${channelSlug}`);
 
-  // Add theme params
+  if (selectedThemeId && selectedThemeId !== "classic-blue") {
+    shareUrl.searchParams.set("theme", selectedThemeId);
+  }
+
   Object.entries(theme).forEach(([key, value]) => {
-    const rootValue = getComputedStyle(document.documentElement)
-      .getPropertyValue(key)
-      .trim();
-    if (value && value !== rootValue) {
-      shareUrl.searchParams.set(key.replace("--", ""), value);
+    const selectedTheme = themes.find((t) => t.id === selectedThemeId);
+    if (!selectedTheme) return;
+
+    const themeKey = key.replace(/-([a-z])/g, (g) =>
+      g[1].toUpperCase()
+    ) as keyof typeof selectedTheme.colors;
+    const baseColor = rgbToHex(selectedTheme.colors[themeKey] as string);
+
+    if (value && value.toLowerCase() !== baseColor.toLowerCase()) {
+      shareUrl.searchParams.set(key, value.replace("#", ""));
     }
   });
 
-  // Add control params
   Object.entries(controls).forEach(([key, value]) => {
-    if (value) {
-      shareUrl.searchParams.set(key, "true");
-    }
+    if (value) shareUrl.searchParams.set(key, "true");
   });
 
   const fullShareUrl = shareUrl.toString();
@@ -132,7 +124,6 @@ export function ShareModal({
         className="bg-[var(--bg-secondary)] border border-[var(--primary-muted)] w-[95%] max-w-[1000px] h-[90vh] flex flex-col md:flex-row animate-[modalSlideIn_0.2s_ease-out] overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Settings - Desktop Left, Mobile Bottom */}
         <div className="flex-1 flex flex-col min-w-0 order-2 md:order-1 overflow-hidden">
           <div className="flex justify-between items-center px-4 py-3 border-b border-[var(--bg-tertiary)] shrink-0">
             <h2 className="m-0 text-[0.9rem] text-[var(--primary)] uppercase tracking-[1px] font-mono font-bold">
@@ -147,7 +138,70 @@ export function ShareModal({
           </div>
 
           <div className="flex-1 p-4 overflow-y-auto font-mono space-y-6">
-            {/* Theme Settings */}
+            <section>
+              <h3 className="text-[0.75rem] text-[var(--primary-muted)] uppercase mb-3 tracking-[1px]">
+                Theme Preset
+              </h3>
+              <div className="relative">
+                <button
+                  onClick={() => setIsThemeDropdownOpen(!isThemeDropdownOpen)}
+                  className="w-full bg-[var(--bg-tertiary)] border border-[var(--primary-muted)] text-[var(--primary)] px-3 py-2 text-[0.8rem] flex justify-between items-center cursor-pointer hover:border-[var(--primary)] transition-colors"
+                >
+                  <span>
+                    {themes.find((t) => t.id === selectedThemeId)?.name ||
+                      "Select Theme"}
+                  </span>
+                  <ChevronDownIcon
+                    size={16}
+                    className={`transition-transform ${
+                      isThemeDropdownOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+
+                {isThemeDropdownOpen && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-[var(--bg-secondary)] border border-[var(--primary-muted)] z-10 shadow-xl max-h-[300px] overflow-y-auto scrollbar-thin">
+                    {themes.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => {
+                          setSelectedThemeId(t.id);
+                          const newTheme: Record<string, string> = {};
+                          THEME_VARS.forEach((v) => {
+                            const themeKey = v.id.replace(/-([a-z])/g, (g) =>
+                              g[1].toUpperCase()
+                            ) as keyof typeof t.colors;
+                            newTheme[v.id] = rgbToHex(
+                              t.colors[themeKey] as string
+                            );
+                          });
+                          setTheme(newTheme);
+                          setIsThemeDropdownOpen(false);
+                        }}
+                        className={`w-full text-left px-3 py-2 text-[0.75rem] transition-colors flex items-center gap-3 cursor-pointer ${
+                          selectedThemeId === t.id
+                            ? "bg-[var(--bg-tertiary)] text-[var(--primary)]"
+                            : "hover:bg-[var(--bg-hover)] text-[var(--primary)]"
+                        }`}
+                      >
+                        <div className="flex gap-1 shrink-0">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: t.colors.bgPrimary }}
+                          />
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: t.colors.primary }}
+                          />
+                        </div>
+                        <span>{t.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </section>
+
             <section>
               <h3 className="text-[0.75rem] text-[var(--primary-muted)] uppercase mb-3 tracking-[1px]">
                 Theme Colors
@@ -155,7 +209,7 @@ export function ShareModal({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-3">
                 {THEME_VARS.map((v) => (
                   <div
-                    key={v.name}
+                    key={v.id}
                     className="flex items-center justify-between gap-2"
                   >
                     <label className="text-[0.7rem] text-[var(--text-dim)] truncate">
@@ -164,22 +218,22 @@ export function ShareModal({
                     <div className="flex items-center gap-2">
                       <input
                         type="text"
-                        value={theme[v.name] || ""}
+                        value={theme[v.id] || ""}
                         onChange={(e) =>
                           setTheme((prev) => ({
                             ...prev,
-                            [v.name]: e.target.value,
+                            [v.id]: e.target.value,
                           }))
                         }
                         className="bg-[var(--bg-tertiary)] border border-[var(--primary-muted)] text-[var(--primary)] text-[0.7rem] px-2 py-1 w-[80px] font-mono"
                       />
                       <input
                         type="color"
-                        value={rgbToHex(theme[v.name] || "#000000")}
+                        value={rgbToHex(theme[v.id] || "#000000")}
                         onChange={(e) =>
                           setTheme((prev) => ({
                             ...prev,
-                            [v.name]: e.target.value,
+                            [v.id]: e.target.value,
                           }))
                         }
                         className="w-6 h-6 p-0 border-none bg-transparent cursor-pointer"
@@ -190,7 +244,6 @@ export function ShareModal({
               </div>
             </section>
 
-            {/* Control Options */}
             <section>
               <h3 className="text-[0.75rem] text-[var(--primary-muted)] uppercase mb-3 tracking-[1px]">
                 Control Options
@@ -233,7 +286,6 @@ export function ShareModal({
               </div>
             </section>
 
-            {/* Preview/Output */}
             <section className="space-y-4 pt-4 border-t border-[var(--bg-tertiary)]">
               <h3 className="text-[0.75rem] text-[var(--primary-muted)] uppercase mb-3 tracking-[1px]">
                 Share Links
@@ -276,7 +328,6 @@ export function ShareModal({
           </div>
         </div>
 
-        {/* Iframe Preview - Desktop Right, Mobile Top */}
         <div className="w-full md:w-[390px] h-[40vh] md:h-full bg-black order-1 md:order-2 shrink-0 md:border-l border-[var(--primary-muted)]">
           <div className="h-full flex flex-col">
             <div className="px-3 py-2 bg-[var(--bg-tertiary)] border-b border-[var(--primary-muted)] flex justify-between items-center shrink-0">

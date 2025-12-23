@@ -5,6 +5,7 @@ import { useChat, type ChatLine } from "@/hooks/useChat";
 import { useFarcasterProfiles } from "@/hooks/useFarcasterProfiles";
 import { useAppKit } from "@reown/appkit/react";
 import { useEvents } from "@/context/EventContext";
+import { useTheme } from "@/context/ThemeContext";
 import {
   getLatestChannels,
   getOwnerBalance,
@@ -44,6 +45,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const { open } = useAppKit();
   const { currentBlock } = useEvents();
   const { data: walletClient } = useWalletClient();
+  const { hideMobileTabs, hideBrand } = useTheme();
 
   // Mobile state
   const [activeTab, setActiveTab] = useState<"chat" | "channels" | "rewards">(
@@ -95,52 +97,6 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lines]);
 
-  const [hideMobileTabs, setHideMobileTabs] = useState(false);
-  const [hideBrand, setHideBrand] = useState(false);
-
-  // Handle theme and control URL parameters
-  useEffect(() => {
-    const applyParams = () => {
-      const params = new URLSearchParams(window.location.search);
-
-      // Apply theme colors
-      const themeVars = [
-        "bg-primary",
-        "bg-secondary",
-        "bg-tertiary",
-        "bg-hover",
-        "primary",
-        "primary-muted",
-        "text-dim",
-        "color-system",
-        "color-error",
-        "color-info",
-        "color-action",
-        "color-nick",
-        "color-channel",
-        "color-timestamp",
-        "color-content",
-      ];
-
-      themeVars.forEach((v) => {
-        const val = params.get(v);
-        if (val) {
-          document.documentElement.style.setProperty(`--${v}`, val);
-        }
-      });
-
-      // Apply controls
-      setHideMobileTabs(params.get("hide-mobile-tabs") === "true");
-      setHideBrand(params.get("hide-brand") === "true");
-    };
-
-    applyParams();
-
-    // Re-apply when URL changes via pushState
-    window.addEventListener("popstate", applyParams);
-    return () => window.removeEventListener("popstate", applyParams);
-  }, []);
-
   // Focus input on mount and after loading completes
   useEffect(() => {
     inputRef.current?.focus();
@@ -155,12 +111,14 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
       const newPath = `/${currentChannel.slug}${search}`;
       if (window.location.pathname + window.location.search !== newPath) {
         window.history.pushState({}, "", newPath);
+        window.dispatchEvent(new Event("pushstate-changed"));
       }
     } else if (
       currentChannel === null &&
       window.location.pathname + window.location.search !== `/${search}`
     ) {
       window.history.pushState({}, "", `/${search}`);
+      window.dispatchEvent(new Event("pushstate-changed"));
     }
   }, [currentChannel]);
 

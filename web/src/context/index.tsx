@@ -8,6 +8,7 @@ import { type ReactNode, useState } from "react";
 import { cookieToInitialState, WagmiProvider, type Config } from "wagmi";
 import { APP_URL, APP_NAME, APP_DESCRIPTION } from "@/configs/constants";
 import { EventProvider } from "./EventContext";
+import { ThemeProvider } from "./ThemeContext";
 
 if (!projectId) {
   throw new Error("Project ID is not defined");
@@ -76,7 +77,9 @@ function ContextProvider({
       initialState={initialState}
     >
       <QueryClientProvider client={queryClient}>
-        <EventProvider>{children}</EventProvider>
+        <ThemeProvider>
+          <EventProvider>{children}</EventProvider>
+        </ThemeProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
