@@ -199,22 +199,10 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
   // Welcome message on mount (only once)
   useEffect(() => {
-    addLine(
-      "system",
-      "╔════════════════════════════════════════════════════════════╗"
-    );
-    addLine(
-      "system",
-      "║                    Welcome to OnChat                       ║"
-    );
-    addLine(
-      "system",
-      "║          Fully permissionless, on-chain chat               ║"
-    );
-    addLine(
-      "system",
-      "╚════════════════════════════════════════════════════════════╝"
-    );
+    addLine("system", "┌──────────────────────────────┐");
+    addLine("system", "│      Welcome to OnChat       │");
+    addLine("system", "└──────────────────────────────┘");
+    addLine("system", "Fully permissionless, on-chain chat");
     addLine("info", "Type /help for available commands");
     addLine("info", "Connect your wallet to start chatting");
 

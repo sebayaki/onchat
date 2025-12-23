@@ -73,3 +73,14 @@ export function formatNumber(
 
   return decimalPart ? `${formattedInteger}.${decimalPart}` : formattedInteger;
 }
+
+/**
+ * Format date/time for display (HH:mm)
+ */
+export function formatTime(date: Date): string {
+  return date.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+}
