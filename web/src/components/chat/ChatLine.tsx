@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import BaseScanIcon from "@/assets/icons/basescan.svg";
-import FarcasterIcon from "@/assets/icons/farcaster.svg";
+import BaseScanIcon from "@/assets/logos/basescan.svg";
+import FarcasterIcon from "@/assets/logos/farcaster.svg";
 import CopyButton from "../CopyButton";
 import { type ChatLine } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";

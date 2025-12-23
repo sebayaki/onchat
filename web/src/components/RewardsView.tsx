@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Image from "next/image";
 import { formatEther } from "viem";
 import { formatNumber } from "@/helpers/format";
 import {

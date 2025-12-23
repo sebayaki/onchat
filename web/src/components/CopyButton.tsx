@@ -1,27 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import Image, { StaticImageData } from "next/image";
-import CopyIcon from "@/assets/icons/copy.svg";
-import CheckIcon from "@/assets/icons/check.svg";
+import { CopyIcon, CheckIcon } from "@/components/Icons";
 
 interface CopyButtonProps {
   textToCopy: string;
   className?: string;
   iconClassName?: string;
   title?: string;
-  copyIcon?: StaticImageData;
-  checkIcon?: StaticImageData;
   onCopySuccess?: () => void;
 }
 
 export default function CopyButton({
   textToCopy,
   className = "flex h-8 w-8 flex-shrink-0 items-center justify-center rounded cursor-pointer",
-  iconClassName = "h-4.5 w-auto",
+  iconClassName = "text-[var(--text-primary)]",
   title = "Copy",
-  copyIcon = CopyIcon,
-  checkIcon = CheckIcon,
   onCopySuccess,
 }: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
@@ -44,9 +38,9 @@ export default function CopyButton({
   return (
     <button onClick={handleCopy} className={className} title={title}>
       {copied ? (
-        <Image src={checkIcon} alt="Copied" className={iconClassName} />
+        <CheckIcon size={18} className={iconClassName} />
       ) : (
-        <Image src={copyIcon} alt="Copy" className={iconClassName} />
+        <CopyIcon size={18} className={iconClassName} />
       )}
     </button>
   );

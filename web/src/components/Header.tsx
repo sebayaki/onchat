@@ -1,13 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import AppIcon from "@/assets/app-icon.png";
+import AppIcon from "@/assets/logos/app-icon.png";
+import { ShareIcon } from "@/components/Icons";
 import { formatNumber } from "@/helpers/format";
 import { type ChannelInfo } from "@/helpers/contracts";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { AccountDropdown } from "./AccountDropdown";
 
-export function ChatHeader({
+export function Header({
   currentChannel,
   isConnected,
   address,
@@ -15,6 +16,8 @@ export function ChatHeader({
   onRewardsClick,
   openWalletModal,
   profiles,
+  onShareClick,
+  hideBrand,
 }: {
   currentChannel: ChannelInfo | null;
   isConnected: boolean;
@@ -23,24 +26,39 @@ export function ChatHeader({
   onRewardsClick: () => void;
   openWalletModal: () => void;
   profiles: Record<string, FarcasterUserProfile | null>;
+  onShareClick: () => void;
+  hideBrand?: boolean;
 }) {
   return (
     <header className="flex justify-between items-center px-4 py-2 bg-[var(--bg-secondary)] border-b border-[var(--text-muted)] shrink-0">
-      <div className="flex items-center gap-2">
-        <Image
-          src={AppIcon}
-          alt="OnChat Logo"
-          width={32}
-          height={32}
-          className="pixelated"
-        />
-        <h1 className="text-xl font-bold text-[var(--text-primary)] m-0 tracking-[2px] uppercase max-sm:text-lg">
-          OnChat
-        </h1>
+      <div className="flex items-center gap-2 overflow-hidden">
+        {!hideBrand && (
+          <>
+            <Image
+              src={AppIcon}
+              alt="OnChat Logo"
+              width={32}
+              height={32}
+              className="pixelated"
+            />
+            <h1 className="text-xl font-bold text-[var(--text-primary)] m-0 tracking-[2px] uppercase max-sm:text-lg shrink-0">
+              OnChat
+            </h1>
+          </>
+        )}
         {currentChannel && (
-          <span className="text-[var(--color-channel)] text-[0.9rem] max-sm:text-[0.8rem] truncate max-w-[150px] sm:max-w-[300px]">
-            #{currentChannel.slug}
-          </span>
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="text-[var(--color-channel)] text-[0.9rem] max-sm:text-[0.8rem] truncate max-w-[150px] sm:max-w-[300px]">
+              #{currentChannel.slug}
+            </span>
+            <button
+              onClick={onShareClick}
+              className="bg-transparent border-none p-1 cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center shrink-0 group"
+              title="Share Channel"
+            >
+              <ShareIcon size={16} className="text-[var(--text-primary)]" />
+            </button>
+          </div>
         )}
       </div>
       <div className="flex items-center gap-3">

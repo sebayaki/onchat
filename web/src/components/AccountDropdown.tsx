@@ -3,10 +3,10 @@
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import { useDisconnect } from "wagmi";
-import MenuIcon from "@/assets/icons/menu.svg";
+import { MenuIcon } from "@/components/Icons";
 import { formatAddress } from "@/helpers/format";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
-import CopyButton from "../CopyButton";
+import CopyButton from "./CopyButton";
 
 export function AccountDropdown({
   address,
@@ -50,13 +50,7 @@ export function AccountDropdown({
         }`}
       >
         {isMobileNav ? (
-          <Image
-            src={MenuIcon}
-            alt="Menu"
-            width={24}
-            height={24}
-            className="w-6 h-6"
-          />
+          <MenuIcon size={24} className="text-[var(--text-primary)]" />
         ) : (
           <>
             {profile ? (
@@ -76,13 +70,7 @@ export function AccountDropdown({
             ) : (
               <span>{formattedAddress}</span>
             )}
-            <Image
-              src={MenuIcon}
-              alt="Menu"
-              width={16}
-              height={16}
-              className="w-4 h-4 opacity-70"
-            />
+            <MenuIcon size={16} className="opacity-70" />
           </>
         )}
       </button>

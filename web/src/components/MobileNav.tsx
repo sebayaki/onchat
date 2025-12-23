@@ -1,9 +1,6 @@
 "use client";
 
-import Image from "next/image";
-import ChatIcon from "@/assets/icons/chat.svg";
-import ChannelIcon from "@/assets/icons/channel.svg";
-import RewardIcon from "@/assets/icons/reward.svg";
+import { ChatIcon, ChannelIcon, RewardIcon } from "@/components/Icons";
 
 export function MobileNav({
   activeTab,
@@ -22,12 +19,9 @@ export function MobileNav({
             : "text-[var(--text-dim)]"
         }`}
       >
-        <Image
-          src={ChannelIcon}
-          alt="Channels"
-          width={20}
-          height={20}
-          className={`w-5 h-5 ${activeTab === "channels" ? "" : "opacity-50"}`}
+        <ChannelIcon
+          size={20}
+          className={`${activeTab === "channels" ? "" : "opacity-50"}`}
         />
         <span className="text-[0.65rem] uppercase font-bold tracking-[1px]">
           Channels
@@ -41,12 +35,9 @@ export function MobileNav({
             : "text-[var(--text-dim)]"
         }`}
       >
-        <Image
-          src={ChatIcon}
-          alt="Chat"
-          width={20}
-          height={20}
-          className={`w-5 h-5 ${activeTab === "chat" ? "" : "opacity-50"}`}
+        <ChatIcon
+          size={20}
+          className={`${activeTab === "chat" ? "" : "opacity-50"}`}
         />
         <span className="text-[0.65rem] uppercase font-bold tracking-[1px]">
           Chat
@@ -60,12 +51,9 @@ export function MobileNav({
             : "text-[var(--text-dim)]"
         }`}
       >
-        <Image
-          src={RewardIcon}
-          alt="Rewards"
-          width={20}
-          height={20}
-          className={`w-5 h-5 ${activeTab === "rewards" ? "" : "opacity-50"}`}
+        <RewardIcon
+          size={20}
+          className={`${activeTab === "rewards" ? "" : "opacity-50"}`}
         />
         <span className="text-[0.65rem] uppercase font-bold tracking-[1px]">
           Rewards

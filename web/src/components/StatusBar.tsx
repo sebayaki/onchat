@@ -1,7 +1,7 @@
 "use client";
 
 import { type ChannelInfo } from "@/helpers/contracts";
-import pkg from "../../../package.json";
+import pkg from "../../package.json";
 
 export function StatusBar({
   isConnected,

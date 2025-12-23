@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useChat, type ChatLine } from "@/hooks/useChat";
 import { useFarcasterProfiles } from "@/hooks/useFarcasterProfiles";
 import { useAppKit } from "@reown/appkit/react";
 import { useEvents } from "@/context/EventContext";
+import { useSearchParams } from "next/navigation";
 import {
   getLatestChannels,
   getOwnerBalance,
@@ -15,15 +16,16 @@ import {
 import { useWalletClient } from "wagmi";
 
 // Sub-components
-import { ChatHeader } from "./chat/ChatHeader";
+import { Header } from "./Header";
 import { Sidebar } from "./chat/Sidebar";
-import { RewardsView } from "./chat/RewardsView";
+import { RewardsView } from "./RewardsView";
 import { MessageList } from "./chat/MessageList";
 import { ChatInput } from "./chat/ChatInput";
-import { MobileNav } from "./chat/MobileNav";
-import { StatusBar } from "./chat/StatusBar";
+import { MobileNav } from "./MobileNav";
+import { StatusBar } from "./StatusBar";
 import { ChannelBrowserModal } from "./chat/ChannelBrowserModal";
 import { CreateChannelModal } from "./chat/CreateChannelModal";
+import { ShareModal } from "./ShareModal";
 
 export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const {
@@ -43,6 +45,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const { open } = useAppKit();
   const { currentBlock } = useEvents();
   const { data: walletClient } = useWalletClient();
+  const searchParams = useSearchParams();
 
   // Mobile state
   const [activeTab, setActiveTab] = useState<"chat" | "channels" | "rewards">(
@@ -67,6 +70,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const [historyIndex, setHistoryIndex] = useState(-1);
   const [showChannelBrowser, setShowChannelBrowser] = useState(false);
   const [showCreateChannel, setShowCreateChannel] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [allChannels, setAllChannels] = useState<ChannelInfo[]>([]);
   const [newChannelName, setNewChannelName] = useState("");
   const [loadingChannels, setLoadingChannels] = useState(false);
@@ -92,6 +96,44 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lines]);
+
+  // Handle theme and control URL parameters
+  useEffect(() => {
+    // Apply theme colors
+    const themeVars = [
+      "bg-primary",
+      "bg-secondary",
+      "bg-tertiary",
+      "bg-hover",
+      "text-primary",
+      "text-muted",
+      "text-dim",
+      "color-system",
+      "color-error",
+      "color-info",
+      "color-action",
+      "color-nick",
+      "color-channel",
+      "color-timestamp",
+      "color-content",
+    ];
+
+    themeVars.forEach((v) => {
+      const val = searchParams.get(v);
+      if (val) {
+        document.documentElement.style.setProperty(`--${v}`, val);
+      }
+    });
+  }, [searchParams]);
+
+  const hideMobileTabs = useMemo(
+    () => searchParams.get("hide-mobile-tabs") === "true",
+    [searchParams]
+  );
+  const hideBrand = useMemo(
+    () => searchParams.get("hide-brand") === "true",
+    [searchParams]
+  );
 
   // Focus input on mount and after loading completes
   useEffect(() => {
@@ -244,7 +286,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
   return (
     <div className="flex flex-col h-screen max-h-screen overflow-hidden chat-container">
-      <ChatHeader
+      <Header
         currentChannel={currentChannel}
         isConnected={isConnected}
         address={address}
@@ -252,6 +294,8 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         onRewardsClick={() => setActiveTab("rewards")}
         openWalletModal={() => open()}
         profiles={profiles}
+        onShareClick={() => setShowShareModal(true)}
+        hideBrand={hideBrand}
       />
 
       <div className="flex flex-1 min-h-0 overflow-hidden relative">
@@ -305,7 +349,9 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         </div>
       </div>
 
-      <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} />
+      {!hideMobileTabs && (
+        <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} />
+      )}
 
       <StatusBar
         isConnected={isConnected}
@@ -332,6 +378,12 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         newChannelName={newChannelName}
         setNewChannelName={setNewChannelName}
         isLoading={isLoading}
+      />
+
+      <ShareModal
+        showShareModal={showShareModal}
+        setShowShareModal={setShowShareModal}
+        currentChannel={currentChannel}
       />
     </div>
   );
