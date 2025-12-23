@@ -365,6 +365,13 @@ export const ONCHAT_ABI = [
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
   },
+  {
+    type: "function",
+    name: "treasuryBalance",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256" }],
+    stateMutability: "view",
+  },
   // Write Functions
   {
     type: "function",
@@ -463,5 +470,44 @@ export const ONCHAT_ABI = [
     inputs: [],
     outputs: [],
     stateMutability: "nonpayable",
+  },
+] as const;
+
+export const ONCHAT_BUYBACK_BURNER_ABI = [
+  {
+    type: "function",
+    name: "stats",
+    inputs: [],
+    outputs: [
+      {
+        name: "",
+        type: "tuple",
+        components: [
+          { name: "totalOnchatBurned", type: "uint128" },
+          { name: "totalHuntSpent", type: "uint128" },
+          { name: "totalEthSpent", type: "uint128" },
+          { name: "burnCount", type: "uint128" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "burn",
+    inputs: [],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "event",
+    name: "Burned",
+    inputs: [
+      { name: "burner", type: "address", indexed: true },
+      { name: "ethSpent", type: "uint128", indexed: false },
+      { name: "huntSpent", type: "uint128", indexed: false },
+      { name: "onchatBurned", type: "uint128", indexed: false },
+      { name: "burnedAt", type: "uint128", indexed: false },
+    ],
   },
 ] as const;

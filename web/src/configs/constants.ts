@@ -4,6 +4,7 @@ export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://onch.at";
 
 export const CONTRACTS = {
   ONCHAT_ADDRESS: "0x898D291C2160A9CB110398e9dF3693b7f2c4af2D",
+  ONCHAT_BUYBACK_BURNER_ADDRESS: "0xb1fc1c145b758dc3cECE71F633b4cAB1a9A7c66d",
 } as const;
 
 // IRC-style constants

@@ -1,5 +1,5 @@
 import { basePublicClient } from "@/configs/viem";
-import { ONCHAT_ABI } from "@/configs/abis";
+import { ONCHAT_ABI, ONCHAT_BUYBACK_BURNER_ABI } from "@/configs/abis";
 import { CONTRACTS } from "@/configs/constants";
 import { type WalletClient, keccak256, toBytes } from "viem";
 import { base } from "viem/chains";
@@ -417,6 +417,38 @@ export async function getOwnerBalance(owner: `0x${string}`): Promise<bigint> {
 }
 
 /**
+ * Get protocol treasury balance
+ */
+export async function getTreasuryBalance(): Promise<bigint> {
+  const result = await basePublicClient.readContract({
+    address: CONTRACTS.ONCHAT_ADDRESS,
+    abi: ONCHAT_ABI,
+    functionName: "treasuryBalance",
+  });
+  return result as bigint;
+}
+
+export interface BurnStats {
+  totalOnchatBurned: bigint;
+  totalHuntSpent: bigint;
+  totalEthSpent: bigint;
+  burnCount: bigint;
+}
+
+/**
+ * Get buyback burner stats
+ */
+export async function getBurnStats(): Promise<BurnStats> {
+  const result = await basePublicClient.readContract({
+    address: CONTRACTS.ONCHAT_BUYBACK_BURNER_ADDRESS,
+    abi: ONCHAT_BUYBACK_BURNER_ABI,
+    functionName: "stats",
+  });
+
+  return result as BurnStats;
+}
+
+/**
  * Get slug from slug hash
  */
 export async function getSlugFromHash(
@@ -718,5 +750,28 @@ export async function claimOwnerBalance(
   });
 
   console.log("📜 claimOwnerBalance tx:", hash);
+  return hash;
+}
+
+/**
+ * Burn protocol fees
+ */
+export async function burnProtocolFees(
+  walletClient: WalletClient
+): Promise<`0x${string}`> {
+  await ensureBaseChain(walletClient);
+
+  console.log("📜 Burning protocol fees...");
+
+  const hash = await walletClient.writeContract({
+    address: CONTRACTS.ONCHAT_BUYBACK_BURNER_ADDRESS,
+    abi: ONCHAT_BUYBACK_BURNER_ABI,
+    functionName: "burn",
+    args: [],
+    account: walletClient.account!,
+    chain: base,
+  });
+
+  console.log("📜 burnProtocolFees tx:", hash);
   return hash;
 }
