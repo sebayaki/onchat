@@ -105,6 +105,10 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
   // Update URL when channel changes
   useEffect(() => {
+    // If we are currently fetching the initial channel requested via deep-link,
+    // don't touch the URL yet to prevent the "/" flash.
+    if (isInitialChannelLoading) return;
+
     const params = new URLSearchParams(window.location.search).toString();
     const search = params ? `?${params}` : "";
 
@@ -119,7 +123,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     ) {
       window.history.pushState({}, "", `/${search}`);
     }
-  }, [currentChannel]);
+  }, [currentChannel, isInitialChannelLoading]);
 
   // Handle browser back/forward buttons
   useEffect(() => {

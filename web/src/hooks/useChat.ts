@@ -84,7 +84,9 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
   const [members, setMembers] = useState<string[]>([]);
   const [moderators, setModerators] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitialChannelLoading, setIsInitialChannelLoading] = useState(false);
+  const [isInitialChannelLoading, setIsInitialChannelLoading] = useState(
+    !!initialChannelSlug
+  );
   const [isLoadingChannels, setIsLoadingChannels] = useState(false);
 
   const lineIdCounter = useRef(0);
@@ -157,6 +159,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         setModerators([]);
         // Clear messages when going to home
         setLines((prev) => prev.filter((l) => l.type !== "message"));
+        setIsInitialChannelLoading(false);
         return;
       }
 
