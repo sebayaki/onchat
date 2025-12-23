@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono } from "next/font/google";
-import { headers } from "next/headers";
 import ContextProvider from "@/context";
 import "./globals.css";
 
@@ -47,18 +46,15 @@ export const metadata: Metadata = {
   manifest: "/site.webmanifest",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const headersObj = await headers();
-  const cookies = headersObj.get("cookie");
-
   return (
     <html lang="en" className={ibmPlexMono.variable}>
       <body>
-        <ContextProvider cookies={cookies}>{children}</ContextProvider>
+        <ContextProvider cookies={null}>{children}</ContextProvider>
       </body>
     </html>
   );
