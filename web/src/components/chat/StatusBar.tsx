@@ -1,6 +1,7 @@
 "use client";
 
 import { type ChannelInfo } from "@/helpers/contracts";
+import pkg from "../../../package.json";
 
 export function StatusBar({
   isConnected,
@@ -44,7 +45,7 @@ export function StatusBar({
         </>
       )}
       <span className="ml-auto text-[var(--text-dim)] max-sm:hidden">
-        Fully on-chain • Permissionless
+        Fully on-chain • Permissionless | v{pkg.version}
       </span>
     </footer>
   );
