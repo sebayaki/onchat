@@ -249,8 +249,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         isConnected={isConnected}
         address={address}
         ownerBalance={ownerBalance}
-        claimingBalance={claimingBalance}
-        handleClaim={handleClaim}
+        onRewardsClick={() => setActiveTab("rewards")}
         openWalletModal={() => open()}
         profiles={profiles}
       />
@@ -306,12 +305,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         </div>
       </div>
 
-      <MobileNav
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        isConnected={isConnected}
-        openWalletModal={() => open()}
-      />
+      <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <StatusBar
         isConnected={isConnected}

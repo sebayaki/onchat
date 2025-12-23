@@ -1,15 +1,16 @@
 "use client";
 
+import Image from "next/image";
+import ChatIcon from "@/assets/icons/chat.svg";
+import ChannelIcon from "@/assets/icons/channel.svg";
+import RewardIcon from "@/assets/icons/reward.svg";
+
 export function MobileNav({
   activeTab,
   setActiveTab,
-  isConnected,
-  openWalletModal,
 }: {
   activeTab: "chat" | "channels" | "rewards";
   setActiveTab: (tab: "chat" | "channels" | "rewards") => void;
-  isConnected: boolean;
-  openWalletModal: () => void;
 }) {
   return (
     <nav className="sm:hidden flex items-center justify-around bg-[var(--bg-secondary)] border-t border-[var(--bg-tertiary)] py-2 px-1 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
@@ -17,11 +18,17 @@ export function MobileNav({
         onClick={() => setActiveTab("channels")}
         className={`flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer ${
           activeTab === "channels"
-            ? "text-[var(--color-channel)]"
+            ? "text-[var(--color-accent)]"
             : "text-[var(--text-dim)]"
         }`}
       >
-        <span className="text-[1.2rem]">#</span>
+        <Image
+          src={ChannelIcon}
+          alt="Channels"
+          width={20}
+          height={20}
+          className={`w-5 h-5 ${activeTab === "channels" ? "" : "opacity-50"}`}
+        />
         <span className="text-[0.65rem] uppercase font-bold tracking-[1px]">
           Channels
         </span>
@@ -34,7 +41,13 @@ export function MobileNav({
             : "text-[var(--text-dim)]"
         }`}
       >
-        <span className="text-[1.2rem]">💬</span>
+        <Image
+          src={ChatIcon}
+          alt="Chat"
+          width={20}
+          height={20}
+          className={`w-5 h-5 ${activeTab === "chat" ? "" : "opacity-50"}`}
+        />
         <span className="text-[0.65rem] uppercase font-bold tracking-[1px]">
           Chat
         </span>
@@ -43,30 +56,19 @@ export function MobileNav({
         onClick={() => setActiveTab("rewards")}
         className={`flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer ${
           activeTab === "rewards"
-            ? "text-[var(--color-action)]"
+            ? "text-[var(--color-accent)]"
             : "text-[var(--text-dim)]"
         }`}
       >
-        <span className="text-[1.2rem]">💎</span>
-        <span className="text-[0.65rem] uppercase font-bold tracking-[1px]">
-          Rewards
-        </span>
-      </button>
-      <button
-        onClick={openWalletModal}
-        className={`flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer ${
-          isConnected
-            ? "text-[var(--color-accent)]"
-            : "text-[var(--text-primary)]"
-        }`}
-      >
-        <div
-          className={`w-3 h-3 rounded-full bg-current ${
-            isConnected ? "animate-pulse" : "opacity-50"
-          } mb-1`}
+        <Image
+          src={RewardIcon}
+          alt="Rewards"
+          width={20}
+          height={20}
+          className={`w-5 h-5 ${activeTab === "rewards" ? "" : "opacity-50"}`}
         />
         <span className="text-[0.65rem] uppercase font-bold tracking-[1px]">
-          {isConnected ? "Wallet" : "Connect"}
+          Rewards
         </span>
       </button>
     </nav>

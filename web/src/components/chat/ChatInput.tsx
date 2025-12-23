@@ -45,7 +45,7 @@ export function ChatInput({
           </button>
         </div>
       )}
-      <div className="text-[var(--color-channel)] text-[0.9rem] shrink-0 font-mono">
+      <div className="text-[var(--color-channel)] text-[0.8rem] sm:text-[0.9rem] shrink-0 font-mono">
         {currentChannel ? `#${currentChannel.slug}>` : ">"}
       </div>
       <input
@@ -58,7 +58,7 @@ export function ChatInput({
           isConnected ? "Type a message or /help" : "Connect wallet to chat"
         }
         disabled={isLoading}
-        className="flex-1 bg-transparent border-none text-[var(--color-content)] font-mono text-[13px] outline-none caret-[var(--color-accent)] placeholder:text-[var(--text-dim)] disabled:opacity-50"
+        className="flex-1 bg-transparent border-none text-[var(--color-content)] font-mono text-[11px] sm:text-[13px] outline-none caret-[var(--color-accent)] placeholder:text-[var(--text-dim)] disabled:opacity-50"
         autoComplete="off"
         spellCheck="false"
       />

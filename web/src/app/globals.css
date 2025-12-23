@@ -54,6 +54,12 @@ body {
   overflow: hidden;
 }
 
+@media (max-width: 640px) {
+  body {
+    font-size: 11px;
+  }
+}
+
 /* Common helpers */
 .pixelated {
   image-rendering: pixelated;
@@ -69,6 +75,12 @@ body {
   line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .chat-line {
+    font-size: 11px;
+  }
 }
 
 .chat-timestamp {

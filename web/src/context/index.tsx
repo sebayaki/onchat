@@ -26,7 +26,7 @@ const metadata = {
   name: APP_NAME,
   description: APP_DESCRIPTION,
   url: currentOrigin,
-  icons: [`${currentOrigin}/icon.png`],
+  icons: [`${currentOrigin}/android-chrome-192x192.png`],
 };
 
 // Create the modal
@@ -38,12 +38,21 @@ createAppKit({
   metadata: metadata,
   features: {
     analytics: true,
+    email: false,
+    socials: false,
+    onramp: true,
+    swaps: false,
+    send: false,
+    history: false,
   },
   themeMode: "dark",
   themeVariables: {
     "--w3m-accent": "#0066ff",
     "--w3m-color-mix": "#000000",
     "--w3m-color-mix-strength": 40,
+    "--w3m-font-family": "'IBM Plex Mono', 'Fira Code', monospace",
+    "--w3m-border-radius-master": "0px",
+    "--w3m-z-index": 10000,
   },
 });
 

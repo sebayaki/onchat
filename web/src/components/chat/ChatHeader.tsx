@@ -2,18 +2,17 @@
 
 import Image from "next/image";
 import AppIcon from "@/assets/app-icon.png";
-import { formatAddress, formatNumber } from "@/helpers/format";
+import { formatNumber } from "@/helpers/format";
 import { type ChannelInfo } from "@/helpers/contracts";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
-import { UserDisplay } from "./ChatLine";
+import { AccountDropdown } from "./AccountDropdown";
 
 export function ChatHeader({
   currentChannel,
   isConnected,
   address,
   ownerBalance,
-  claimingBalance,
-  handleClaim,
+  onRewardsClick,
   openWalletModal,
   profiles,
 }: {
@@ -21,8 +20,7 @@ export function ChatHeader({
   isConnected: boolean;
   address?: string;
   ownerBalance: bigint;
-  claimingBalance: boolean;
-  handleClaim: () => Promise<void>;
+  onRewardsClick: () => void;
   openWalletModal: () => void;
   profiles: Record<string, FarcasterUserProfile | null>;
 }) {
@@ -40,53 +38,40 @@ export function ChatHeader({
           OnChat
         </h1>
         {currentChannel && (
-          <span className="text-[var(--color-channel)] text-[0.9rem] max-sm:text-[0.8rem] truncate max-w-[100px]">
+          <span className="text-[var(--color-channel)] text-[0.9rem] max-sm:text-[0.8rem] truncate max-w-[150px] sm:max-w-[300px]">
             #{currentChannel.slug}
           </span>
         )}
       </div>
       <div className="flex items-center gap-3">
-        {/* Claimable balance - Hidden on mobile header, moved to rewards tab */}
-        {isConnected && address && ownerBalance > BigInt(0) && (
-          <div className="flex items-center gap-2 px-[10px] py-1 bg-[var(--bg-tertiary)] border border-[var(--color-accent-dim)] rounded font-mono text-[0.8rem] max-md:hidden">
-            <span className="text-[var(--text-dim)]">Creator Rewards:</span>
-            <span className="text-[var(--color-accent)] font-medium">
-              {formatNumber(ownerBalance, { fromDecimals: 18 })} ETH
-            </span>
+        {isConnected && address ? (
+          <>
             <button
-              className="bg-[var(--color-accent)] text-[var(--bg-primary)] border-none px-2 py-[2px] text-[0.75rem] font-mono cursor-pointer rounded-sm font-semibold hover:not-disabled:bg-[var(--text-primary)] disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleClaim}
-              disabled={claimingBalance}
+              onClick={onRewardsClick}
+              className="flex items-center gap-2 font-mono text-[0.75rem] max-md:hidden bg-transparent border-none cursor-pointer hover:opacity-80 transition-opacity"
             >
-              {claimingBalance ? "..." : "Claim"}
+              <span className="text-[var(--text-dim)] uppercase">
+                Creator Rewards:
+              </span>
+              <span className="text-[var(--color-accent)] font-bold">
+                {formatNumber(ownerBalance, { fromDecimals: 18 })} ETH
+              </span>
             </button>
-          </div>
-        )}
-
-        {/* Wallet connection - Hidden on mobile header, moved to mobile nav or rewards */}
-        <button
-          className={`bg-transparent border border-[var(--color-accent-dim)] ${
-            isConnected && address
-              ? "text-[var(--color-accent)]"
-              : "text-[var(--text-primary)]"
-          } px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--color-accent)] max-sm:hidden`}
-          onClick={openWalletModal}
-        >
-          <div
-            className={`w-2 h-2 rounded-full bg-[var(--color-accent)] ${
-              isConnected ? "animate-pulse" : "opacity-50"
-            }`}
-          />
-          {isConnected && address ? (
-            <UserDisplay
+            <AccountDropdown
               address={address}
-              formattedAddress={formatAddress(address)}
               profile={profiles[address.toLowerCase()]}
+              onRewardsClick={onRewardsClick}
             />
-          ) : (
-            "Connect"
-          )}
-        </button>
+          </>
+        ) : (
+          <button
+            className="bg-transparent border border-[var(--color-accent-dim)] text-[var(--text-primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--color-accent)]"
+            onClick={openWalletModal}
+          >
+            <div className="w-2 h-2 rounded-full bg-[var(--color-accent)] opacity-50" />
+            Connect
+          </button>
+        )}
       </div>
     </header>
   );

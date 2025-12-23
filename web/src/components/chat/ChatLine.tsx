@@ -106,7 +106,7 @@ export function UserDisplay({
           alt={profile.username}
           width={16}
           height={16}
-          className="w-4 h-4 rounded-full shrink-0"
+          className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full shrink-0"
           unoptimized
         />
       )}
@@ -142,13 +142,23 @@ export function ChatLineComponent({
   const timeStr = formatTime(line.timestamp);
 
   switch (line.type) {
-    case "system":
+    case "system": {
+      const content = typeof line.content === "string" ? line.content : "";
+      const hasNowTalking = content.includes("* Now talking in #");
+
       return (
-        <div className="chat-line text-[var(--color-system)]">
+        <div
+          className={`chat-line ${
+            hasNowTalking
+              ? "text-[var(--color-channel)]"
+              : "text-[var(--color-system)]"
+          }`}
+        >
           <span className="chat-timestamp">[{timeStr}]</span>
           <span className="chat-content">{line.content}</span>
         </div>
       );
+    }
     case "error":
       return (
         <div className="chat-line text-[var(--color-error)]">
@@ -189,9 +199,6 @@ export function ChatLineComponent({
       return (
         <div className="chat-line chat-line-message text-[var(--text-primary)]">
           <span className="chat-timestamp">[{timeStr}]</span>
-          {line.channel && (
-            <span className="chat-channel">#{line.channel}</span>
-          )}
           <span
             className="chat-sender inline-flex items-center gap-0"
             style={{ verticalAlign: "middle" }}

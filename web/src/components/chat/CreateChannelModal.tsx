@@ -1,6 +1,8 @@
 "use client";
 
-import { FormEvent } from "react";
+import { FormEvent, useEffect, useState } from "react";
+import { getChannelCreationFee } from "@/helpers/contracts";
+import { formatEther } from "viem";
 
 export function CreateChannelModal({
   showCreateChannel,
@@ -19,6 +21,22 @@ export function CreateChannelModal({
   setNewChannelName: (val: string) => void;
   isLoading: boolean;
 }) {
+  const [creationFee, setCreationFee] = useState<bigint | null>(null);
+
+  useEffect(() => {
+    async function loadFee() {
+      try {
+        const fee = await getChannelCreationFee();
+        setCreationFee(fee);
+      } catch (err) {
+        console.error("Failed to load channel creation fee:", err);
+      }
+    }
+    if (showCreateChannel) {
+      loadFee();
+    }
+  }, [showCreateChannel]);
+
   if (!showCreateChannel) return null;
 
   return (
@@ -73,7 +91,7 @@ export function CreateChannelModal({
                   placeholder="my-channel"
                   maxLength={20}
                   autoFocus
-                  className="flex-1 bg-transparent border-none text-[var(--text-primary)] font-mono text-[0.9rem] py-2 outline-none placeholder:text-[var(--text-dim)]"
+                  className="flex-1 bg-transparent border-none text-[var(--color-channel)] font-mono text-[0.9rem] py-2 outline-none placeholder:text-[var(--text-dim)]"
                 />
               </div>
               <p className="text-[0.7rem] text-[var(--text-dim)] m-0">
@@ -87,7 +105,9 @@ export function CreateChannelModal({
                 {isLoading ? "Creating..." : "Create Channel"}
               </button>
               <p className="text-[0.7rem] text-[var(--text-dim)] text-center m-0">
-                Creating a channel requires a small ETH fee
+                {creationFee !== null
+                  ? `Creation Fee: ${formatEther(creationFee)} ETH`
+                  : "Loading creation fee..."}
               </p>
             </form>
           )}

@@ -199,10 +199,9 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
   // Welcome message on mount (only once)
   useEffect(() => {
-    addLine("system", "┌──────────────────────────────┐");
-    addLine("system", "│      Welcome to OnChat       │");
-    addLine("system", "└──────────────────────────────┘");
+    addLine("system", "Welcome to OnChat");
     addLine("system", "Fully permissionless, on-chain chat");
+    addLine("system", "────────────────────────────────────");
     addLine("info", "Type /help for available commands");
     addLine("info", "Connect your wallet to start chatting");
 
@@ -213,19 +212,30 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load joined channels when wallet connects
-  const prevConnectedRef = useRef(false);
+  // Load joined channels when wallet connects or changes
+  const prevAddressRef = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (isConnected && address && !prevConnectedRef.current) {
-      prevConnectedRef.current = true;
-      // Defer state updates to avoid synchronous setState in effect
-      const timeoutId = setTimeout(() => {
-        loadJoinedChannels();
-        addLine("system", `Connected as ${formatAddress(address)}`);
-      }, 0);
-      return () => clearTimeout(timeoutId);
-    } else if (!isConnected) {
-      prevConnectedRef.current = false;
+    if (isConnected && address) {
+      if (address !== prevAddressRef.current) {
+        const isSwitching = prevAddressRef.current !== undefined;
+        prevAddressRef.current = address;
+
+        // Defer state updates to avoid synchronous setState in effect
+        const timeoutId = setTimeout(() => {
+          loadJoinedChannels();
+          if (isSwitching) {
+            addLine("system", `Switched to account ${formatAddress(address)}`);
+          } else {
+            addLine("system", `Connected as ${formatAddress(address)}`);
+          }
+        }, 0);
+        return () => clearTimeout(timeoutId);
+      }
+    } else if (!isConnected || !address) {
+      if (prevAddressRef.current !== undefined) {
+        prevAddressRef.current = undefined;
+        setJoinedChannels([]);
+      }
     }
   }, [isConnected, address, loadJoinedChannels, addLine]);
 

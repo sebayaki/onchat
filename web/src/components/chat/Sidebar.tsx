@@ -65,7 +65,7 @@ export function Sidebar({
             joinedChannels.map((channel) => (
               <li
                 key={channel.slug}
-                className={`px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--text-secondary)] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-[var(--bg-hover)] hover:text-[var(--text-primary)] ${
+                className={`px-2 py-1 cursor-pointer text-[0.8rem] text-[var(--color-channel)] whitespace-nowrap overflow-hidden text-ellipsis hover:bg-[var(--bg-hover)] ${
                   currentChannel?.slug === channel.slug
                     ? "bg-[var(--bg-tertiary)] text-[var(--color-channel)] border-l-2 border-[var(--color-channel)] !pl-[calc(0.5rem-2px)]"
                     : ""
@@ -75,8 +75,7 @@ export function Sidebar({
                   setActiveTab("chat");
                 }}
               >
-                <span className="text-[var(--text-muted)]">#</span>
-                {channel.slug}
+                #{channel.slug}
                 <span className="ml-1 text-[0.75rem]">
                   ({channel.memberCount.toString()})
                 </span>
