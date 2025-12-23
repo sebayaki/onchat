@@ -111,14 +111,12 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
       const newPath = `/${currentChannel.slug}${search}`;
       if (window.location.pathname + window.location.search !== newPath) {
         window.history.pushState({}, "", newPath);
-        window.dispatchEvent(new Event("pushstate-changed"));
       }
     } else if (
       currentChannel === null &&
       window.location.pathname + window.location.search !== `/${search}`
     ) {
       window.history.pushState({}, "", `/${search}`);
-      window.dispatchEvent(new Event("pushstate-changed"));
     }
   }, [currentChannel]);
 
