@@ -54,8 +54,8 @@ export function ShareModal({
     useState<string>("classic-blue");
   const [theme, setTheme] = useState<Record<string, string>>({});
   const [controls, setControls] = useState({
-    [CONTROL_VARS.HIDE_MOBILE_TABS]: true,
-    [CONTROL_VARS.HIDE_BRAND]: true,
+    [CONTROL_VARS.HIDE_MOBILE_TABS]: !!currentChannel,
+    [CONTROL_VARS.HIDE_BRAND]: !!currentChannel,
   });
   const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
 
@@ -76,13 +76,13 @@ export function ShareModal({
         setSelectedThemeId(urlTheme);
         setTheme(initialTheme);
         setControls({
-          [CONTROL_VARS.HIDE_MOBILE_TABS]: true,
-          [CONTROL_VARS.HIDE_BRAND]: true,
+          [CONTROL_VARS.HIDE_MOBILE_TABS]: !!currentChannel,
+          [CONTROL_VARS.HIDE_BRAND]: !!currentChannel,
         });
       }, 0);
       return () => clearTimeout(timeoutId);
     }
-  }, [showShareModal]);
+  }, [showShareModal, currentChannel]);
 
   if (!showShareModal) return null;
 

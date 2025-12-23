@@ -16,6 +16,7 @@ export function Header({
   profiles,
   onShareClick,
   hideBrand,
+  onBrandClick,
 }: {
   currentChannel: ChannelInfo | null;
   isConnected: boolean;
@@ -26,30 +27,36 @@ export function Header({
   profiles: Record<string, FarcasterUserProfile | null>;
   onShareClick: () => void;
   hideBrand?: boolean;
+  onBrandClick: () => void;
 }) {
   return (
     <header className="flex justify-between items-center px-4 py-2 bg-[var(--bg-secondary)] border-b border-[var(--primary-muted)] shrink-0">
       <div className="flex items-center gap-2 overflow-hidden">
-        <LogoIcon size={32} className="text-[var(--primary)] shrink-0" />
-        {!hideBrand && (
-          <h1 className="text-xl font-bold text-[var(--primary)] m-0 tracking-[2px] uppercase max-sm:text-lg shrink-0">
-            OnChat
-          </h1>
-        )}
-        {currentChannel && (
-          <div className="flex items-center gap-2 min-w-0">
+        <button
+          onClick={onBrandClick}
+          className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity bg-transparent border-none p-0 m-0"
+        >
+          <LogoIcon size={32} className="text-[var(--primary)] shrink-0" />
+          {!hideBrand && (
+            <h1 className="text-xl font-bold text-[var(--primary)] m-0 tracking-[2px] uppercase max-sm:text-lg shrink-0">
+              OnChat
+            </h1>
+          )}
+        </button>
+        <div className="flex items-center gap-2 min-w-0">
+          {currentChannel && (
             <span className="text-[var(--color-channel)] text-[0.9rem] max-sm:text-[0.8rem] truncate max-w-[150px] sm:max-w-[300px]">
               #{currentChannel.slug}
             </span>
-            <button
-              onClick={onShareClick}
-              className="bg-transparent border-none p-1 cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center shrink-0 group"
-              title="Share Channel"
-            >
-              <ShareIcon size={16} className="text-[var(--primary)]" />
-            </button>
-          </div>
-        )}
+          )}
+          <button
+            onClick={onShareClick}
+            className="bg-transparent border-none p-1 cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center shrink-0 group"
+            title={currentChannel ? "Share Channel" : "Share App"}
+          >
+            <ShareIcon size={16} className="text-[var(--primary)]" />
+          </button>
+        </div>
       </div>
       <div className="flex items-center gap-3">
         {isConnected && address ? (

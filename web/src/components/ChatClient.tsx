@@ -269,6 +269,10 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         profiles={profiles}
         onShareClick={() => setShowShareModal(true)}
         hideBrand={hideBrand}
+        onBrandClick={() => {
+          enterChannel(null);
+          setActiveTab("chat");
+        }}
       />
 
       <div className="flex flex-1 min-h-0 overflow-hidden relative">

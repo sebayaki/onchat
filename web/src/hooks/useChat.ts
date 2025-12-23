@@ -92,6 +92,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
   const lineIdCounter = useRef(0);
   // Track processed tx hashes to avoid duplicates from optimistic updates
   const processedTxHashes = useRef<Set<string>>(new Set());
+  const welcomeShownRef = useRef(false);
 
   // Helper to add a line
   const addLine = useCallback(
@@ -207,6 +208,9 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
   // Welcome message on mount (only once)
   useEffect(() => {
+    if (welcomeShownRef.current) return;
+    welcomeShownRef.current = true;
+
     addLine("system", "Welcome to OnChat");
     addLine("system", "Fully permissionless, on-chain chat");
     addLine("system", "────────────────────────────────────");
