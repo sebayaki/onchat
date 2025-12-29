@@ -12,7 +12,7 @@ export function MobileNav({
   messageCount?: bigint;
 }) {
   return (
-    <nav className="sm:hidden flex items-center justify-around bg-[var(--bg-secondary)] border-t border-[var(--bg-tertiary)] py-2 px-1 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
+    <nav className="sm:hidden flex items-center justify-around bg-[var(--bg-secondary)] border-t border-[var(--bg-tertiary)] py-2 px-1">
       <button
         onClick={() => setActiveTab("channels")}
         className={`flex flex-col items-center gap-1 bg-transparent border-none cursor-pointer ${

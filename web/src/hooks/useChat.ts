@@ -215,7 +215,9 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     addLine("system", "Fully permissionless, on-chain chat");
     addLine("system", "────────────────────────────────────");
     addLine("info", "Type /help for available commands");
-    addLine("info", "Connect your wallet to start chatting");
+    if (!isConnected) {
+      addLine("info", "Connect your wallet to start chatting");
+    }
 
     // If an initial channel is provided, enter it
     if (initialChannelSlug) {
@@ -427,6 +429,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             setIsLoading(true);
             try {
               const channels = await getLatestChannels(0, 20);
+
               if (channels.length === 0) {
                 addLine(
                   "info",

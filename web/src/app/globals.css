@@ -25,9 +25,6 @@
   --bg-secondary: #111111;
   --bg-tertiary: #1a1a1a;
   --bg-hover: #222222;
-
-  /* Fonts */
-  --font-mono: 'JetBrains Mono', monospace;
 }
 
 * {

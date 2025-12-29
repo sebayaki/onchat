@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import BaseScanIcon from "@/assets/logos/basescan.svg";
 import FarcasterIcon from "@/assets/logos/farcaster.svg";
 import CopyButton from "../CopyButton";
@@ -142,6 +143,23 @@ export function UserDisplay({
   );
 }
 
+function ConnectButton() {
+  const { open } = useAppKit();
+  const { isConnected } = useAppKitAccount();
+
+  if (isConnected) return null;
+
+  return (
+    <button
+      className="mt-2 bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--primary)]"
+      onClick={() => open()}
+    >
+      <div className="w-2 h-2 rounded-full bg-[var(--primary)] opacity-50" />
+      Connect Wallet
+    </button>
+  );
+}
+
 export function ChatLineComponent({
   line,
   profile,
@@ -149,6 +167,7 @@ export function ChatLineComponent({
   line: ChatLine;
   profile?: FarcasterUserProfile | null;
 }) {
+  const { isConnected } = useAppKitAccount();
   const timeStr = formatTime(line.timestamp);
 
   switch (line.type) {
@@ -179,14 +198,21 @@ export function ChatLineComponent({
           <span className="chat-content">{line.content}</span>
         </div>
       );
-    case "info":
+    case "info": {
+      const isConnectLine =
+        !isConnected &&
+        line.content === "Connect your wallet to start chatting";
       return (
-        <div className="chat-line text-[var(--color-info)]">
-          <span className="chat-timestamp">[{timeStr}]</span>
-          <span className="chat-prefix text-[var(--color-info)]">*</span>
-          <span className="chat-content">{line.content}</span>
+        <div className="chat-line text-[var(--color-info)] flex flex-col items-start">
+          <div className="flex items-center">
+            <span className="chat-timestamp">[{timeStr}]</span>
+            <span className="chat-prefix text-[var(--color-info)]">*</span>
+            <span className="chat-content">{line.content}</span>
+          </div>
+          {isConnectLine && <ConnectButton />}
         </div>
       );
+    }
     case "action":
       return (
         <div className="chat-line text-[var(--color-action)]">

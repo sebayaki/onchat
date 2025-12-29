@@ -13,7 +13,7 @@ export function FooterBar({
   currentChannel: ChannelInfo | null;
 }) {
   return (
-    <footer className="flex sm:flex items-center px-4 py-1 bg-[var(--bg-tertiary)] border-t border-[var(--bg-hover)] text-[0.75rem] text-[var(--primary-muted)] shrink-0 gap-2 font-mono">
+    <footer className="flex sm:flex items-center px-4 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] bg-[var(--bg-tertiary)] border-t border-[var(--bg-hover)] text-[0.75rem] text-[var(--primary-muted)] shrink-0 gap-2 font-mono">
       <span className="flex items-center gap-[0.4rem]">
         {isConnected ? (
           <>

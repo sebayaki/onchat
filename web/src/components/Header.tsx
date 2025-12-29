@@ -30,7 +30,7 @@ export function Header({
   onBrandClick: () => void;
 }) {
   return (
-    <header className="flex justify-between items-center px-4 py-2 bg-[var(--bg-secondary)] border-b border-[var(--primary-muted)] shrink-0">
+    <header className="flex justify-between items-center px-4 pt-[calc(0.5rem+env(safe-area-inset-top))] pb-2 bg-[var(--bg-secondary)] border-b border-[var(--primary-muted)] shrink-0">
       <div className="flex items-center gap-2 overflow-hidden">
         <button
           onClick={onBrandClick}

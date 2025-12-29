@@ -258,7 +258,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   );
 
   return (
-    <div className="flex flex-col h-screen max-h-screen overflow-hidden chat-container">
+    <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden chat-container">
       <Header
         currentChannel={currentChannel}
         isConnected={isConnected}

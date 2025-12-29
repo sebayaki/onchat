@@ -158,7 +158,7 @@ export async function getChannelBySlug(slug: string): Promise<ChannelInfo> {
 }
 
 /**
- * Get latest channels with pagination
+ * Get latest channels with pagination, sorted by member count (descending)
  */
 export async function getLatestChannels(
   offset: number = 0,
@@ -171,14 +171,20 @@ export async function getLatestChannels(
     args: [BigInt(offset), BigInt(limit)],
   });
 
-  return (result as ChannelInfo[]).map((info) => ({
-    slugHash: info.slugHash,
-    slug: info.slug,
-    owner: info.owner,
-    createdAt: Number(info.createdAt),
-    memberCount: info.memberCount,
-    messageCount: info.messageCount,
-  }));
+  return (result as ChannelInfo[])
+    .map((info) => ({
+      slugHash: info.slugHash,
+      slug: info.slug,
+      owner: info.owner,
+      createdAt: Number(info.createdAt),
+      memberCount: info.memberCount,
+      messageCount: info.messageCount,
+    }))
+    .sort((a, b) => {
+      if (b.memberCount > a.memberCount) return 1;
+      if (b.memberCount < a.memberCount) return -1;
+      return 0;
+    });
 }
 
 /**
