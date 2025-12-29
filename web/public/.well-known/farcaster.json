@@ -6,7 +6,7 @@
     "homeUrl": "https://onchat.sebayaki.com",
     "splashImageUrl": "https://onchat.sebayaki.com/app-icon-black-bg.png",
     "splashBackgroundColor": "#000000",
-    "subtitle": "Fully permissionless, on-chain chat.",
+    "subtitle": "Permissionless, on-chain chat.",
     "description": "A fully permissionless, on-chain chat protocol built on the Base.",
     "screenshotUrls": [
       "https://onchat.sebayaki.com/screenshot-1.png",
@@ -22,15 +22,15 @@
       "farcaster"
     ],
     "heroImageUrl": "https://onchat.sebayaki.com/screenshot-1.png",
-    "tagline": "Fully permissionless, on-chain chat.",
+    "tagline": "Permissionless, on-chain chat.",
     "ogTitle": "OnChat",
     "ogDescription": "A fully permissionless, on-chain chat protocol built on the Base.",
     "ogImageUrl": "https://onchat.sebayaki.com/screenshot-1.png"
   },
   "accountAssociation": {
-    "header": "eyJmaWQiOjcwMjUzMCwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDVkNDBiOTBFNmEwMjlCNjk5YURkNTNDNUM3MzRlNzE4NjE4NjEwQkEifQ",
+    "header": "eyJmaWQiOjgxNTEsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgyYkQyQjZFODhCNjY1M0JCMzYxNTk2MTA5MEQ0MjFhYzU4ZTQ0QmU0In0",
     "payload": "eyJkb21haW4iOiJvbmNoYXQuc2ViYXlha2kuY29tIn0",
-    "signature": "MHg2YjM5NTZhN2VlZjQwOTMyMjFkYWVhYThjYTU4OThkODQ2MDVjNjRiYWNjNTRjNzZkZDZlM2JlZTlmNDhlNTg4M2UyOTE0YTg0NGEyMGQ4YWE3ZDY1ZjY0ODBjN2YxNDlkMjY0OGM3ZTU0ZjA3YmM0YWUxNTE1MjM4MjUzYjRjODFi"
+    "signature": "DGcJiGZTtAtQOU4a30zzLaQdivaIt0eB6L7fup8M42sKCNvjIMMhD7vaSY0TfKWT4oh8qnsm4fxNaM/bwHgm4hs="
   },
   "baseBuilder": {
     "allowedAddresses": [
