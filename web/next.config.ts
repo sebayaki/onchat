@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
       "@turnkey/viem": "./src/empty-module.js",
     },
   },
+  devIndicators: false,
   // DEVELOPMENT-ONLY REWRITES
   // --------------------------------------------------------------------------------
   // Since we use 'output: export', Next.js normally generates static HTML files.
