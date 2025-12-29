@@ -25,12 +25,14 @@ export function RewardsView({
 }) {
   const { data: walletClient } = useWalletClient();
   const [fees, setFees] = useState<{ base: bigint; perChar: bigint }>({
-    base: BigInt(0),
-    perChar: BigInt(0),
+    base: BigInt(10000000000000), // 0.00001 ETH
+    perChar: BigInt(200000000000), // 0.0000002 ETH
   });
   const [treasuryBalance, setTreasuryBalance] = useState<bigint>(BigInt(0));
   const [burnStats, setBurnStats] = useState<BurnStats | null>(null);
   const [burning, setBurning] = useState(false);
+  const [simMessages, setSimMessages] = useState(100);
+  const [simChars, setSimChars] = useState(70);
 
   async function loadProtocolInfo() {
     try {
@@ -138,6 +140,85 @@ export function RewardsView({
                   </span>{" "}
                   tokens.
                 </p>
+
+                <div className="mt-6 pt-6 border-t border-[var(--primary-muted)]/20">
+                  <p className="text-[var(--primary)] font-bold uppercase tracking-wider text-[0.75rem] mb-4">
+                    Creator Earning Simulator
+                  </p>
+                  <div className="space-y-6">
+                    <div>
+                      <div className="flex justify-between text-[0.7rem] mb-2">
+                        <span className="text-[var(--text-dim)] uppercase tracking-wider">
+                          Messages per day
+                        </span>
+                        <span className="text-[var(--primary)] font-bold">
+                          {simMessages}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="1000"
+                        step="10"
+                        value={simMessages}
+                        onChange={(e) =>
+                          setSimMessages(parseInt(e.target.value))
+                        }
+                        className="w-full accent-[var(--primary)] h-1 bg-[var(--bg-primary)] rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between text-[0.7rem] mb-2">
+                        <span className="text-[var(--text-dim)] uppercase tracking-wider">
+                          Avg characters per message
+                        </span>
+                        <span className="text-[var(--primary)] font-bold">
+                          {simChars}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="1"
+                        max="500"
+                        step="5"
+                        value={simChars}
+                        onChange={(e) => setSimChars(parseInt(e.target.value))}
+                        className="w-full accent-[var(--primary)] h-1 bg-[var(--bg-primary)] rounded-lg appearance-none cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="bg-[var(--primary)]/10 p-5 rounded-sm border border-[var(--primary)]/20">
+                      <p className="text-[var(--text-dim)] text-[0.65rem] uppercase mb-2 tracking-wider">
+                        Estimated Monthly Earnings
+                      </p>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-[var(--primary)]">
+                          {formatNumber(
+                            (BigInt(30) *
+                              BigInt(simMessages) *
+                              (fees.base + BigInt(simChars) * fees.perChar) *
+                              BigInt(8000)) /
+                              BigInt(10000),
+                            { fromDecimals: 18 }
+                          )}
+                        </span>
+                        <span className="text-sm text-[var(--primary-muted)]">
+                          ETH
+                        </span>
+                      </div>
+                      <div className="mt-4 pt-4 border-t border-[var(--primary)]/10 text-[0.65rem] text-[var(--text-dim)] font-mono leading-relaxed">
+                        <p className="mb-1 uppercase text-[0.6rem] opacity-70">
+                          Calculation:
+                        </p>
+                        <p>
+                          30 days × {simMessages} msg/day × (
+                          {formatEther(fees.base)} + ({simChars} ×{" "}
+                          {formatEther(fees.perChar)})) ETH × 80% share
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
