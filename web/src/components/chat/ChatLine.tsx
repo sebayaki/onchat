@@ -163,9 +163,13 @@ function ConnectButton() {
 export function ChatLineComponent({
   line,
   profile,
+  isModerator,
+  processCommand,
 }: {
   line: ChatLine;
   profile?: FarcasterUserProfile | null;
+  isModerator?: boolean;
+  processCommand?: (input: string) => Promise<void>;
 }) {
   const { isConnected } = useAppKitAccount();
   const timeStr = formatTime(line.timestamp);
@@ -231,9 +235,14 @@ export function ChatLineComponent({
           <span className="chat-content">{line.content}</span>
         </div>
       );
-    case "message":
+    case "message": {
+      const isHidden = line.isHidden;
       return (
-        <div className="chat-line chat-line-message text-[var(--primary)]">
+        <div
+          className={`chat-line chat-line-message text-[var(--primary)] ${
+            isHidden ? "opacity-50 italic" : ""
+          }`}
+        >
           <span className="chat-timestamp">[{timeStr}]</span>
           <span
             className="chat-sender inline-flex items-center gap-0"
@@ -247,9 +256,25 @@ export function ChatLineComponent({
             />
             <span className="ml-[1px]">&gt;</span>
           </span>
-          <span className="chat-content">{line.content}</span>
+          <span className="chat-content">
+            {isHidden ? `(Hidden) ${line.content}` : line.content}
+          </span>
+          {isModerator && line.messageIndex !== undefined && processCommand && (
+            <button
+              onClick={() =>
+                processCommand(
+                  `/mode ${isHidden ? "-h" : "+h"} ${line.messageIndex}`
+                )
+              }
+              className="ml-2 text-[0.6rem] bg-transparent border border-[var(--bg-tertiary)] px-1 rounded hover:bg-[var(--bg-hover)] cursor-pointer align-middle transition-colors uppercase font-bold"
+              style={{ verticalAlign: "middle" }}
+            >
+              {isHidden ? "Unhide" : "Hide"}
+            </button>
+          )}
         </div>
       );
+    }
     case "user":
       return (
         <div className="chat-line text-[var(--color-info)] flex items-center">

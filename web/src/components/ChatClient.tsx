@@ -34,6 +34,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     joinedChannels,
     members,
     moderators,
+    isModerator,
     isConnected,
     address,
     isLoading,
@@ -308,6 +309,8 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 lines={lines}
                 profiles={profiles}
                 messagesEndRef={messagesEndRef}
+                isModerator={isModerator}
+                processCommand={processCommand}
               />
               <ChatInput
                 input={input}

@@ -22,6 +22,8 @@ import {
   joinChannel,
   leaveChannel,
   sendMessage,
+  hideMessage,
+  unhideMessage,
   waitForTransaction,
   getOwnerBalance,
   claimOwnerBalance,
@@ -38,6 +40,7 @@ import {
   useEvents,
   type MessageSentEvent,
   type ChannelEvent,
+  type ModerationEvent,
 } from "@/context/EventContext";
 import { fetchUserProfilesBulk } from "@/helpers/farcaster";
 import { renderWhoisChannels } from "@/components/WhoisChannels";
@@ -50,6 +53,8 @@ export interface ChatLine {
   sender?: string;
   senderAddress?: string;
   channel?: string;
+  messageIndex?: number;
+  isHidden?: boolean;
 }
 
 interface UseChatReturn {
@@ -59,6 +64,7 @@ interface UseChatReturn {
   joinedChannels: ChannelInfo[];
   members: string[];
   moderators: string[];
+  isModerator: boolean;
   isConnected: boolean;
   address: string | undefined;
   isLoading: boolean;
@@ -74,7 +80,7 @@ interface UseChatReturn {
 export function useChat(initialChannelSlug?: string): UseChatReturn {
   const { address, isConnected } = useAppKitAccount();
   const { data: walletClient } = useWalletClient();
-  const { onMessageSent, onChannelEvent } = useEvents();
+  const { onMessageSent, onChannelEvent, onModerationEvent } = useEvents();
 
   const [lines, setLines] = useState<ChatLine[]>([]);
   const [currentChannel, setCurrentChannel] = useState<ChannelInfo | null>(
@@ -101,7 +107,9 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       content: string | ReactNode,
       sender?: string,
       senderAddress?: string,
-      channel?: string
+      channel?: string,
+      messageIndex?: number,
+      isHidden?: boolean
     ) => {
       const line: ChatLine = {
         id: `line-${lineIdCounter.current++}`,
@@ -111,6 +119,8 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         sender,
         senderAddress,
         channel,
+        messageIndex,
+        isHidden,
       };
       setLines((prev) => [...prev, line]);
     },
@@ -180,14 +190,34 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         // Clear existing messages when switching channels
         setLines((prev) => prev.filter((l) => l.type !== "message"));
 
-        for (const msg of orderedMessages) {
-          if (!msg.isHidden) {
+        // Determine if user is moderator to show hidden messages
+        const isMod =
+          address &&
+          (channelInfo.owner.toLowerCase() === address.toLowerCase() ||
+            moderators.some((m) => m.toLowerCase() === address.toLowerCase()));
+
+        for (let i = 0; i < orderedMessages.length; i++) {
+          const msg = orderedMessages[i];
+          // In latest messages (newest first), if limit=20, offset=0:
+          // messages[0] is index length-1
+          // messages[1] is index length-2
+          // ...
+          // messages[messages.length-1] is index length-messages.length
+          // orderedMessages is messages reversed
+          // orderedMessages[0] is messages[messages.length-1] index length-messages.length
+          // orderedMessages[i] is index length-messages.length + i
+          const msgIndex =
+            Number(channelInfo.messageCount) - orderedMessages.length + i;
+
+          if (!msg.isHidden || isMod) {
             addLine(
               "message",
               msg.content,
               formatAddress(msg.sender),
               msg.sender,
-              cleanSlug
+              cleanSlug,
+              msgIndex,
+              msg.isHidden
             );
           }
         }
@@ -203,7 +233,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         setIsInitialChannelLoading(false);
       }
     },
-    [loadMembers, addLine]
+    [loadMembers, addLine, address, moderators]
   );
 
   // Welcome message on mount (only once)
@@ -282,8 +312,30 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         sender: formatAddress(event.sender),
         senderAddress: event.sender,
         channel: channel.slug,
+        messageIndex: Number(event.messageIndex),
+        isHidden: false,
       };
       setLines((prev) => [...prev, line]);
+    });
+
+    const unsubModeration = onModerationEvent((event: ModerationEvent) => {
+      const channel = currentChannelRef.current;
+      if (!channel || event.slugHash !== channel.slugHash) return;
+
+      if (event.type === "messageHidden" || event.type === "messageUnhidden") {
+        const isHidden = event.type === "messageHidden";
+        setLines((prev) =>
+          prev.map((line) => {
+            if (
+              line.type === "message" &&
+              line.messageIndex === Number(event.messageIndex)
+            ) {
+              return { ...line, isHidden };
+            }
+            return line;
+          })
+        );
+      }
     });
 
     const unsubChannel = onChannelEvent((event: ChannelEvent) => {
@@ -310,9 +362,16 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
     return () => {
       unsubMessage();
+      unsubModeration();
       unsubChannel();
     };
-  }, [onMessageSent, onChannelEvent, address, loadJoinedChannels]);
+  }, [
+    onMessageSent,
+    onModerationEvent,
+    onChannelEvent,
+    address,
+    loadJoinedChannels,
+  ]);
 
   // Process user input
   const processCommand = useCallback(
@@ -497,14 +556,29 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               const messages = await getLatestMessages(slugHash, 0, 20);
               const orderedMessages = [...messages].reverse();
               setLines((prev) => prev.filter((l) => l.type !== "message"));
-              for (const msg of orderedMessages) {
-                if (!msg.isHidden) {
+
+              // Determine if user is moderator to show hidden messages
+              const isMod =
+                address &&
+                (channelInfo.owner.toLowerCase() === address.toLowerCase() ||
+                  moderators.some(
+                    (m) => m.toLowerCase() === address.toLowerCase()
+                  ));
+
+              for (let i = 0; i < orderedMessages.length; i++) {
+                const msg = orderedMessages[i];
+                const msgIndex =
+                  Number(channelInfo.messageCount) - orderedMessages.length + i;
+
+                if (!msg.isHidden || isMod) {
                   addLine(
                     "message",
                     msg.content,
                     formatAddress(msg.sender),
                     msg.sender,
-                    channelToJoin
+                    channelToJoin,
+                    msgIndex,
+                    msg.isHidden
                   );
                 }
               }
@@ -787,12 +861,16 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               argIndex++;
             }
 
-            if (args[argIndex]?.match(/^[+-][ob]$/i)) {
+            if (args[argIndex]?.match(/^[+-][obh]$/i)) {
               modeFlag = args[argIndex].toLowerCase();
               argIndex++;
             }
 
-            if (args[argIndex]?.match(/^0x[a-fA-F0-9]{40}$/)) {
+            if (modeFlag === "+h" || modeFlag === "-h") {
+              if (args[argIndex]?.match(/^\d+$/)) {
+                targetWallet = args[argIndex]; // Reuse targetWallet for index
+              }
+            } else if (args[argIndex]?.match(/^0x[a-fA-F0-9]{40}$/)) {
               targetWallet = args[argIndex];
             }
 
@@ -973,6 +1051,46 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   );
                   break;
                 }
+                case "+h": {
+                  // Hide message (owner/moderator)
+                  const msgIndex = parseInt(targetWallet!);
+                  addLine(
+                    "action",
+                    `Hiding message ${msgIndex} in #${channelSlug}...`
+                  );
+                  const tx = await hideMessage(
+                    walletClient,
+                    slugHash,
+                    msgIndex
+                  );
+                  addLine(
+                    "info",
+                    "Transaction sent, waiting for confirmation..."
+                  );
+                  await waitForTransaction(tx);
+                  addLine("system", `✓ Message ${msgIndex} has been hidden`);
+                  break;
+                }
+                case "-h": {
+                  // Unhide message (owner/moderator)
+                  const msgIndex = parseInt(targetWallet!);
+                  addLine(
+                    "action",
+                    `Unhiding message ${msgIndex} in #${channelSlug}...`
+                  );
+                  const tx = await unhideMessage(
+                    walletClient,
+                    slugHash,
+                    msgIndex
+                  );
+                  addLine(
+                    "info",
+                    "Transaction sent, waiting for confirmation..."
+                  );
+                  await waitForTransaction(tx);
+                  addLine("system", `✓ Message ${msgIndex} has been unhidden`);
+                  break;
+                }
                 default:
                   addLine("error", `Unknown mode flag: ${modeFlag}`);
               }
@@ -1047,12 +1165,15 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         setIsLoading(true);
         try {
           // Show the message immediately (optimistic update)
+          const msgIndex = Number(currentChannel.messageCount);
           addLine(
             "message",
             content,
             formatAddress(address!),
             address!,
-            currentChannel.slug
+            currentChannel.slug,
+            msgIndex,
+            false
           );
 
           const tx = await sendMessage(
@@ -1083,6 +1204,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       address,
       currentChannel,
       members,
+      moderators,
       addLine,
       loadJoinedChannels,
       loadMembers,
@@ -1093,12 +1215,20 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     setLines([]);
   }, []);
 
+  const isUserModerator = !!(
+    address &&
+    currentChannel &&
+    (currentChannel.owner.toLowerCase() === address.toLowerCase() ||
+      moderators.some((m) => m.toLowerCase() === address.toLowerCase()))
+  );
+
   return {
     lines,
     currentChannel,
     joinedChannels,
     members,
     moderators,
+    isModerator: isUserModerator,
     isConnected,
     address,
     isLoading,
