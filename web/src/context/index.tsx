@@ -1,6 +1,6 @@
 "use client";
 
-import { wagmiAdapter, projectId } from "@/configs/wagmi";
+import { wagmiAdapter, projectId, farcasterConnector } from "@/configs/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createAppKit } from "@reown/appkit/react";
 import { base } from "@reown/appkit/networks";
@@ -13,7 +13,8 @@ import {
   createContext,
   useContext,
 } from "react";
-import { WagmiProvider, type Config } from "wagmi";
+import { WagmiProvider, type Config, useConnect } from "wagmi";
+import { useAppKitAccount } from "@reown/appkit/react";
 import { APP_URL, APP_NAME, APP_DESCRIPTION } from "@/configs/constants";
 import { EventProvider } from "./EventContext";
 import { ThemeProvider } from "./ThemeContext";
@@ -70,21 +71,71 @@ createAppKit({
 interface FarcasterContextType {
   isInMiniApp: boolean;
   isSDKLoaded: boolean;
+  connectFarcasterWallet: () => void;
 }
 
 const FarcasterContext = createContext<FarcasterContextType>({
   isInMiniApp: false,
   isSDKLoaded: false,
+  connectFarcasterWallet: () => {},
 });
 
 export const useFarcaster = () => useContext(FarcasterContext);
+
+/**
+ * Inner component that has access to wagmi hooks
+ * Handles auto-connection when in Farcaster Mini App context
+ */
+function FarcasterAutoConnect({
+  children,
+  isInMiniApp,
+  isSDKLoaded,
+}: {
+  children: ReactNode;
+  isInMiniApp: boolean;
+  isSDKLoaded: boolean;
+}) {
+  const { mutate: connectWallet } = useConnect();
+  const { isConnected } = useAppKitAccount();
+  const hasAttemptedAutoConnect = useRef(false);
+
+  // Auto-connect to Farcaster wallet when in Mini App context
+  useEffect(() => {
+    if (
+      isInMiniApp &&
+      isSDKLoaded &&
+      !isConnected &&
+      !hasAttemptedAutoConnect.current
+    ) {
+      hasAttemptedAutoConnect.current = true;
+      console.log("[Farcaster] Auto-connecting to Farcaster wallet...");
+      connectWallet({ connector: farcasterConnector });
+    }
+  }, [isInMiniApp, isSDKLoaded, isConnected, connectWallet]);
+
+  // Function to manually connect to Farcaster wallet
+  const connectFarcasterWallet = useCallback(() => {
+    if (isInMiniApp && !isConnected) {
+      console.log("[Farcaster] Manually connecting to Farcaster wallet...");
+      connectWallet({ connector: farcasterConnector });
+    }
+  }, [isInMiniApp, isConnected, connectWallet]);
+
+  return (
+    <FarcasterContext.Provider
+      value={{ isInMiniApp, isSDKLoaded, connectFarcasterWallet }}
+    >
+      {children}
+    </FarcasterContext.Provider>
+  );
+}
 
 /**
  * Component that handles Farcaster Mini App initialization
  * and auto-connects the embedded wallet when in Mini App context
  */
 function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
-  const [farcasterState, setFarcasterState] = useState<FarcasterContextType>({
+  const [farcasterState, setFarcasterState] = useState({
     isInMiniApp: false,
     isSDKLoaded: false,
   });
@@ -147,9 +198,12 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
   }, [handleAddMiniApp]);
 
   return (
-    <FarcasterContext.Provider value={farcasterState}>
+    <FarcasterAutoConnect
+      isInMiniApp={farcasterState.isInMiniApp}
+      isSDKLoaded={farcasterState.isSDKLoaded}
+    >
       {children}
-    </FarcasterContext.Provider>
+    </FarcasterAutoConnect>
   );
 }
 

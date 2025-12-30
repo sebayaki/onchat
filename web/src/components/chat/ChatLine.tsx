@@ -8,6 +8,7 @@ import CopyButton from "../CopyButton";
 import { type ChatLine } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { formatTime, formatAddress } from "@/helpers/format";
+import { useFarcaster } from "@/context";
 
 export function ActionButtons({
   address,
@@ -159,13 +160,24 @@ export function UserDisplay({
 function ConnectButton() {
   const { open } = useAppKit();
   const { isConnected } = useAppKitAccount();
+  const { isInMiniApp, connectFarcasterWallet } = useFarcaster();
 
   if (isConnected) return null;
+
+  const handleConnect = () => {
+    if (isInMiniApp) {
+      // In Farcaster Mini App context, use the Farcaster connector directly
+      connectFarcasterWallet();
+    } else {
+      // Outside Mini App, use the AppKit modal
+      open();
+    }
+  };
 
   return (
     <button
       className="mt-2 bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--primary)]"
-      onClick={() => open()}
+      onClick={handleConnect}
     >
       <div className="w-2 h-2 rounded-full bg-[var(--primary)] opacity-50" />
       Connect Wallet

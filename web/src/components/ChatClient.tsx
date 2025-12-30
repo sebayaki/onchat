@@ -6,6 +6,7 @@ import { useFarcasterProfiles } from "@/hooks/useFarcasterProfiles";
 import { useAppKit } from "@reown/appkit/react";
 import { useEvents } from "@/context/EventContext";
 import { useTheme } from "@/context/ThemeContext";
+import { useFarcaster } from "@/context";
 import {
   getLatestChannels,
   getOwnerBalance,
@@ -49,6 +50,16 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const { currentBlock } = useEvents();
   const { data: walletClient } = useWalletClient();
   const { hideMobileTabs, hideBrand } = useTheme();
+  const { isInMiniApp, connectFarcasterWallet } = useFarcaster();
+
+  // Open wallet modal - use Farcaster connector in Mini App context
+  const openWalletModal = useCallback(() => {
+    if (isInMiniApp) {
+      connectFarcasterWallet();
+    } else {
+      open();
+    }
+  }, [isInMiniApp, connectFarcasterWallet, open]);
 
   // Mobile state
   const [activeTab, setActiveTab] = useState<"chat" | "channels" | "rewards">(
@@ -267,7 +278,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         address={address}
         ownerBalance={ownerBalance}
         onRewardsClick={() => setActiveTab("rewards")}
-        openWalletModal={() => open()}
+        openWalletModal={openWalletModal}
         profiles={profiles}
         onShareClick={() => setShowShareModal(true)}
         hideBrand={hideBrand}
