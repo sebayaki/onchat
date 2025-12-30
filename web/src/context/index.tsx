@@ -103,23 +103,37 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
 
     const initFarcaster = async () => {
       try {
-        // Get the Farcaster context to check if we're in a Mini App
+        // Use sdk.isInMiniApp() with timeout to prevent hanging in regular iframes
+        // The SDK has a built-in timeout (default 1000ms), we use 2000ms for reliability
+        // Cast to bypass type definition that may not include the timeout parameter
+        const inMiniApp = await (
+          sdk.isInMiniApp as (timeoutMs?: number) => Promise<boolean>
+        )(2000);
+
+        if (!inMiniApp) {
+          if (mounted) {
+            setFarcasterState({
+              isInMiniApp: false,
+              isSDKLoaded: true,
+            });
+          }
+          return;
+        }
+
+        // Now safe to get context since we confirmed we're in a Mini App
         const context = await sdk.context;
-        const isInMiniApp = !!context;
 
         if (mounted) {
           setFarcasterState({
-            isInMiniApp,
+            isInMiniApp: true,
             isSDKLoaded: true,
           });
 
           // Call ready() to hide the splash screen
-          // Safe to call even outside Mini App context
           await sdk.actions.ready();
 
           // Prompt user to add mini app if in Farcaster context but not yet added
           if (
-            isInMiniApp &&
             context &&
             !context.client.added &&
             !hasAttemptedAddMiniApp.current
