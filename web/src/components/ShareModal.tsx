@@ -5,28 +5,7 @@ import { themes } from "@/helpers/themes";
 import { ChevronDownIcon } from "./Icons";
 import { THEME_VARS, CONTROL_VARS } from "../helpers/themes";
 
-// Type for the OnChat widget global
-interface OnChatWidget {
-  mount: (
-    selector: string | HTMLElement,
-    options?: {
-      channel?: string;
-      theme?: string;
-      hideMobileTabs?: boolean;
-      hideBrand?: boolean;
-      height?: string;
-      colors?: Record<string, string>;
-    }
-  ) => { unmount: () => void; instanceId: string };
-  unmount: (instanceId: string) => boolean;
-  unmountAll: () => void;
-}
-
-declare global {
-  interface Window {
-    OnChat?: OnChatWidget;
-  }
-}
+// Type for the OnChat widget global (managed in vite-env.d.ts)
 
 function rgbToHex(rgb: string) {
   if (!rgb) return "#000000";
@@ -141,7 +120,14 @@ export function ShareModal({
     previewRef.current.innerHTML = "";
 
     // Build widget options
-    const widgetOpts: Parameters<OnChatWidget["mount"]>[1] = {
+    const widgetOpts: {
+      channel?: string;
+      theme?: string;
+      hideMobileTabs?: boolean;
+      hideBrand?: boolean;
+      height?: string;
+      colors?: Record<string, string>;
+    } = {
       height: "100%",
     };
 
@@ -177,10 +163,8 @@ export function ShareModal({
 
     // Mount the widget
     try {
-      widgetInstanceRef.current = window.OnChat.mount(
-        previewRef.current,
-        widgetOpts
-      );
+      widgetInstanceRef.current =
+        window.OnChat?.mount(previewRef.current, widgetOpts) || null;
     } catch (err) {
       console.error("Failed to mount widget preview:", err);
     }

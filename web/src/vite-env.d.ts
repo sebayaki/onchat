@@ -9,6 +9,27 @@ interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
 
+// Global Window extensions
+interface Window {
+  OnChat?: {
+    mount: (
+      selector: string | HTMLElement,
+      options?: {
+        channel?: string;
+        theme?: string;
+        hideMobileTabs?: boolean;
+        hideBrand?: boolean;
+        height?: string;
+        colors?: Record<string, string>;
+      }
+    ) => { unmount: () => void };
+    unmount: () => boolean;
+    themes: import("./helpers/themes").Theme[];
+  };
+  _onchatAppKitInitialized?: boolean;
+  _onchatWagmiAdapter?: import("@reown/appkit-adapter-wagmi").WagmiAdapter;
+}
+
 // Allow ?inline CSS imports
 declare module "*.css?inline" {
   const content: string;

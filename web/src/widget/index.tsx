@@ -135,8 +135,7 @@ export function unmount(): boolean {
 
 // Export as global for IIFE build
 if (typeof window !== "undefined") {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (window as any).OnChat = {
+  window.OnChat = {
     mount,
     unmount,
     themes,
