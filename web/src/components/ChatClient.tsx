@@ -82,7 +82,9 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const [claimingBalance, setClaimingBalance] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const prevLinesLengthRef = useRef(0);
 
   // Check if we are in the initial channel
   const isJoinedInInitialChannel =
@@ -96,7 +98,24 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
   // Auto-scroll to bottom
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    // Determine if this is a bulk load (channel join) or single message
+    const linesDiff = lines.length - prevLinesLengthRef.current;
+    const isBulkLoad = linesDiff > 3;
+    prevLinesLengthRef.current = lines.length;
+
+    // Use requestAnimationFrame to ensure DOM is fully rendered
+    requestAnimationFrame(() => {
+      if (isBulkLoad) {
+        // For bulk loads (joining channel), scroll instantly to bottom
+        container.scrollTop = container.scrollHeight;
+      } else {
+        // For single messages, use smooth scroll
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      }
+    });
   }, [lines]);
 
   // Focus input on mount and after loading completes
@@ -328,6 +347,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 lines={lines}
                 profiles={profiles}
                 messagesEndRef={messagesEndRef}
+                messagesContainerRef={messagesContainerRef}
                 isModerator={isModerator}
                 processCommand={processCommand}
                 showChannelButtons={isConnected && !currentChannel}

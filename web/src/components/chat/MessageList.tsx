@@ -7,6 +7,7 @@ export function MessageList({
   lines,
   profiles,
   messagesEndRef,
+  messagesContainerRef,
   isModerator,
   processCommand,
   showChannelButtons,
@@ -16,6 +17,7 @@ export function MessageList({
   lines: ChatLine[];
   profiles: Record<string, FarcasterUserProfile | null>;
   messagesEndRef: RefObject<HTMLDivElement | null>;
+  messagesContainerRef?: RefObject<HTMLDivElement | null>;
   isModerator: boolean;
   processCommand: (input: string) => Promise<void>;
   showChannelButtons?: boolean;
@@ -23,7 +25,10 @@ export function MessageList({
   onCreateChannel?: () => void;
 }) {
   return (
-    <div className="flex-1 overflow-y-auto px-4 py-2 bg-[var(--bg-primary)] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[var(--bg-tertiary)] hover:scrollbar-thumb-[var(--bg-hover)]">
+    <div
+      ref={messagesContainerRef}
+      className="flex-1 overflow-y-auto px-4 py-2 bg-[var(--bg-primary)] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[var(--bg-tertiary)] hover:scrollbar-thumb-[var(--bg-hover)]"
+    >
       <div className="flex flex-col gap-[2px]">
         {lines.map((line: ChatLine) => (
           <ChatLineComponent
