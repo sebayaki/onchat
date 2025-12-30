@@ -717,7 +717,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             } catch (err) {
               console.error("Failed to fetch profiles for /who:", err);
               // Fallback to just listing addresses if profile fetch fails
-              addLine("info", members.map(formatAddress).join(" "));
+              addLine("info", members.map((m) => formatAddress(m)).join(" "));
             }
             setIsLoading(false);
             break;
