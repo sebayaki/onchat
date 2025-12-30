@@ -97,7 +97,10 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
   const [isInitialChannelLoading, setIsInitialChannelLoading] = useState(
     !!initialChannelSlug
   );
-  const [isLoadingChannels, setIsLoadingChannels] = useState(false);
+  // Initialize as loading if we already have a connection to restore
+  const [isLoadingChannels, setIsLoadingChannels] = useState(
+    isConnected && !!address
+  );
 
   const lineIdCounter = useRef(0);
   // Track processed tx hashes to avoid duplicates from optimistic updates
@@ -272,16 +275,12 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         const isSwitching = prevAddressRef.current !== undefined;
         prevAddressRef.current = address;
 
-        // Defer state updates to avoid synchronous setState in effect
-        const timeoutId = setTimeout(() => {
-          loadJoinedChannels();
-          if (isSwitching) {
-            addLine("system", `Switched to account ${formatAddress(address)}`);
-          } else {
-            addLine("system", `Connected as ${formatAddress(address)}`);
-          }
-        }, 0);
-        return () => clearTimeout(timeoutId);
+        loadJoinedChannels();
+        if (isSwitching) {
+          addLine("system", `Switched to account ${formatAddress(address)}`);
+        } else {
+          addLine("system", `Connected as ${formatAddress(address)}`);
+        }
       }
     } else if (!isConnected || !address) {
       if (prevAddressRef.current !== undefined) {

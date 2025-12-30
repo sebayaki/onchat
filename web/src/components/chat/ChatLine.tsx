@@ -251,10 +251,10 @@ export function ChatLineComponent({
         line.content === "Connect your wallet to start chatting";
       return (
         <div className="chat-line text-[var(--color-info)] flex flex-col items-start">
-          <div className="flex items-center">
+          <div className="flex items-start">
             <span className="chat-timestamp">[{timeStr}]</span>
             <span className="chat-prefix text-[var(--color-info)]">*</span>
-            <span className="chat-content">
+            <span className="chat-content min-w-0">
               <MessageContent content={line.content} />
             </span>
           </div>
@@ -336,16 +336,18 @@ export function ChatLineComponent({
     }
     case "user":
       return (
-        <div className="chat-line text-[var(--color-info)] flex items-center">
+        <div className="chat-line text-[var(--color-info)] flex items-start">
           <span className="chat-timestamp">[{timeStr}]</span>
           <span className="chat-prefix text-[var(--color-info)]">*</span>
-          <UserDisplay
-            address={line.senderAddress}
-            formattedAddress={line.sender || ""}
-            profile={profile}
-            showFullAddress={true}
-            showActions={true}
-          />
+          <div className="min-w-0">
+            <UserDisplay
+              address={line.senderAddress}
+              formattedAddress={line.sender || ""}
+              profile={profile}
+              showFullAddress={true}
+              showActions={true}
+            />
+          </div>
         </div>
       );
     default:

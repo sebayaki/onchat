@@ -1,7 +1,6 @@
-import { wagmiAdapter, projectId } from "@/configs/wagmi";
+import { wagmiAdapter } from "@/configs/wagmi";
+import { initializeAppKit } from "@/configs/appkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { createAppKit } from "@reown/appkit/react";
-import { base } from "@reown/appkit/networks";
 import {
   type ReactNode,
   useState,
@@ -12,57 +11,12 @@ import {
   useContext,
 } from "react";
 import { WagmiProvider, type Config } from "wagmi";
-import { APP_URL, APP_NAME, APP_DESCRIPTION } from "@/configs/constants";
 import { EventProvider } from "./EventContext";
 import { ThemeProvider } from "./ThemeContext";
 import { sdk } from "@farcaster/miniapp-sdk";
 
-if (!projectId) {
-  throw new Error("Project ID is not defined");
-}
-
-// Set up metadata
-const getCurrentOrigin = () => {
-  if (typeof window !== "undefined") {
-    return window.location.origin;
-  }
-  return APP_URL;
-};
-
-const currentOrigin = getCurrentOrigin();
-const metadata = {
-  name: APP_NAME,
-  description: APP_DESCRIPTION,
-  url: currentOrigin,
-  icons: [`${currentOrigin}/android-chrome-192x192.png`],
-};
-
-// Create the modal
-createAppKit({
-  adapters: [wagmiAdapter],
-  projectId,
-  networks: [base],
-  defaultNetwork: base,
-  metadata: metadata,
-  features: {
-    analytics: true,
-    email: false,
-    socials: false,
-    onramp: true,
-    swaps: false,
-    send: false,
-    history: false,
-  },
-  themeMode: "dark",
-  themeVariables: {
-    "--w3m-accent": "#0066ff",
-    "--w3m-color-mix": "#000000",
-    "--w3m-color-mix-strength": 40,
-    "--w3m-font-family": "'IBM Plex Mono', 'Fira Code', monospace",
-    "--w3m-border-radius-master": "0px",
-    "--w3m-z-index": 10000,
-  },
-});
+// Initialize AppKit
+initializeAppKit();
 
 // Farcaster context type
 interface FarcasterContextType {

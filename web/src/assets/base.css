@@ -1,9 +1,9 @@
 /**
  * OnChat Base Styles
- * 
+ *
  * Shared styles used by both the main app (globals.css) and the embeddable widget (widget.css).
  * This file contains animations, chat line styles, scrollbar, selection, and utility classes.
- * 
+ *
  * Note: CSS variables must be defined in the importing file (:root for app, :host for widget)
  */
 
@@ -28,10 +28,14 @@
 .chat-timestamp {
   color: var(--color-timestamp);
   margin-right: 0.5rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .chat-prefix {
   margin-right: 0.5rem;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .chat-channel {

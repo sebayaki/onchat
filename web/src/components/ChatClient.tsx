@@ -90,6 +90,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     channelSlug &&
     joinedChannels.some((c) => c.slug === channelSlug.toLowerCase());
   const showJoinButton =
+    isConnected &&
     channelSlug &&
     !isJoinedInInitialChannel &&
     !isInitialChannelLoading &&

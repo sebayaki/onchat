@@ -21,16 +21,12 @@
  */
 
 import type { Root } from "react-dom/client";
-import { http, createClient, fallback } from "viem";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
-import { createAppKit } from "@reown/appkit/react";
-import { base } from "@reown/appkit/networks";
-import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
-import { injected, coinbaseWallet } from "wagmi/connectors";
+import { wagmiAdapter as globalWagmiAdapter } from "../configs/wagmi";
+import { initializeAppKit } from "../configs/appkit";
 
 import { setWidgetThemeOptions } from "./ThemeContext";
 import { themes, type Theme } from "../helpers/themes";
-import { BASE_RPC_ENDPOINTS } from "../configs/rpcs";
 import { renderWidget, type OnChatWidgetOptions } from "./WidgetComponents";
 
 // Inline CSS - injected at build time by Vite
@@ -38,53 +34,6 @@ import widgetStyles from "./widget.css?inline";
 
 // Re-export for external use
 export type { OnChatWidgetOptions };
-
-// Get project ID from Vite env or fallback
-const getProjectId = () => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const env = (import.meta as any).env || {};
-  return env.VITE_REOWN_PROJECT_ID || "";
-};
-
-// Create wagmi adapter for widget
-function createWidgetWagmiAdapter() {
-  const projectId = getProjectId();
-
-  if (!projectId) {
-    console.error("OnChat Widget: VITE_REOWN_PROJECT_ID is not defined");
-    return null;
-  }
-
-  return new WagmiAdapter({
-    projectId,
-    networks: [base],
-    connectors: [
-      farcasterMiniApp(),
-      injected(),
-      coinbaseWallet({
-        appName: "OnChat Widget",
-        appLogoUrl: "https://onchat.sebayaki.com/android-chrome-512x512.png",
-      }),
-    ],
-    client({ chain }) {
-      const transport = fallback(
-        BASE_RPC_ENDPOINTS.map((url) =>
-          http(url, {
-            timeout: 2_000,
-            retryCount: 0,
-            batch: true,
-          })
-        ),
-        { rank: false }
-      );
-
-      return createClient({
-        chain,
-        transport,
-      });
-    },
-  });
-}
 
 // Apply theme CSS variables to shadow root host
 function applyThemeToShadow(
@@ -190,44 +139,9 @@ export function mount(
   mountPoint.style.height = "100%";
   shadowRoot.appendChild(mountPoint);
 
-  // Create wagmi adapter
-  const wagmiAdapter = createWidgetWagmiAdapter();
-
-  if (!wagmiAdapter) {
-    throw new Error("OnChat: Failed to create wagmi adapter");
-  }
-
-  // Initialize AppKit
-  const projectId = getProjectId();
-  createAppKit({
-    adapters: [wagmiAdapter],
-    projectId,
-    networks: [base],
-    defaultNetwork: base,
-    metadata: {
-      name: "OnChat Widget",
-      description: "Embeddable on-chain chat",
-      url: window.location.origin,
-      icons: ["https://onchat.sebayaki.com/android-chrome-192x192.png"],
-    },
-    features: {
-      analytics: false,
-      email: false,
-      socials: false,
-      onramp: false,
-      swaps: false,
-      send: false,
-      history: false,
-    },
-    themeMode: "dark",
-    themeVariables: {
-      "--w3m-accent": "#0066ff",
-      "--w3m-color-mix": "#000000",
-      "--w3m-color-mix-strength": 40,
-      "--w3m-border-radius-master": "0px",
-      "--w3m-z-index": 10000,
-    },
-  });
+  // Initialize AppKit and get adapter
+  initializeAppKit(true);
+  const wagmiAdapter = globalWagmiAdapter;
 
   // Apply theme CSS variables to shadow root
   const theme = themes.find((t) => t.id === options.theme) || themes[0];
