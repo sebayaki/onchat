@@ -1,6 +1,3 @@
-// IMPORTANT: This patch must be imported FIRST, before any Farcaster SDK imports!
-import "@/utils/farcasterPatch";
-
 import { http } from "@wagmi/core";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { base } from "@reown/appkit/networks";
