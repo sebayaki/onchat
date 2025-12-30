@@ -44,9 +44,23 @@ import { fetchUserProfilesBulk } from "@/helpers/farcaster";
 import { renderWhoisChannels } from "@/components/WhoisChannels";
 import { STORAGE_KEYS } from "@/configs/constants";
 
+export interface ChannelListItem {
+  slug: string;
+  memberCount: bigint;
+  messageCount: bigint;
+}
+
 export interface ChatLine {
   id: string;
-  type: "system" | "error" | "info" | "message" | "action" | "command" | "user";
+  type:
+    | "system"
+    | "error"
+    | "info"
+    | "message"
+    | "action"
+    | "command"
+    | "user"
+    | "channelList";
   timestamp: Date;
   content: string | ReactNode;
   sender?: string;
@@ -56,6 +70,7 @@ export interface ChatLine {
   isHidden?: boolean;
   isPending?: boolean;
   transactionHash?: string;
+  channels?: ChannelListItem[];
 }
 
 interface UseChatReturn {
@@ -530,13 +545,19 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   "No channels found. Create one with /create #channel-name"
                 );
               } else {
-                addLine("info", `═══ Channels (${channels.length}) ═══`);
-                for (const ch of channels) {
-                  addLine(
-                    "info",
-                    `#${ch.slug} - ${ch.memberCount} users, ${ch.messageCount} messages`
-                  );
-                }
+                // Add a single channelList line with all channels for front-end pagination
+                const newLine: ChatLine = {
+                  id: crypto.randomUUID(),
+                  type: "channelList",
+                  timestamp: new Date(),
+                  content: `═══ Channels (${channels.length}) ═══`,
+                  channels: channels.map((ch) => ({
+                    slug: ch.slug,
+                    memberCount: ch.memberCount,
+                    messageCount: ch.messageCount,
+                  })),
+                };
+                setLines((prev) => [...prev, newLine]);
               }
             } catch (err) {
               addLine("error", `Failed to list channels: ${err}`);

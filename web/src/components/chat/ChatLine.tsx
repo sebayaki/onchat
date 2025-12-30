@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import BaseScanIcon from "@/assets/logos/basescan.svg?url";
 import FarcasterIcon from "@/assets/logos/farcaster.svg?url";
 import CopyButton from "../CopyButton";
-import { type ChatLine } from "@/hooks/useChat";
+import { type ChatLine, type ChannelListItem } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { formatTime, formatAddress } from "@/helpers/format";
 
@@ -199,6 +200,54 @@ function MessageContent({ content }: { content: string | React.ReactNode }) {
   );
 }
 
+const CHANNELS_PER_PAGE = 20;
+
+function ChannelListDisplay({
+  channels,
+  title,
+  timeStr,
+}: {
+  channels: ChannelListItem[];
+  title: string;
+  timeStr: string;
+}) {
+  const [visibleCount, setVisibleCount] = useState(CHANNELS_PER_PAGE);
+  const hasMore = visibleCount < channels.length;
+  const visibleChannels = channels.slice(0, visibleCount);
+
+  return (
+    <div className="chat-line text-[var(--color-info)] flex flex-col items-start">
+      <div className="flex items-start">
+        <span className="chat-timestamp">[{timeStr}]</span>
+        <span className="chat-prefix text-[var(--color-info)]">*</span>
+        <span className="chat-content">{title}</span>
+      </div>
+      {visibleChannels.map((ch) => (
+        <div
+          key={ch.slug}
+          className="flex items-start pl-[calc(var(--timestamp-width)+0.5rem)]"
+        >
+          <span className="chat-prefix text-[var(--color-info)]">*</span>
+          <span className="chat-content">
+            #{ch.slug} - {ch.memberCount.toString()} users,{" "}
+            {ch.messageCount.toString()} messages
+          </span>
+        </div>
+      ))}
+      {hasMore && (
+        <div className="pl-[calc(var(--timestamp-width)+0.5rem)]">
+          <button
+            onClick={() => setVisibleCount((prev) => prev + CHANNELS_PER_PAGE)}
+            className="text-[var(--color-channel)] hover:text-[var(--primary)] transition-colors cursor-pointer font-mono text-[0.85rem] underline"
+          >
+            View more ({channels.length - visibleCount} remaining)
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function ChatLineComponent({
   line,
   profile,
@@ -350,6 +399,14 @@ export function ChatLineComponent({
           </div>
         </div>
       );
+    case "channelList":
+      return line.channels ? (
+        <ChannelListDisplay
+          channels={line.channels}
+          title={typeof line.content === "string" ? line.content : "Channels"}
+          timeStr={timeStr}
+        />
+      ) : null;
     default:
       return null;
   }

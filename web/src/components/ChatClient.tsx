@@ -141,10 +141,18 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     if (!container) return;
 
     const linesDiff = lines.length - prevLinesLengthRef.current;
+    const lastLine = lines[lines.length - 1];
     prevLinesLengthRef.current = lines.length;
 
-    // If channel changed or lots of messages added, force a scroll
-    if (linesDiff > 5 || (linesDiff > 0 && isInitialChannelLoading)) {
+    // Force scroll for: bulk messages, initial loading, or command output (channelList, info, etc.)
+    const isCommandOutput =
+      lastLine &&
+      ["channelList", "info", "error", "system"].includes(lastLine.type);
+    if (
+      linesDiff > 5 ||
+      (linesDiff > 0 && isInitialChannelLoading) ||
+      (linesDiff > 0 && isCommandOutput)
+    ) {
       requestAnimationFrame(() => {
         container.scrollTop = container.scrollHeight;
       });
