@@ -13,7 +13,7 @@ import {
   createContext,
   useContext,
 } from "react";
-import { cookieToInitialState, WagmiProvider, type Config } from "wagmi";
+import { WagmiProvider, type Config } from "wagmi";
 import { APP_URL, APP_NAME, APP_DESCRIPTION } from "@/configs/constants";
 import { EventProvider } from "./EventContext";
 import { ThemeProvider } from "./ThemeContext";
@@ -153,25 +153,11 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
   );
 }
 
-function ContextProvider({
-  children,
-  cookies,
-}: {
-  children: ReactNode;
-  cookies: string | null;
-}) {
+function ContextProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
-  const initialState = cookieToInitialState(
-    wagmiAdapter.wagmiConfig as Config,
-    cookies
-  );
-
   return (
-    <WagmiProvider
-      config={wagmiAdapter.wagmiConfig as Config}
-      initialState={initialState}
-    >
+    <WagmiProvider config={wagmiAdapter.wagmiConfig as Config}>
       <QueryClientProvider client={queryClient}>
         <FarcasterMiniAppHandler>
           <ThemeProvider>

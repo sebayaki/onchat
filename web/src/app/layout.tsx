@@ -87,7 +87,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://auth.farcaster.xyz" />
       </head>
       <body>
-        <ContextProvider cookies={null}>{children}</ContextProvider>
+        <ContextProvider>{children}</ContextProvider>
       </body>
     </html>
   );
