@@ -160,6 +160,36 @@ function ConnectButton() {
   );
 }
 
+function MessageContent({ content }: { content: string | React.ReactNode }) {
+  if (typeof content !== "string") {
+    return <>{content}</>;
+  }
+
+  // Basic URL regex that matches http/https
+  const parts = content.split(/(https?:\/\/[^\s]+)/g);
+
+  return (
+    <>
+      {parts.map((part, i) => {
+        if (part.startsWith("http://") || part.startsWith("https://")) {
+          return (
+            <a
+              key={i}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:opacity-80 transition-opacity"
+            >
+              {part}
+            </a>
+          );
+        }
+        return part;
+      })}
+    </>
+  );
+}
+
 export function ChatLineComponent({
   line,
   profile,
@@ -188,7 +218,9 @@ export function ChatLineComponent({
           }`}
         >
           <span className="chat-timestamp">[{timeStr}]</span>
-          <span className="chat-content">{line.content}</span>
+          <span className="chat-content">
+            <MessageContent content={line.content} />
+          </span>
         </div>
       );
     }
@@ -199,7 +231,9 @@ export function ChatLineComponent({
           <span className="chat-prefix font-bold text-[var(--color-error)]">
             !
           </span>
-          <span className="chat-content">{line.content}</span>
+          <span className="chat-content">
+            <MessageContent content={line.content} />
+          </span>
         </div>
       );
     case "info": {
@@ -211,7 +245,9 @@ export function ChatLineComponent({
           <div className="flex items-center">
             <span className="chat-timestamp">[{timeStr}]</span>
             <span className="chat-prefix text-[var(--color-info)]">*</span>
-            <span className="chat-content">{line.content}</span>
+            <span className="chat-content">
+              <MessageContent content={line.content} />
+            </span>
           </div>
           {isConnectLine && <ConnectButton />}
         </div>
@@ -222,7 +258,9 @@ export function ChatLineComponent({
         <div className="chat-line text-[var(--color-action)]">
           <span className="chat-timestamp">[{timeStr}]</span>
           <span className="chat-prefix text-[var(--color-action)]">→</span>
-          <span className="chat-content">{line.content}</span>
+          <span className="chat-content">
+            <MessageContent content={line.content} />
+          </span>
         </div>
       );
     case "command":
@@ -232,7 +270,9 @@ export function ChatLineComponent({
           <span className="text-[var(--color-channel)] mr-1">
             {line.channel ? `#${line.channel}>` : ">"}
           </span>
-          <span className="chat-content">{line.content}</span>
+          <span className="chat-content">
+            <MessageContent content={line.content} />
+          </span>
         </div>
       );
     case "message": {
@@ -257,7 +297,13 @@ export function ChatLineComponent({
             <span className="ml-[1px]">&gt;</span>
           </span>
           <span className="chat-content">
-            {isHidden ? `(Hidden) ${line.content}` : line.content}
+            {isHidden ? (
+              <>
+                (Hidden) <MessageContent content={line.content} />
+              </>
+            ) : (
+              <MessageContent content={line.content} />
+            )}
           </span>
           {isModerator && line.messageIndex !== undefined && processCommand && (
             <button
