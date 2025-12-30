@@ -31,7 +31,7 @@ echo "Installing dependencies..." && npm install
 echo "Building widget (outputs to public/widget.js)..." && npm run build:widget
 
 echo "Pushing latest changes and tagging..."
-git pull && npm version patch --no-git-tag-version
+git pull && git push && npm version patch --no-git-tag-version
 VERSION=$(node -p "require('./package.json').version")
 git add .
 git commit -m "v$VERSION"
