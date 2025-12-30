@@ -5,7 +5,7 @@ import { formatAddress, formatNumber } from "@/helpers/format";
 import {
   type ChannelInfo,
   computeSlugHash,
-  getLatestChannels,
+  getAllChannels,
   getChannelBySlug,
   getLatestMessages,
   getChannel,
@@ -487,7 +487,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
           case "list":
             setIsLoading(true);
             try {
-              const channels = await getLatestChannels(0, 20);
+              const channels = await getAllChannels();
 
               if (channels.length === 0) {
                 addLine(

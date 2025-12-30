@@ -188,6 +188,33 @@ export async function getLatestChannels(
 }
 
 /**
+ * Get all channels by paginating until the end, sorted by message count (descending)
+ */
+export async function getAllChannels(): Promise<ChannelInfo[]> {
+  const totalCount = await getChannelCount();
+  const total = Number(totalCount);
+
+  if (total === 0) return [];
+
+  const batchSize = 50;
+  const offsets: number[] = [];
+  for (let offset = 0; offset < total; offset += batchSize) {
+    offsets.push(offset);
+  }
+
+  const batches = await Promise.all(
+    offsets.map((offset) => getLatestChannels(offset, batchSize))
+  );
+
+  // Sort all channels by message count descending
+  return batches.flat().sort((a, b) => {
+    if (b.messageCount > a.messageCount) return 1;
+    if (b.messageCount < a.messageCount) return -1;
+    return 0;
+  });
+}
+
+/**
  * Get message count for a channel
  */
 export async function getMessageCount(

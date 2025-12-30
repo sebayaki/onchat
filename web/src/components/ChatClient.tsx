@@ -5,7 +5,7 @@ import { useAppKit } from "@reown/appkit/react";
 import { useEvents } from "@/context/EventContext";
 import { useTheme } from "@/context/ThemeContext";
 import {
-  getLatestChannels,
+  getAllChannels,
   getOwnerBalance,
   claimOwnerBalance,
   waitForTransaction,
@@ -200,7 +200,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const loadAllChannels = useCallback(async () => {
     setLoadingChannels(true);
     try {
-      const channels = await getLatestChannels(0, 50);
+      const channels = await getAllChannels();
       setAllChannels(channels);
     } catch (err) {
       console.error("Failed to load channels:", err);
