@@ -61,6 +61,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={jetbrainsMono.variable}>
+      <head>
+        {/* Preconnect to Farcaster Quick Auth for optimized performance */}
+        <link rel="preconnect" href="https://auth.farcaster.xyz" />
+      </head>
       <body>
         <ContextProvider cookies={null}>{children}</ContextProvider>
       </body>

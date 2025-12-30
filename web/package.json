@@ -10,26 +10,33 @@
   },
   "dependencies": {
     "@coinbase/wallet-sdk": "^4.3.7",
-    "@metamask/sdk": "^0.33.1",
+    "@farcaster/miniapp-sdk": "^0.2.1",
+    "@farcaster/miniapp-wagmi-connector": "^1.1.0",
+    "@metamask/sdk": "^0.34.0",
     "@reown/appkit": "^1.8.15",
     "@reown/appkit-adapter-wagmi": "^1.8.15",
     "@tanstack/react-query": "^5.90.12",
-    "@walletconnect/ethereum-provider": "^2.21.10",
-    "next": "16.1.0",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
+    "@walletconnect/ethereum-provider": "^2.23.1",
+    "next": "^16.1.1",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
     "viem": "^2.43.3",
     "wagmi": "^3.1.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^20",
+    "@types/node": "^25.0.3",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
-    "eslint-config-next": "16.1.0",
+    "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "@farcaster/miniapp-wagmi-connector": {
+      "@wagmi/core": "^3.0.1"
+    }
   }
 }

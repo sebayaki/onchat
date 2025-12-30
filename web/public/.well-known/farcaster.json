@@ -21,11 +21,11 @@
       "social",
       "farcaster"
     ],
-    "heroImageUrl": "https://onchat.sebayaki.com/screenshot-1.png",
+    "heroImageUrl": "https://onchat.sebayaki.com/og-image.jpg",
     "tagline": "Permissionless, on-chain chat.",
     "ogTitle": "OnChat",
     "ogDescription": "A fully permissionless, on-chain chat protocol built on the Base.",
-    "ogImageUrl": "https://onchat.sebayaki.com/screenshot-1.png"
+    "ogImageUrl": "https://onchat.sebayaki.com/og-image.jpg"
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjgxNTEsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgyYkQyQjZFODhCNjY1M0JCMzYxNTk2MTA5MEQ0MjFhYzU4ZTQ0QmU0In0",

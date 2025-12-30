@@ -1,14 +1,27 @@
 "use client";
 
-import { wagmiAdapter, projectId } from "@/configs/wagmi";
+import { wagmiAdapter, projectId, farcasterConnector } from "@/configs/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createAppKit } from "@reown/appkit/react";
 import { base } from "@reown/appkit/networks";
-import { type ReactNode, useState } from "react";
-import { cookieToInitialState, WagmiProvider, type Config } from "wagmi";
+import {
+  type ReactNode,
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+} from "react";
+import {
+  cookieToInitialState,
+  WagmiProvider,
+  type Config,
+  useConnect,
+  useAccount,
+} from "wagmi";
 import { APP_URL, APP_NAME, APP_DESCRIPTION } from "@/configs/constants";
 import { EventProvider } from "./EventContext";
 import { ThemeProvider } from "./ThemeContext";
+import { sdk } from "@farcaster/miniapp-sdk";
 
 if (!projectId) {
   throw new Error("Project ID is not defined");
@@ -57,6 +70,84 @@ createAppKit({
   },
 });
 
+// Farcaster context type
+interface FarcasterContextType {
+  isInMiniApp: boolean;
+  isSDKLoaded: boolean;
+}
+
+const FarcasterContext = createContext<FarcasterContextType>({
+  isInMiniApp: false,
+  isSDKLoaded: false,
+});
+
+export const useFarcaster = () => useContext(FarcasterContext);
+
+/**
+ * Component that handles Farcaster Mini App initialization
+ * and auto-connects the embedded wallet when in Mini App context
+ */
+function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
+  const [farcasterState, setFarcasterState] = useState<FarcasterContextType>({
+    isInMiniApp: false,
+    isSDKLoaded: false,
+  });
+  const { connect } = useConnect();
+  const { isConnected } = useAccount();
+
+  useEffect(() => {
+    let mounted = true;
+
+    const initFarcaster = async () => {
+      try {
+        // Get the Farcaster context to check if we're in a Mini App
+        const context = await sdk.context;
+        const isInMiniApp = !!context;
+
+        if (mounted) {
+          setFarcasterState({
+            isInMiniApp,
+            isSDKLoaded: true,
+          });
+
+          // Auto-connect Farcaster wallet if in Mini App and not already connected
+          if (isInMiniApp && !isConnected) {
+            try {
+              connect({ connector: farcasterConnector });
+            } catch (err) {
+              console.error("Failed to auto-connect Farcaster wallet:", err);
+            }
+          }
+
+          // Call ready() to hide the splash screen
+          // Safe to call even outside Mini App context
+          await sdk.actions.ready();
+        }
+      } catch (error) {
+        console.error("Failed to initialize Farcaster SDK:", error);
+        if (mounted) {
+          setFarcasterState({
+            isInMiniApp: false,
+            isSDKLoaded: true,
+          });
+        }
+      }
+    };
+
+    initFarcaster();
+
+    return () => {
+      mounted = false;
+    };
+  }, [connect, isConnected]);
+
+  return (
+    <FarcasterContext.Provider value={farcasterState}>
+      {children}
+    </FarcasterContext.Provider>
+  );
+}
+
 function ContextProvider({
   children,
   cookies,
@@ -77,9 +168,11 @@ function ContextProvider({
       initialState={initialState}
     >
       <QueryClientProvider client={queryClient}>
-        <ThemeProvider>
-          <EventProvider>{children}</EventProvider>
-        </ThemeProvider>
+        <FarcasterMiniAppHandler>
+          <ThemeProvider>
+            <EventProvider>{children}</EventProvider>
+          </ThemeProvider>
+        </FarcasterMiniAppHandler>
       </QueryClientProvider>
     </WagmiProvider>
   );
