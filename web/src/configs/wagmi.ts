@@ -1,11 +1,12 @@
 import { http } from "@wagmi/core";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { base } from "@reown/appkit/networks";
-import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
 import { injected, coinbaseWallet } from "wagmi/connectors";
 import { createClient, fallback } from "viem";
 import { BASE_RPC_ENDPOINTS } from "@/configs/rpcs";
 import { APP_URL } from "@/configs/constants";
+// Custom Farcaster connector that uses window.top for nested iframe support
+import { farcasterMiniAppCustom } from "@/utils/farcasterConnector";
 
 // Get projectId from environment variable
 export const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID;
@@ -16,8 +17,8 @@ if (!projectId) {
 
 export const networks = [base];
 
-// Farcaster Mini App connector for embedded wallet support
-export const farcasterConnector = farcasterMiniApp();
+// Farcaster Mini App connector with window.top support for nested iframes
+export const farcasterConnector = farcasterMiniAppCustom();
 
 // Set up the Wagmi Adapter (Config)
 // Reown AppKit handles wallet connections (WalletConnect, injected, etc.) automatically
