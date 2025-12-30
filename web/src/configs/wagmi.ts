@@ -1,4 +1,4 @@
-import { http } from "@wagmi/core";
+import { http, createStorage } from "@wagmi/core";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { base } from "@reown/appkit/networks";
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
@@ -6,6 +6,12 @@ import { injected, coinbaseWallet } from "wagmi/connectors";
 import { createClient, fallback } from "viem";
 import { BASE_RPC_ENDPOINTS } from "@/configs/rpcs";
 import { APP_URL } from "@/configs/constants";
+
+// Custom storage with app-specific prefix to avoid conflicts when embedded in iframes
+const storage = createStorage({
+  key: "onchat",
+  storage: typeof window !== "undefined" ? localStorage : undefined,
+});
 
 // Get projectId from environment variable
 export const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID;
@@ -25,6 +31,7 @@ export const farcasterConnector = farcasterMiniApp();
 export const wagmiAdapter = new WagmiAdapter({
   projectId,
   networks,
+  storage,
   connectors: [
     farcasterConnector,
     injected(),
