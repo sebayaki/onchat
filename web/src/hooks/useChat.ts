@@ -54,6 +54,8 @@ export interface ChatLine {
   channel?: string;
   messageIndex?: number;
   isHidden?: boolean;
+  isPending?: boolean;
+  transactionHash?: string;
 }
 
 interface UseChatReturn {
@@ -111,7 +113,9 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       senderAddress?: string,
       channel?: string,
       messageIndex?: number,
-      isHidden?: boolean
+      isHidden?: boolean,
+      isPending?: boolean,
+      transactionHash?: string
     ) => {
       const line: ChatLine = {
         id: `line-${lineIdCounter.current++}`,
@@ -123,6 +127,8 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         channel,
         messageIndex,
         isHidden,
+        isPending,
+        transactionHash,
       };
       setLines((prev) => [...prev, line]);
     },
@@ -299,25 +305,43 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       // Only process messages for the current channel
       if (event.slugHash !== channel.slugHash) return;
 
-      // Skip if we already processed this tx (from optimistic update)
-      if (processedTxHashes.current.has(event.transactionHash)) {
-        processedTxHashes.current.delete(event.transactionHash);
-        return;
-      }
+      // Check if we have an optimistic message for this transaction
+      setLines((prev) => {
+        const existingLineIndex = prev.findIndex(
+          (l) =>
+            l.type === "message" && l.transactionHash === event.transactionHash
+        );
 
-      // Add the new message
-      const line: ChatLine = {
-        id: `line-${lineIdCounter.current++}`,
-        type: "message",
-        timestamp: new Date(),
-        content: event.content,
-        sender: formatAddress(event.sender),
-        senderAddress: event.sender,
-        channel: channel.slug,
-        messageIndex: Number(event.messageIndex),
-        isHidden: false,
-      };
-      setLines((prev) => [...prev, line]);
+        if (existingLineIndex !== -1) {
+          // Update the optimistic message
+          const newLines = [...prev];
+          newLines[existingLineIndex] = {
+            ...newLines[existingLineIndex],
+            isPending: false,
+            messageIndex: Number(event.messageIndex),
+            // Optionally update timestamp to the one from the event
+            timestamp: new Date(),
+          };
+          return newLines;
+        }
+
+        // Add the new message
+        const line: ChatLine = {
+          id: `line-${lineIdCounter.current++}`,
+          type: "message",
+          timestamp: new Date(),
+          content: event.content,
+          sender: formatAddress(event.sender),
+          senderAddress: event.sender,
+          channel: channel.slug,
+          messageIndex: Number(event.messageIndex),
+          isHidden: false,
+        };
+        return [...prev, line];
+      });
+
+      // Remove from processedTxHashes if it was there
+      processedTxHashes.current.delete(event.transactionHash);
     });
 
     const unsubModeration = onModerationEvent((event: ModerationEvent) => {
@@ -1179,6 +1203,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         }
 
         setIsLoading(true);
+        const tempId = `line-${lineIdCounter.current}`;
         try {
           // Show the message immediately (optimistic update)
           const msgIndex = Number(currentChannel.messageCount);
@@ -1189,7 +1214,8 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             address!,
             currentChannel.slug,
             msgIndex,
-            false
+            false,
+            true // isPending
           );
 
           const tx = await sendMessage(
@@ -1197,11 +1223,31 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             currentChannel.slugHash,
             content
           );
-          // Track tx hash to avoid duplicate from event subscription
+
+          // Update the optimistic message with the transaction hash
+          setLines((prev) =>
+            prev.map((l) =>
+              l.id === tempId ? { ...l, transactionHash: tx } : l
+            )
+          );
+
+          // Track tx hash to avoid duplicate from event subscription if it arrives early
           processedTxHashes.current.add(tx);
+
+          // Wait for confirmation
           await waitForTransaction(tx);
-          // Message already shown optimistically
+
+          // Note: isPending will be set to false by the onMessageSent event listener
+          // or we can also set it here as a fallback in case the event listener is slow
+          setLines((prev) =>
+            prev.map((l) =>
+              l.id === tempId && l.isPending ? { ...l, isPending: false } : l
+            )
+          );
         } catch (err: unknown) {
+          // Remove the optimistic message if it failed to send
+          setLines((prev) => prev.filter((l) => l.id !== tempId));
+
           const errorMessage = handleTransactionError(err);
           if (errorMessage !== null) {
             if (isUserRejectedError(err)) {

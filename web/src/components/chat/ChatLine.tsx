@@ -286,11 +286,12 @@ export function ChatLineComponent({
       );
     case "message": {
       const isHidden = line.isHidden;
+      const isPending = line.isPending;
       return (
         <div
           className={`chat-line chat-line-message text-[var(--primary)] ${
             isHidden ? "opacity-50 italic" : ""
-          }`}
+          } ${isPending ? "animate-blink" : ""}`}
         >
           <span className="chat-timestamp">[{timeStr}]</span>
           <span
@@ -314,19 +315,22 @@ export function ChatLineComponent({
               <MessageContent content={line.content} />
             )}
           </span>
-          {isModerator && line.messageIndex !== undefined && processCommand && (
-            <button
-              onClick={() =>
-                processCommand(
-                  `/mode ${isHidden ? "-h" : "+h"} ${line.messageIndex}`
-                )
-              }
-              className="ml-2 text-[0.6rem] bg-transparent border border-[var(--bg-tertiary)] px-1 rounded hover:bg-[var(--bg-hover)] cursor-pointer align-middle transition-colors uppercase font-bold"
-              style={{ verticalAlign: "middle" }}
-            >
-              {isHidden ? "Unhide" : "Hide"}
-            </button>
-          )}
+          {isModerator &&
+            line.messageIndex !== undefined &&
+            !isPending &&
+            processCommand && (
+              <button
+                onClick={() =>
+                  processCommand(
+                    `/mode ${isHidden ? "-h" : "+h"} ${line.messageIndex}`
+                  )
+                }
+                className="ml-2 text-[0.6rem] bg-transparent border border-[var(--bg-tertiary)] px-1 rounded hover:bg-[var(--bg-hover)] cursor-pointer align-middle transition-colors uppercase font-bold"
+                style={{ verticalAlign: "middle" }}
+              >
+                {isHidden ? "Unhide" : "Hide"}
+              </button>
+            )}
         </div>
       );
     }
