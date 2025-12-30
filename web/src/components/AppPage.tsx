@@ -1,5 +1,3 @@
-"use client";
-
 import { Suspense, useState, useEffect } from "react";
 import ChatClient from "@/components/ChatClient";
 

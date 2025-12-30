@@ -1,5 +1,3 @@
-"use client";
-
 import { ShareIcon, LogoIcon } from "@/components/Icons";
 import { formatNumber } from "@/helpers/format";
 import { type ChannelInfo } from "@/helpers/contracts";

@@ -1,5 +1,3 @@
-"use client";
-
 import { SidebarContent } from "./SidebarContent";
 import { type ChannelInfo } from "@/helpers/contracts";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
@@ -31,11 +29,15 @@ export function Sidebar({
   setShowChannelBrowser: (show: boolean) => void;
   setShowCreateChannel: (show: boolean) => void;
 }) {
+  // Mobile: show when channels tab active (full screen overlay)
+  // Desktop (sm:): always visible as side panel
   return (
     <aside
-      className={`${
-        activeTab === "channels" ? "flex" : "hidden"
-      } sm:flex w-[260px] bg-[var(--bg-secondary)] border-r border-[var(--bg-tertiary)] flex-col shrink-0 overflow-hidden max-md:w-[220px] max-sm:absolute max-sm:inset-0 max-sm:w-full max-sm:z-20`}
+      data-sidebar="true"
+      className={`${activeTab === "channels" ? "flex" : "hidden"} sm:flex
+        w-full sm:w-[260px] md:w-[260px]
+        absolute inset-0 z-20 sm:relative sm:inset-auto sm:z-auto
+        bg-[var(--bg-secondary)] border-r border-[var(--bg-tertiary)] flex-col shrink-0 overflow-hidden`}
     >
       <SidebarContent
         joinedChannels={joinedChannels}

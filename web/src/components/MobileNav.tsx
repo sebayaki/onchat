@@ -1,5 +1,3 @@
-"use client";
-
 import { ChatIcon, ChannelIcon, RewardIcon } from "@/components/Icons";
 
 export function MobileNav({
@@ -11,6 +9,7 @@ export function MobileNav({
   setActiveTab: (tab: "chat" | "channels" | "rewards") => void;
   messageCount?: bigint;
 }) {
+  // Hidden on desktop (sm:), visible on mobile
   return (
     <nav className="sm:hidden flex items-center justify-around bg-[var(--bg-secondary)] border-t border-[var(--bg-tertiary)] py-2 px-1">
       <button

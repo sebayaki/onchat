@@ -1,5 +1,3 @@
-"use client";
-
 import { type ChannelInfo } from "@/helpers/contracts";
 import { UserIcon, ChatIcon } from "../Icons";
 

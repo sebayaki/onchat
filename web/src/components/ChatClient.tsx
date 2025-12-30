@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useChat, type ChatLine } from "@/hooks/useChat";
 import { useFarcasterProfiles } from "@/hooks/useFarcasterProfiles";
@@ -48,7 +46,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const { open } = useAppKit();
   const { currentBlock } = useEvents();
   const { data: walletClient } = useWalletClient();
-  const { hideMobileTabs, hideBrand } = useTheme();
+  const { hideMobileTabs, hideBrand, isWidget } = useTheme();
 
   // Mobile state
   const [activeTab, setActiveTab] = useState<"chat" | "channels" | "rewards">(
@@ -105,8 +103,10 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     inputRef.current?.focus();
   }, [isLoading]);
 
-  // Update URL when channel changes
+  // Update URL when channel changes (skip in widget mode to avoid breaking parent app)
   useEffect(() => {
+    if (isWidget) return;
+
     // If we are currently fetching the initial channel requested via deep-link,
     // don't touch the URL yet to prevent the "/" flash.
     if (isInitialChannelLoading) return;
@@ -125,10 +125,12 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     ) {
       window.history.pushState({}, "", `/${search}`);
     }
-  }, [currentChannel, isInitialChannelLoading]);
+  }, [currentChannel, isInitialChannelLoading, isWidget]);
 
-  // Handle browser back/forward buttons
+  // Handle browser back/forward buttons (skip in widget mode)
   useEffect(() => {
+    if (isWidget) return;
+
     const handlePopState = () => {
       const path = window.location.pathname;
       const slug = path.split("/").filter(Boolean)[0];
@@ -137,7 +139,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
-  }, [enterChannel]);
+  }, [enterChannel, isWidget]);
 
   // Load balance data
   const loadBalanceData = useCallback(async () => {

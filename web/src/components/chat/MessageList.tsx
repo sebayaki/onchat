@@ -1,5 +1,3 @@
-"use client";
-
 import { type ChatLine } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { ChatLineComponent } from "./ChatLine";

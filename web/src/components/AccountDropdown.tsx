@@ -1,7 +1,4 @@
-"use client";
-
 import { useState, useRef, useEffect } from "react";
-import Image from "next/image";
 import { useDisconnect } from "wagmi";
 import { MenuIcon } from "@/components/Icons";
 import { formatAddress } from "@/helpers/format";
@@ -59,13 +56,12 @@ export function AccountDropdown({
             {profile ? (
               <div className="flex items-center gap-1.5">
                 {profile.pfpUrl && (
-                  <Image
+                  <img
                     src={profile.pfpUrl}
                     alt={profile.username}
                     width={16}
                     height={16}
                     className="w-4 h-4 rounded-full shrink-0"
-                    unoptimized
                   />
                 )}
                 <span className="font-bold">@{profile.username}</span>
@@ -89,12 +85,10 @@ export function AccountDropdown({
             <div className="flex items-center gap-2.5">
               <div className="relative w-8 h-8 rounded-full overflow-hidden bg-[var(--bg-primary)] border border-[var(--primary-muted)] shrink-0">
                 {profile?.pfpUrl ? (
-                  <Image
+                  <img
                     src={profile.pfpUrl}
                     alt={profile.username}
-                    fill
-                    className="object-cover"
-                    unoptimized
+                    className="absolute inset-0 w-full h-full object-cover"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-[var(--text-dim)] text-[0.6rem]">

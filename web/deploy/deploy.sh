@@ -33,7 +33,8 @@ git push && git push --tags
 
 echo "Building OnChat..."
 echo "Installing dependencies..." && npm install
-echo "Building static export..." && rm -rf out && npm run build
+echo "Building widget (outputs to public/widget.js)..." && npm run build:widget
+echo "Building static export..." && rm -rf dist && npm run build
 
 # Create directories only if they don't exist
 ssh $SSH_OPTS $HOST "
@@ -49,9 +50,9 @@ archive_name="client_build_$TIMESTAMP"
 
 # Use pigz (parallel gzip) if available for faster compression
 if command -v pigz &> /dev/null; then
-  tar -C out/ -cf - . | pigz > $archive_name.tar.gz
+  tar -C dist/ -cf - . | pigz > $archive_name.tar.gz
 else
-  tar -C out/ -zcf $archive_name.tar.gz .
+  tar -C dist/ -zcf $archive_name.tar.gz .
 fi
 
 scp $SSH_OPTS -C $archive_name.tar.gz $HOST:$RELEASE_DIR/$TIMESTAMP/ && \
@@ -74,4 +75,3 @@ ssh $SSH_OPTS $HOST "chmod 755 '$DEPLOY_DIR_BASE' '$RELEASE_DIR' 2>/dev/null || 
 echo "_________"
 echo "Deployment to $HOST completed successfully at $TIMESTAMP"
 echo "Deployed to: $CURRENT_LINK -> $RELEASE_DIR/$TIMESTAMP"
-

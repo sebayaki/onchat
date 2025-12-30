@@ -1,5 +1,3 @@
-"use client";
-
 import { FormEvent, useEffect, useState } from "react";
 import { getChannelCreationFee } from "@/helpers/contracts";
 import { formatEther } from "viem";

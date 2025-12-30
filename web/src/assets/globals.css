@@ -1,0 +1,47 @@
+@import 'tailwindcss';
+@import './variables.css';
+@import './base.css';
+
+/* ============================================================================
+   OnChat - Main App Styles
+   App-specific styles. Variables in variables.css, common styles in base.css.
+   ============================================================================ */
+
+/* ============================================================================
+   Reset & Base
+   ============================================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-mono);
+  font-optical-sizing: auto;
+  font-size: 13px;
+  line-height: 1.5;
+  background: var(--bg-primary);
+  color: var(--primary);
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 11px;
+  }
+}
+
+/* ============================================================================
+   Main App Scanline Effect (uses position: fixed for full viewport)
+   ============================================================================ */
+
+.chat-container::before {
+  position: fixed;
+}
+

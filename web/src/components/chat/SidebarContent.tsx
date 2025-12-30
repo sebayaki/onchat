@@ -1,5 +1,3 @@
-"use client";
-
 import { type ChannelInfo } from "@/helpers/contracts";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { formatAddress } from "@/helpers/format";

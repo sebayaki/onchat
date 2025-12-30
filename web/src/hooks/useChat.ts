@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useCallback, useRef, useEffect, ReactNode } from "react";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { useWalletClient } from "wagmi";

@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { CopyIcon, CheckIcon } from "@/components/Icons";
 

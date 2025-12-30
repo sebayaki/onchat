@@ -1,6 +1,7 @@
 export const APP_NAME = "OnChat";
 export const APP_DESCRIPTION = "Fully permissionless, on-chain chat on Base";
-export const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://onch.at";
+export const APP_URL =
+  import.meta.env.VITE_APP_URL || "https://onchat.sebayaki.com";
 
 export const CONTRACTS = {
   ONCHAT_ADDRESS: "0x898D291C2160A9CB110398e9dF3693b7f2c4af2D",

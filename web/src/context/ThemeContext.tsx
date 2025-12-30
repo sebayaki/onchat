@@ -1,5 +1,3 @@
-"use client";
-
 import React, {
   createContext,
   useContext,
@@ -15,6 +13,8 @@ interface ThemeContextType {
   themes: Theme[];
   hideMobileTabs: boolean;
   hideBrand: boolean;
+  /** True when running as embedded widget - disables URL/history manipulation */
+  isWidget: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -157,6 +157,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         themes,
         hideMobileTabs: urlState.hideMobileTabs,
         hideBrand: urlState.hideBrand,
+        isWidget: false,
       }}
     >
       {children}

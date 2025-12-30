@@ -1,0 +1,225 @@
+/**
+ * OnChat Base Styles
+ * 
+ * Shared styles used by both the main app (globals.css) and the embeddable widget (widget.css).
+ * This file contains animations, chat line styles, scrollbar, selection, and utility classes.
+ * 
+ * Note: CSS variables must be defined in the importing file (:root for app, :host for widget)
+ */
+
+/* ============================================================================
+   Chat Line Semantic Styles
+   ============================================================================ */
+
+.chat-line {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@media (max-width: 640px) {
+  .chat-line {
+    font-size: 11px;
+  }
+}
+
+.chat-timestamp {
+  color: var(--color-timestamp);
+  margin-right: 0.5rem;
+}
+
+.chat-prefix {
+  margin-right: 0.5rem;
+}
+
+.chat-channel {
+  color: var(--color-channel);
+  margin-right: 0.5rem;
+}
+
+.chat-sender {
+  color: var(--color-nick);
+  margin-right: 0.5rem;
+}
+
+.chat-content {
+  color: inherit;
+}
+
+.chat-line-message .chat-content {
+  color: var(--color-content);
+}
+
+/* ============================================================================
+   Scanline Effect (retro overlay)
+   ============================================================================ */
+
+.chat-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 0, 0, 0.03) 2px,
+    rgba(0, 0, 0, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* Subtle CRT glow */
+.chat-messages {
+  text-shadow: 0 0 2px rgba(0, 102, 255, 0.4);
+}
+
+/* ============================================================================
+   Selection
+   ============================================================================ */
+
+::selection {
+  background: var(--primary);
+  color: var(--bg-primary);
+}
+
+::-moz-selection {
+  background: var(--primary);
+  color: var(--bg-primary);
+}
+
+/* ============================================================================
+   Scrollbar
+   ============================================================================ */
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+}
+
+.scrollbar-overlay {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-overlay::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollbar-track-transparent::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thumb-\[var\(--bg-tertiary\)\]::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+.hover\:scrollbar-thumb-\[var\(--bg-hover\)\]:hover::-webkit-scrollbar-thumb {
+  background: var(--bg-hover);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--bg-hover);
+}
+
+/* ============================================================================
+   Animations
+   ============================================================================ */
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes status-pulse {
+  0%, 100% {
+    opacity: 0.5;
+    box-shadow: 0 0 2px var(--primary);
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 8px 2px var(--primary);
+  }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.status-dot-animated {
+  animation: status-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================================================
+   Utility Classes
+   ============================================================================ */
+
+.pixelated {
+  image-rendering: pixelated;
+}
+
+/* ============================================================================
+   Form Elements
+   ============================================================================ */
+
+input, textarea, button {
+  font-family: var(--font-mono);
+}
+
+input:focus, textarea:focus, button:focus {
+  outline: none;
+}
+
+/* ============================================================================
+   Links
+   ============================================================================ */
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+

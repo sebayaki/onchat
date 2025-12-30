@@ -1,0 +1,316 @@
+/**
+ * OnChat Widget Styles
+ *
+ * This file contains all styles needed for the embeddable widget.
+ * It's imported as a string and injected into the Shadow DOM.
+ *
+ * Variables in variables.css, common styles in base.css.
+ */
+
+@import 'tailwindcss';
+@import '../assets/variables.css';
+@import '../assets/base.css';
+
+/* ============================================================================
+   Widget Host Setup (Shadow DOM specific)
+   ============================================================================ */
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ============================================================================
+   Widget Reset & Base
+   ============================================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+#onchat-mount {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.5;
+  background: var(--bg-primary);
+  color: var(--primary);
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  #onchat-mount {
+    font-size: 11px;
+  }
+}
+
+/* ============================================================================
+   Widget Root Container with Container Queries
+   ============================================================================ */
+
+.onchat-widget-root {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  /* Enable container queries for responsive layout based on widget size, not viewport */
+  container-type: inline-size;
+  container-name: widget;
+}
+
+.onchat-widget-root .chat-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+}
+
+/* ============================================================================
+   Widget Layout
+   Uses container queries for responsive layout
+   Font size is reduced for compact display
+   ============================================================================ */
+
+.onchat-widget-root {
+  /* Widget uses smaller font for compact mobile layout */
+  #onchat-mount {
+    font-size: 11px;
+  }
+
+  .chat-line {
+    font-size: 11px;
+  }
+}
+
+/* Hide elements that shouldn't appear in widget context */
+.onchat-widget-root [data-widget-hide="true"] {
+  display: none !important;
+}
+
+/* ============================================================================
+   Container Query Responsive Overrides
+
+   These rules override Tailwind's viewport-based responsive utilities to use
+   container queries instead. This ensures the widget displays correctly based
+   on its container width, not the viewport width.
+
+   Tailwind breakpoints:
+   - sm: 640px and up
+   - md: 768px and up
+   ============================================================================ */
+
+/*
+ * Small container (< 640px) - Mobile styles
+ * Override sm: utilities to NOT apply in small containers
+ */
+@container widget (max-width: 639px) {
+  /* Hide elements that should only show on sm+ */
+  .sm\:flex:not([data-force-show]) {
+    display: none !important;
+  }
+  .sm\:inline:not([data-force-show]) {
+    display: none !important;
+  }
+  .sm\:block:not([data-force-show]) {
+    display: none !important;
+  }
+
+  /* Show elements hidden on sm+ (sm:hidden) */
+  .sm\:hidden {
+    display: flex !important;
+  }
+
+  /* max-sm: styles should apply */
+  .max-sm\:hidden {
+    display: none !important;
+  }
+  .max-sm\:text-lg {
+    font-size: 1.125rem !important;
+  }
+  .max-sm\:absolute {
+    position: absolute !important;
+  }
+  .max-sm\:inset-0 {
+    inset: 0 !important;
+  }
+  .max-sm\:w-full {
+    width: 100% !important;
+  }
+  .max-sm\:z-20 {
+    z-index: 20 !important;
+  }
+  .max-sm\:p-3 {
+    padding: 0.75rem !important;
+  }
+
+  /* Font size overrides */
+  .sm\:text-\[0\.9rem\] {
+    font-size: 0.8rem !important;
+  }
+  .sm\:text-\[13px\] {
+    font-size: 11px !important;
+  }
+
+  /* Size overrides */
+  .sm\:w-4 {
+    width: 0.875rem !important;
+  }
+  .sm\:h-4 {
+    height: 0.875rem !important;
+  }
+
+  /* Margin overrides */
+  .sm\:mb-0 {
+    margin-bottom: env(safe-area-inset-bottom) !important;
+  }
+
+  /* Max width overrides */
+  .sm\:max-w-\[300px\] {
+    max-width: 150px !important;
+  }
+}
+
+/*
+ * Medium+ container (>= 640px) - Desktop styles
+ * Override max-sm: utilities to NOT apply in larger containers
+ */
+@container widget (min-width: 640px) {
+  /* sm: utilities should apply */
+  .sm\:flex {
+    display: flex !important;
+  }
+  .sm\:inline {
+    display: inline !important;
+  }
+  .sm\:block {
+    display: block !important;
+  }
+
+  /* Hide elements that show on mobile only */
+  .sm\:hidden {
+    display: none !important;
+  }
+
+  /* max-sm: styles should NOT apply */
+  .max-sm\:hidden {
+    display: revert !important;
+  }
+  .max-sm\:text-lg {
+    font-size: revert !important;
+  }
+  .max-sm\:absolute {
+    position: revert !important;
+  }
+
+  /* Font sizes */
+  .sm\:text-\[0\.9rem\] {
+    font-size: 0.9rem !important;
+  }
+  .sm\:text-\[13px\] {
+    font-size: 13px !important;
+  }
+
+  /* Sizes */
+  .sm\:w-4 {
+    width: 1rem !important;
+  }
+  .sm\:h-4 {
+    height: 1rem !important;
+  }
+
+  /* Margin */
+  .sm\:mb-0 {
+    margin-bottom: 0 !important;
+  }
+
+  /* Max width */
+  .sm\:max-w-\[300px\] {
+    max-width: 300px !important;
+  }
+}
+
+/*
+ * Medium container queries (< 768px)
+ * Override md: utilities in medium-small containers
+ */
+@container widget (max-width: 767px) {
+  /* max-md: styles should apply */
+  .max-md\:hidden {
+    display: none !important;
+  }
+  .max-md\:w-\[220px\] {
+    width: 220px !important;
+  }
+
+  /* md: grid overrides */
+  .md\:grid-cols-2 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* md: text size overrides */
+  .md\:text-4xl {
+    font-size: 1.5rem !important;
+  }
+  .md\:text-xl {
+    font-size: 1.125rem !important;
+  }
+}
+
+/*
+ * Large container (>= 768px)
+ */
+@container widget (min-width: 768px) {
+  /* max-md: styles should NOT apply */
+  .max-md\:hidden {
+    display: revert !important;
+  }
+  .max-md\:w-\[220px\] {
+    width: revert !important;
+  }
+
+  /* md: utilities should apply */
+  .md\:grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .md\:text-4xl {
+    font-size: 2.25rem !important;
+  }
+  .md\:text-xl {
+    font-size: 1.25rem !important;
+  }
+}
+
+/*
+ * Extra overrides for widget-specific elements
+ * These ensure mobile-first styling for common widget use cases
+ */
+.onchat-widget-root {
+  /* Hide Creator Rewards button in widget - typically too small */
+  [data-widget-hide="rewards-header"] {
+    display: none !important;
+  }
+
+  /* Ensure footer stays compact */
+  footer {
+    font-size: 0.65rem;
+  }
+}
+
+/* Container query for very small widgets (< 400px) */
+@container widget (max-width: 399px) {
+  /* Even more compact styling for tiny embeds */
+  .onchat-widget-root header {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .onchat-widget-root footer {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+    font-size: 0.6rem;
+  }
+}

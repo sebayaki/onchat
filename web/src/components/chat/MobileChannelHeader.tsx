@@ -1,5 +1,3 @@
-"use client";
-
 import { useState } from "react";
 import { type ChannelInfo } from "@/helpers/contracts";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
@@ -38,6 +36,7 @@ export function MobileChannelHeader({
     return null;
   }
 
+  // Hidden on desktop (sm:), visible on mobile
   return (
     <div className="sm:hidden flex flex-col border-b border-[var(--bg-tertiary)] bg-[var(--bg-primary)] shrink-0">
       <button

@@ -1,0 +1,33 @@
+/**
+ * OnChat CSS Variables
+ * 
+ * Shared design tokens used by both the main app and the embeddable widget.
+ * Uses :root for main app context and :host for Shadow DOM widget context.
+ */
+
+:root, :host {
+  /* Text colors */
+  --primary: #0066ff;
+  --primary-muted: #0044cc;
+  --text-dim: #555555;
+
+  /* IRC-style semantic colors */
+  --color-system: #f8fafc;
+  --color-error: #ff5c5c;
+  --color-info: #3b82f6;
+  --color-action: #fbbf24;
+  --color-nick: #e879f9;
+  --color-channel: #22d3ee;
+  --color-timestamp: #64748b;
+  --color-content: #cbd5e1;
+
+  /* Terminal colors - classic blue on black */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #111111;
+  --bg-tertiary: #1a1a1a;
+  --bg-hover: #222222;
+
+  /* Font */
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+

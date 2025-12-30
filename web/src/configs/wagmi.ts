@@ -7,17 +7,11 @@ import { createClient, fallback } from "viem";
 import { BASE_RPC_ENDPOINTS } from "@/configs/rpcs";
 import { APP_URL } from "@/configs/constants";
 
-// Custom storage with app-specific prefix to avoid conflicts when embedded in iframes
-const storage = createStorage({
-  key: "onchat",
-  storage: typeof window !== "undefined" ? localStorage : undefined,
-});
-
 // Get projectId from environment variable
-export const projectId = process.env.NEXT_PUBLIC_REOWN_PROJECT_ID;
+export const projectId = import.meta.env.VITE_REOWN_PROJECT_ID;
 
 if (!projectId) {
-  throw new Error("NEXT_PUBLIC_REOWN_PROJECT_ID is not defined");
+  throw new Error("VITE_REOWN_PROJECT_ID is not defined");
 }
 
 export const networks = [base];
@@ -31,7 +25,6 @@ export const farcasterConnector = farcasterMiniApp();
 export const wagmiAdapter = new WagmiAdapter({
   projectId,
   networks,
-  storage,
   connectors: [
     farcasterConnector,
     injected(),

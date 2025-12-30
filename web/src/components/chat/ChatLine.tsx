@@ -1,9 +1,6 @@
-"use client";
-
-import Image from "next/image";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
-import BaseScanIcon from "@/assets/logos/basescan.svg";
-import FarcasterIcon from "@/assets/logos/farcaster.svg";
+import BaseScanIcon from "@/assets/logos/basescan.svg?url";
+import FarcasterIcon from "@/assets/logos/farcaster.svg?url";
 import CopyButton from "../CopyButton";
 import { type ChatLine } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
@@ -34,7 +31,7 @@ export function ActionButtons({
           rel="noopener noreferrer"
           className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity shrink-0"
         >
-          <Image
+          <img
             src={BaseScanIcon}
             alt="BaseScan"
             width={14}
@@ -50,7 +47,7 @@ export function ActionButtons({
           rel="noopener noreferrer"
           className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity shrink-0"
         >
-          <Image
+          <img
             src={FarcasterIcon}
             alt="Farcaster"
             width={14}
@@ -120,13 +117,12 @@ export function UserDisplay({
       style={{ verticalAlign: "middle" }}
     >
       {profile.pfpUrl && (
-        <Image
+        <img
           src={profile.pfpUrl}
           alt={profile.username}
           width={16}
           height={16}
           className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full shrink-0"
-          unoptimized
         />
       )}
       <span
