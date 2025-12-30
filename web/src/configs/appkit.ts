@@ -3,16 +3,14 @@ import { base } from "@reown/appkit/networks";
 import { wagmiAdapter, projectId } from "./wagmi";
 import { APP_NAME, APP_DESCRIPTION, APP_URL } from "./constants";
 
+let initialized = false;
+
 /**
  * Initialize Reown AppKit once.
  * Reuses the same Wagmi adapter and project configuration across the app and widgets.
  */
 export const initializeAppKit = (isWidget = false) => {
-  if (
-    typeof window !== "undefined" &&
-    (window as Window & { _onchatAppKitInitialized?: boolean })
-      ._onchatAppKitInitialized
-  ) {
+  if (initialized) {
     return;
   }
 
@@ -47,11 +45,5 @@ export const initializeAppKit = (isWidget = false) => {
     },
   });
 
-  if (typeof window !== "undefined") {
-    (
-      window as Window & {
-        _onchatAppKitInitialized?: boolean;
-      }
-    )._onchatAppKitInitialized = true;
-  }
+  initialized = true;
 };

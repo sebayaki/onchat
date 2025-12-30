@@ -1,4 +1,4 @@
-import { http, createStorage } from "@wagmi/core";
+import { http } from "@wagmi/core";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { base } from "@reown/appkit/networks";
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
