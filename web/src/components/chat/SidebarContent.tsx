@@ -4,7 +4,7 @@ import { type ChannelInfo } from "@/helpers/contracts";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { formatAddress } from "@/helpers/format";
 import { UserDisplay } from "./ChatLine";
-import { UserIcon, ChatIcon } from "../Icons";
+import { UserIcon, ChatIcon, LoadingIcon } from "../Icons";
 
 export function SidebarContent({
   joinedChannels,
@@ -56,12 +56,17 @@ export function SidebarContent({
 
       {/* Channels */}
       <div className="p-3 border-b border-[var(--bg-tertiary)] overflow-hidden flex flex-col">
-        <h3 className="text-[0.7rem] uppercase text-[var(--primary-muted)] mb-2 tracking-[1px] m-0">
-          My Channels
-        </h3>
+        <div className="flex items-center gap-2 mb-2">
+          <h3 className="text-[0.7rem] uppercase text-[var(--primary-muted)] tracking-[1px] m-0">
+            My Channels
+          </h3>
+          {isLoadingChannels && joinedChannels.length > 0 && (
+            <LoadingIcon size={12} className="text-[var(--primary-muted)]" />
+          )}
+        </div>
         <ul className="list-none p-0 m-0 overflow-y-auto flex-1">
-          {isLoadingChannels ? (
-            // Loading skeleton
+          {isLoadingChannels && joinedChannels.length === 0 ? (
+            // Loading skeleton (only on initial load)
             <>
               {[1, 2, 3].map((i) => (
                 <li key={i} className="px-2 py-1">
