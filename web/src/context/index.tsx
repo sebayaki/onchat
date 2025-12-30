@@ -83,34 +83,6 @@ const FarcasterContext = createContext<FarcasterContextType>({
 export const useFarcaster = () => useContext(FarcasterContext);
 
 /**
- * Wait for Farcaster Ethereum provider to be available
- * In mobile Farcaster app, the provider may take time to initialize
- */
-async function waitForEthereumProvider(
-  maxAttempts = 10,
-  delayMs = 200
-): Promise<boolean> {
-  for (let i = 0; i < maxAttempts; i++) {
-    try {
-      const provider = await sdk.wallet.getEthereumProvider();
-      if (provider) {
-        console.log(
-          `[Farcaster] Ethereum provider ready after ${i + 1} attempt(s)`
-        );
-        return true;
-      }
-    } catch {
-      // Provider not ready yet
-    }
-    await new Promise((resolve) => setTimeout(resolve, delayMs));
-  }
-  console.warn(
-    "[Farcaster] Ethereum provider not available after max attempts"
-  );
-  return false;
-}
-
-/**
  * Inner component that has access to wagmi hooks
  * Handles auto-connection when in Farcaster Mini App context
  */
@@ -136,55 +108,16 @@ function FarcasterAutoConnect({
       !hasAttemptedAutoConnect.current
     ) {
       hasAttemptedAutoConnect.current = true;
-
-      // Wait for provider then connect
-      (async () => {
-        console.log("[Farcaster] Waiting for Ethereum provider...");
-        const providerReady = await waitForEthereumProvider();
-
-        if (providerReady) {
-          console.log("[Farcaster] Auto-connecting to Farcaster wallet...");
-          connectWallet(
-            { connector: farcasterConnector },
-            {
-              onSuccess: () => {
-                console.log("[Farcaster] Wallet connected successfully");
-              },
-              onError: (error) => {
-                console.error("[Farcaster] Wallet connection error:", error);
-                // Reset flag to allow retry on manual connect
-                hasAttemptedAutoConnect.current = false;
-              },
-            }
-          );
-        }
-      })();
+      console.log("[Farcaster] Auto-connecting to Farcaster wallet...");
+      connectWallet({ connector: farcasterConnector });
     }
   }, [isInMiniApp, isSDKLoaded, isConnected, connectWallet]);
 
   // Function to manually connect to Farcaster wallet
   const connectFarcasterWallet = useCallback(() => {
     if (isInMiniApp && !isConnected) {
-      (async () => {
-        console.log("[Farcaster] Manually connecting to Farcaster wallet...");
-        const providerReady = await waitForEthereumProvider();
-
-        if (providerReady) {
-          connectWallet(
-            { connector: farcasterConnector },
-            {
-              onSuccess: () => {
-                console.log("[Farcaster] Wallet connected successfully");
-              },
-              onError: (error) => {
-                console.error("[Farcaster] Wallet connection error:", error);
-              },
-            }
-          );
-        } else {
-          console.error("[Farcaster] Cannot connect: provider not available");
-        }
-      })();
+      console.log("[Farcaster] Manually connecting to Farcaster wallet...");
+      connectWallet({ connector: farcasterConnector });
     }
   }, [isInMiniApp, isConnected, connectWallet]);
 
