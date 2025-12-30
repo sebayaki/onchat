@@ -21,17 +21,17 @@ export const farcasterConnector = farcasterMiniApp();
 
 // Set up the Wagmi Adapter (Config)
 // Reown AppKit handles wallet connections (WalletConnect, injected, etc.) automatically
-// Farcaster connector is added for Mini App embedded wallet support
+// Farcaster connector is prioritized first for Mini App embedded wallet support
 export const wagmiAdapter = new WagmiAdapter({
   projectId,
   networks,
   connectors: [
+    farcasterConnector, // Prioritize Farcaster connector for Mini App context
     injected(),
     coinbaseWallet({
       appName: "OnChat",
       appLogoUrl: `${APP_URL}/android-chrome-512x512.png`,
     }),
-    farcasterConnector,
   ],
   client({ chain }) {
     const transport = fallback(

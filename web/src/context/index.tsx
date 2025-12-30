@@ -108,18 +108,17 @@ function FarcasterAutoConnect({
       !hasAttemptedAutoConnect.current
     ) {
       hasAttemptedAutoConnect.current = true;
-      console.log("[Farcaster] Auto-connecting to Farcaster wallet...");
       connectWallet({ connector: farcasterConnector });
     }
   }, [isInMiniApp, isSDKLoaded, isConnected, connectWallet]);
 
   // Function to manually connect to Farcaster wallet
+  // This can be called even outside Mini App context - the connector handles it
   const connectFarcasterWallet = useCallback(() => {
-    if (isInMiniApp && !isConnected) {
-      console.log("[Farcaster] Manually connecting to Farcaster wallet...");
+    if (!isConnected) {
       connectWallet({ connector: farcasterConnector });
     }
-  }, [isInMiniApp, isConnected, connectWallet]);
+  }, [isConnected, connectWallet]);
 
   return (
     <FarcasterContext.Provider
@@ -179,8 +178,7 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
             await handleAddMiniApp();
           }
         }
-      } catch (error) {
-        console.error("Failed to initialize Farcaster SDK:", error);
+      } catch {
         if (mounted) {
           setFarcasterState({
             isInMiniApp: false,
