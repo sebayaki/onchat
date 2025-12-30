@@ -17,7 +17,8 @@ import { WagmiProvider, type Config } from "wagmi";
 import { APP_URL, APP_NAME, APP_DESCRIPTION } from "@/configs/constants";
 import { EventProvider } from "./EventContext";
 import { ThemeProvider } from "./ThemeContext";
-import { sdk } from "@farcaster/miniapp-sdk";
+// Use custom SDK that routes through window.top for nested iframe support
+import { farcasterSDK as sdk } from "@/utils/farcasterConnector";
 
 if (!projectId) {
   throw new Error("Project ID is not defined");
@@ -122,10 +123,11 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
           await sdk.actions.ready();
 
           // Prompt user to add mini app if in Farcaster context but not yet added
+          const ctx = context as { client?: { added?: boolean } } | null;
           if (
             isInMiniApp &&
-            context &&
-            !context.client.added &&
+            ctx?.client &&
+            !ctx.client.added &&
             !hasAttemptedAddMiniApp.current
           ) {
             hasAttemptedAddMiniApp.current = true;

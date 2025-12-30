@@ -62,25 +62,61 @@ function createTopWindowEndpoint() {
   };
 }
 
-// Create the miniAppHost proxy using Comlink with window.top
-let miniAppHost: ReturnType<typeof createMiniAppHost> | null = null;
-
-function createMiniAppHost() {
-  const endpoint = createTopWindowEndpoint();
-  return wrap<{
-    ethProviderRequest: (request: unknown) => Promise<unknown>;
-    ethProviderRequestV2: (request: unknown) => Promise<unknown>;
-    context: Promise<unknown>;
-    getCapabilities: () => Promise<string[]>;
-  }>(endpoint as never);
+// Define the host interface
+interface MiniAppHostInterface {
+  ethProviderRequest: (request: unknown) => Promise<unknown>;
+  ethProviderRequestV2: (request: unknown) => Promise<unknown>;
+  context: Promise<unknown>;
+  getCapabilities: () => Promise<string[]>;
+  ready: (options?: unknown) => Promise<void>;
+  addFrame: () => Promise<{ result?: unknown; error?: { type: string } }>;
 }
 
-function getMiniAppHost() {
+// Create the miniAppHost proxy using Comlink with window.top
+let miniAppHost: MiniAppHostInterface | null = null;
+
+function createMiniAppHost(): MiniAppHostInterface {
+  const endpoint = createTopWindowEndpoint();
+  return wrap<MiniAppHostInterface>(endpoint as never);
+}
+
+function getMiniAppHost(): MiniAppHostInterface {
   if (!miniAppHost) {
     miniAppHost = createMiniAppHost();
   }
   return miniAppHost;
 }
+
+// Export SDK-like methods that use window.top
+export const farcasterSDK = {
+  get context() {
+    return getMiniAppHost().context;
+  },
+
+  actions: {
+    async ready(options?: unknown) {
+      try {
+        console.log("[Farcaster SDK] Calling ready()...");
+        await getMiniAppHost().ready(options);
+        console.log("[Farcaster SDK] ready() complete");
+      } catch (e) {
+        console.warn("[Farcaster SDK] ready() failed:", e);
+      }
+    },
+
+    async addMiniApp() {
+      console.log("[Farcaster SDK] Calling addMiniApp()...");
+      const response = await getMiniAppHost().addFrame();
+      if (response.result) {
+        return response.result;
+      }
+      if (response.error) {
+        throw new Error(response.error.type);
+      }
+      throw new Error("Unknown error");
+    },
+  },
+};
 
 // RPC request store for tracking requests
 let requestId = 0;
