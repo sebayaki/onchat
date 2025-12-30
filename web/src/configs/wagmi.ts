@@ -1,7 +1,3 @@
-// IMPORTANT: This patch MUST be imported before @farcaster/miniapp-wagmi-connector
-// It fixes nested iframe communication by redirecting window.parent to window.top
-import "@/utils/farcasterPatch";
-
 import { http, createStorage } from "@wagmi/core";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { base } from "@reown/appkit/networks";
