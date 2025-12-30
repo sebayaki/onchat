@@ -17,6 +17,7 @@ export function SidebarContent({
   setShowChannelBrowser,
   setShowCreateChannel,
   onChannelClick,
+  hideUsersOnMobile,
 }: {
   joinedChannels: ChannelInfo[];
   currentChannel: ChannelInfo | null;
@@ -30,6 +31,7 @@ export function SidebarContent({
   setShowChannelBrowser: (show: boolean) => void;
   setShowCreateChannel: (show: boolean) => void;
   onChannelClick?: () => void;
+  hideUsersOnMobile?: boolean;
 }) {
   return (
     <>
@@ -53,7 +55,7 @@ export function SidebarContent({
       </div>
 
       {/* Channels */}
-      <div className="py-2 border-b border-[var(--bg-tertiary)] overflow-hidden flex flex-col flex-[0.8]">
+      <div className="py-2 border-b border-[var(--bg-tertiary)] overflow-hidden flex flex-col flex-1 min-h-[120px]">
         <div className="flex items-center gap-2 mb-2 px-2">
           <h3 className="text-[0.7rem] uppercase text-[var(--primary-muted)] tracking-[1px] m-0">
             My Channels
@@ -117,7 +119,11 @@ export function SidebarContent({
 
       {/* Users */}
       {currentChannel && (
-        <div className="py-2 border-b border-[var(--bg-tertiary)] overflow-hidden flex flex-col flex-[1.2]">
+        <div
+          className={`py-2 border-b border-[var(--bg-tertiary)] overflow-hidden flex-col flex-1 min-h-0 ${
+            hideUsersOnMobile ? "hidden sm:flex" : "flex"
+          }`}
+        >
           <h3 className="text-[0.7rem] uppercase text-[var(--primary-muted)] mb-2 tracking-[1px] m-0 px-2">
             Users ({members.length})
           </h3>

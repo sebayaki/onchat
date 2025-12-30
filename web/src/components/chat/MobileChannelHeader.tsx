@@ -84,6 +84,7 @@ export function MobileChannelHeader({
               setShowChannelBrowser={setShowChannelBrowser}
               setShowCreateChannel={setShowCreateChannel}
               onChannelClick={() => setIsExpanded(false)}
+              hideUsersOnMobile
             />
           </div>
         </div>

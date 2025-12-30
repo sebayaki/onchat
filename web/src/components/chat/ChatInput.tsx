@@ -1,6 +1,6 @@
 import { type ChannelInfo } from "@/helpers/contracts";
 import { RefObject } from "react";
-import { SendIcon } from "../Icons";
+import { SendIcon, LoadingIcon } from "../Icons";
 
 export function ChatInput({
   input,
@@ -10,6 +10,7 @@ export function ChatInput({
   isLoading,
   isConnected,
   isWalletLoading,
+  isLoadingChannels,
   currentChannel,
   showJoinButton,
   handleJoinChannel,
@@ -23,6 +24,7 @@ export function ChatInput({
   isLoading: boolean;
   isConnected: boolean;
   isWalletLoading: boolean;
+  isLoadingChannels?: boolean;
   currentChannel: ChannelInfo | null;
   showJoinButton: boolean | "" | undefined;
   handleJoinChannel: (slug: string) => Promise<void>;
@@ -34,11 +36,17 @@ export function ChatInput({
       className="flex items-center px-4 py-2 bg-[var(--bg-secondary)] border-t border-[var(--bg-tertiary)] gap-2 relative mb-[env(safe-area-inset-bottom)] sm:mb-0"
       onSubmit={handleSubmit}
     >
-      {(showJoinButton || (isWalletLoading && channelSlug)) && (
+      {(showJoinButton ||
+        ((isWalletLoading || isLoadingChannels) && channelSlug)) && (
         <div className="absolute inset-0 bg-[var(--bg-secondary)] flex items-center justify-center z-10 px-4">
-          {isWalletLoading ? (
-            <div className="text-[var(--text-dim)] font-mono text-[0.85rem] animate-pulse">
-              Connecting wallet...
+          {isWalletLoading || isLoadingChannels ? (
+            <div className="text-[var(--text-dim)] font-mono text-[0.8rem] flex items-center gap-2">
+              <LoadingIcon size={14} className="animate-spin opacity-70" />
+              <span className="animate-pulse">
+                {isWalletLoading
+                  ? "Connecting Wallet..."
+                  : "Loading Channels..."}
+              </span>
             </div>
           ) : (
             <button

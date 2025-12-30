@@ -84,7 +84,6 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const prevLinesLengthRef = useRef(0);
 
   // Check if we are in the initial channel
   const isJoinedInInitialChannel =
@@ -94,29 +93,62 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     channelSlug &&
     !isJoinedInInitialChannel &&
     !isInitialChannelLoading &&
+    !isLoadingChannels &&
     currentChannel?.slug === channelSlug.toLowerCase();
 
-  // Auto-scroll to bottom
+  // Robust auto-scroll using ResizeObserver to catch all layout shifts (images, profiles, etc.)
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
 
-    // Determine if this is a bulk load (channel join) or single message
-    const linesDiff = lines.length - prevLinesLengthRef.current;
-    const isBulkLoad = linesDiff > 3;
-    prevLinesLengthRef.current = lines.length;
+    let isAutoScrolling = false;
 
-    // Use requestAnimationFrame to ensure DOM is fully rendered
-    requestAnimationFrame(() => {
-      if (isBulkLoad) {
-        // For bulk loads (joining channel), scroll instantly to bottom
-        container.scrollTop = container.scrollHeight;
-      } else {
-        // For single messages, use smooth scroll
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const observer = new ResizeObserver(() => {
+      if (isAutoScrolling) return;
+
+      // Check if we're near the bottom or if it's the initial load
+      const threshold = 150; // pixels from bottom
+      const isNearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight <
+        threshold;
+
+      if (isNearBottom || isInitialChannelLoading) {
+        isAutoScrolling = true;
+        // Double RAF to ensure layout is stable
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            container.scrollTop = container.scrollHeight;
+            isAutoScrolling = false;
+          });
+        });
       }
     });
-  }, [lines]);
+
+    // Observe the inner div of the message list (the one that actually changes size)
+    const scrollContent = container.firstElementChild;
+    if (scrollContent) {
+      observer.observe(scrollContent);
+    }
+
+    return () => observer.disconnect();
+  }, [isInitialChannelLoading]);
+
+  // Handle new messages and channel switches
+  const prevLinesLengthRef = useRef(0);
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const linesDiff = lines.length - prevLinesLengthRef.current;
+    prevLinesLengthRef.current = lines.length;
+
+    // If channel changed or lots of messages added, force a scroll
+    if (linesDiff > 5 || (linesDiff > 0 && isInitialChannelLoading)) {
+      requestAnimationFrame(() => {
+        container.scrollTop = container.scrollHeight;
+      });
+    }
+  }, [lines, isInitialChannelLoading]);
 
   // Focus input on mount and after loading completes
   useEffect(() => {
@@ -300,19 +332,21 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         }}
       />
 
-      <MobileChannelHeader
-        currentChannel={currentChannel}
-        joinedChannels={joinedChannels}
-        members={members}
-        moderators={moderators}
-        profiles={profiles}
-        isConnected={isConnected}
-        isLoadingChannels={isLoadingChannels}
-        processCommand={processCommand}
-        setActiveTab={setActiveTab}
-        setShowChannelBrowser={setShowChannelBrowser}
-        setShowCreateChannel={setShowCreateChannel}
-      />
+      {activeTab === "chat" && (
+        <MobileChannelHeader
+          currentChannel={currentChannel}
+          joinedChannels={joinedChannels}
+          members={members}
+          moderators={moderators}
+          profiles={profiles}
+          isConnected={isConnected}
+          isLoadingChannels={isLoadingChannels}
+          processCommand={processCommand}
+          setActiveTab={setActiveTab}
+          setShowChannelBrowser={setShowChannelBrowser}
+          setShowCreateChannel={setShowCreateChannel}
+        />
+      )}
 
       <div className="flex flex-1 min-h-0 overflow-hidden relative">
         <Sidebar
@@ -362,6 +396,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 isLoading={isLoading}
                 isConnected={isConnected}
                 isWalletLoading={isWalletLoading}
+                isLoadingChannels={isLoadingChannels}
                 currentChannel={currentChannel}
                 showJoinButton={showJoinButton}
                 handleJoinChannel={handleJoinChannel}
