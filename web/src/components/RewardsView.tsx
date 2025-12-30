@@ -31,8 +31,8 @@ export function RewardsView({
   const [treasuryBalance, setTreasuryBalance] = useState<bigint>(BigInt(0));
   const [burnStats, setBurnStats] = useState<BurnStats | null>(null);
   const [burning, setBurning] = useState(false);
-  const [simMessages, setSimMessages] = useState(100);
-  const [simChars, setSimChars] = useState(70);
+  const [simMessages, setSimMessages] = useState(500);
+  const FIXED_AVG_CHARS = 100;
 
   async function loadProtocolInfo() {
     try {
@@ -158,31 +158,12 @@ export function RewardsView({
                       <input
                         type="range"
                         min="1"
-                        max="1000"
+                        max="5000"
                         step="10"
                         value={simMessages}
                         onChange={(e) =>
                           setSimMessages(parseInt(e.target.value))
                         }
-                        className="w-full accent-[var(--primary)] h-1 bg-[var(--bg-primary)] rounded-lg appearance-none cursor-pointer"
-                      />
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-[0.7rem] mb-2">
-                        <span className="text-[var(--text-dim)] uppercase tracking-wider">
-                          Avg characters per message
-                        </span>
-                        <span className="text-[var(--primary)] font-bold">
-                          {simChars}
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="1"
-                        max="500"
-                        step="5"
-                        value={simChars}
-                        onChange={(e) => setSimChars(parseInt(e.target.value))}
                         className="w-full accent-[var(--primary)] h-1 bg-[var(--bg-primary)] rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
@@ -196,7 +177,8 @@ export function RewardsView({
                           {formatNumber(
                             (BigInt(30) *
                               BigInt(simMessages) *
-                              (fees.base + BigInt(simChars) * fees.perChar) *
+                              (fees.base +
+                                BigInt(FIXED_AVG_CHARS) * fees.perChar) *
                               BigInt(8000)) /
                               BigInt(10000),
                             { fromDecimals: 18 }
@@ -212,8 +194,12 @@ export function RewardsView({
                         </p>
                         <p>
                           30 days × {simMessages} msg/day × (
-                          {formatEther(fees.base)} + ({simChars} ×{" "}
+                          {formatEther(fees.base)} + ({FIXED_AVG_CHARS} ×{" "}
                           {formatEther(fees.perChar)})) ETH × 80% share
+                        </p>
+                        <p className="mt-2 opacity-70">
+                          * Assumes an average of {FIXED_AVG_CHARS} characters
+                          per message.
                         </p>
                       </div>
                     </div>
