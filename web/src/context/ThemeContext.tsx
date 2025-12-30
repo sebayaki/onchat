@@ -1,19 +1,11 @@
-import React, {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  useCallback,
-} from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   themes,
-  ThemeContextType,
   THEME_VARS,
   CONTROL_VARS,
   applyThemeVars,
 } from "@/helpers/themes";
-
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+import { ThemeContext } from "./useTheme";
 
 const THEME_VAR_IDS = THEME_VARS.map((v) => v.id);
 const STORAGE_KEY = "onchat-theme-id";
@@ -110,12 +102,4 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       {children}
     </ThemeContext.Provider>
   );
-}
-
-export function useTheme() {
-  const context = useContext(ThemeContext);
-  if (context === undefined) {
-    throw new Error("useTheme must be used within a ThemeProvider");
-  }
-  return context;
 }

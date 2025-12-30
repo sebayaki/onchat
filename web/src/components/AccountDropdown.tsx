@@ -4,7 +4,7 @@ import { MenuIcon } from "@/components/Icons";
 import { formatAddress } from "@/helpers/format";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import CopyButton from "./CopyButton";
-import { useTheme } from "@/context/ThemeContext";
+import { useTheme } from "@/context/useTheme";
 
 export function AccountDropdown({
   address,

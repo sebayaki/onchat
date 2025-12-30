@@ -3,7 +3,7 @@ import { useChat, type ChatLine } from "@/hooks/useChat";
 import { useFarcasterProfiles } from "@/hooks/useFarcasterProfiles";
 import { useAppKit } from "@reown/appkit/react";
 import { useEvents } from "@/context/EventContext";
-import { useTheme } from "@/context/ThemeContext";
+import { useTheme } from "@/context/useTheme";
 import {
   getAllChannels,
   getOwnerBalance,
