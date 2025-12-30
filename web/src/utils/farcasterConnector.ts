@@ -216,12 +216,11 @@ export function farcasterMiniAppCustom() {
       },
 
       async isAuthorized() {
-        try {
-          const accounts = await this.getAccounts();
-          return accounts.length > 0;
-        } catch {
-          return false;
-        }
+        // Skip auto-reconnect check to avoid creating a pending request
+        // that would block the user's explicit connect action.
+        // Farcaster only allows one active request at a time.
+        console.log("[Farcaster Connector] isAuthorized - skipping auto-check");
+        return false;
       },
 
       async switchChain({ chainId }) {
