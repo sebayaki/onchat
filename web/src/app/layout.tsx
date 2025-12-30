@@ -9,6 +9,23 @@ const jetbrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+const APP_URL = "https://onchat.sebayaki.com";
+
+const fcMiniappConfig = JSON.stringify({
+  version: "next",
+  imageUrl: `${APP_URL}/og-image.jpg`,
+  button: {
+    title: "OnChat",
+    action: {
+      type: "launch_frame",
+      name: "OnChat",
+      url: APP_URL,
+      splashImageUrl: `${APP_URL}/app-icon-200x200.png`,
+      splashBackgroundColor: "#000000",
+    },
+  },
+});
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -18,7 +35,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://onchat.sebayaki.com"),
+  metadataBase: new URL(APP_URL),
   title: "OnChat",
   description:
     "A fully permissionless, on-chain chat protocol built on the Base.",
@@ -47,6 +64,9 @@ export const metadata: Metadata = {
     ],
   },
   manifest: "/site.webmanifest",
+  other: {
+    "fc:frame": fcMiniappConfig,
+  },
 };
 
 export default function RootLayout({
