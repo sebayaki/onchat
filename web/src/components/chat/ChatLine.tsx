@@ -160,16 +160,16 @@ export function UserDisplay({
 function ConnectButton() {
   const { open } = useAppKit();
   const { isConnected } = useAppKitAccount();
-  const { isInMiniApp, connectFarcasterWallet } = useFarcaster();
+  const { isInMiniApp, isSDKLoaded, connectFarcasterWallet } = useFarcaster();
 
   if (isConnected) return null;
 
   const handleConnect = () => {
-    if (isInMiniApp) {
-      // In Farcaster Mini App context, use the Farcaster connector directly
+    if (isInMiniApp || !isSDKLoaded) {
+      // In Mini App context OR SDK not yet loaded - use Farcaster connector
       connectFarcasterWallet();
     } else {
-      // Outside Mini App, use the AppKit modal
+      // Definitely not in Mini App - use Reown modal
       open();
     }
   };

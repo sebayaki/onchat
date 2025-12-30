@@ -50,16 +50,19 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const { currentBlock } = useEvents();
   const { data: walletClient } = useWalletClient();
   const { hideMobileTabs, hideBrand } = useTheme();
-  const { isInMiniApp, connectFarcasterWallet } = useFarcaster();
+  const { isInMiniApp, isSDKLoaded, connectFarcasterWallet } = useFarcaster();
 
   // Open wallet modal - use Farcaster connector in Mini App context
+  // Only show Reown modal if SDK is loaded and we're NOT in Mini App
   const openWalletModal = useCallback(() => {
-    if (isInMiniApp) {
+    if (isInMiniApp || !isSDKLoaded) {
+      // In Mini App context OR SDK not yet loaded - use Farcaster connector
       connectFarcasterWallet();
     } else {
+      // Definitely not in Mini App - use Reown modal
       open();
     }
-  }, [isInMiniApp, connectFarcasterWallet, open]);
+  }, [isInMiniApp, isSDKLoaded, connectFarcasterWallet, open]);
 
   // Mobile state
   const [activeTab, setActiveTab] = useState<"chat" | "channels" | "rewards">(
