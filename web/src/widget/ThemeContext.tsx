@@ -10,15 +10,7 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import { themes } from "../helpers/themes";
-import {
-  THEME_VARS,
-  CONTROL_VARS,
-  getThemeById,
-  type ThemeContextType,
-} from "../helpers/theme-shared";
-
-// Re-export for consumers
-export { THEME_VARS, CONTROL_VARS, type ThemeContextType };
+import { getThemeById, type ThemeContextType } from "../helpers/theme-shared";
 
 // Create context with default values (widget can work without provider)
 export const ThemeContext = createContext<ThemeContextType>({

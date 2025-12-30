@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, {
   createContext,
   useContext,
@@ -7,16 +8,12 @@ import React, {
 } from "react";
 import { themes } from "@/helpers/themes";
 import {
-  THEME_VARS,
   THEME_VAR_IDS,
   CONTROL_VARS,
   applyTheme,
   getThemeById,
   type ThemeContextType,
 } from "@/helpers/theme-shared";
-
-// Re-export for consumers
-export { THEME_VARS, CONTROL_VARS, type ThemeContextType };
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 

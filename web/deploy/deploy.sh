@@ -30,9 +30,6 @@ trap cleanup_ssh EXIT
 echo "Installing dependencies..."
 npm install
 
-echo "Building widget (outputs to public/widget.js)..."
-npm run build:widget
-
 echo "Pushing latest changes and tagging..."
 # Ensure all changes are staged before pulling
 git add .
@@ -45,7 +42,8 @@ fi
 # Pull latest changes from remote
 git pull --rebase
 
-# Increment version
+# Increment version BEFORE building widget and production
+# so both builds have the same version
 npm version patch --no-git-tag-version
 VERSION=$(node -p "require('./package.json').version")
 
@@ -61,7 +59,10 @@ fi
 git tag "v$VERSION"
 git push && git push --tags
 
-echo "Building static export..."
+echo "Building widget v$VERSION (outputs to public/widget.js)..."
+npm run build:widget
+
+echo "Building static export v$VERSION..."
 rm -rf dist
 npm run build
 
