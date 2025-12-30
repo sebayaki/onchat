@@ -27,17 +27,17 @@ cleanup_ssh() {
 }
 trap cleanup_ssh EXIT
 
+echo "Installing dependencies..." && npm install
+echo "Building widget (outputs to public/widget.js)..." && npm run build:widget
+
 echo "Pushing latest changes and tagging..."
 git pull && npm version patch --no-git-tag-version
 VERSION=$(node -p "require('./package.json').version")
-git add package.json package-lock.json
+git add .
 git commit -m "v$VERSION"
 git tag "v$VERSION"
 git push && git push --tags
 
-echo "Building OnChat..."
-echo "Installing dependencies..." && npm install
-echo "Building widget (outputs to public/widget.js)..." && npm run build:widget
 echo "Building static export..." && rm -rf dist && npm run build
 
 # Create directories only if they don't exist
