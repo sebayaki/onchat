@@ -152,7 +152,10 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
   // Focus input on mount and after loading completes
   useEffect(() => {
-    inputRef.current?.focus();
+    const isMobile = window.matchMedia("(pointer: coarse)").matches;
+    if (!isMobile) {
+      inputRef.current?.focus();
+    }
   }, [isLoading]);
 
   // Update URL when channel changes (skip in widget mode to avoid breaking parent app)
@@ -261,7 +264,10 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
       setCommandHistory((prev) => [command, ...prev.slice(0, 99)]);
 
       await processCommand(command);
-      inputRef.current?.focus();
+      const isMobile = window.matchMedia("(pointer: coarse)").matches;
+      if (!isMobile) {
+        inputRef.current?.focus();
+      }
     },
     [input, isLoading, processCommand]
   );
