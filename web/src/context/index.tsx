@@ -1,6 +1,6 @@
 "use client";
 
-import { wagmiAdapter, projectId, farcasterConnector } from "@/configs/wagmi";
+import { wagmiAdapter, projectId } from "@/configs/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createAppKit } from "@reown/appkit/react";
 import { base } from "@reown/appkit/networks";
@@ -8,16 +8,12 @@ import {
   type ReactNode,
   useState,
   useEffect,
+  useCallback,
+  useRef,
   createContext,
   useContext,
 } from "react";
-import {
-  cookieToInitialState,
-  WagmiProvider,
-  type Config,
-  useConnect,
-  useAccount,
-} from "wagmi";
+import { cookieToInitialState, WagmiProvider, type Config } from "wagmi";
 import { APP_URL, APP_NAME, APP_DESCRIPTION } from "@/configs/constants";
 import { EventProvider } from "./EventContext";
 import { ThemeProvider } from "./ThemeContext";
@@ -92,8 +88,15 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
     isInMiniApp: false,
     isSDKLoaded: false,
   });
-  const { connect } = useConnect();
-  const { isConnected } = useAccount();
+  const hasAttemptedAddMiniApp = useRef(false);
+
+  const handleAddMiniApp = useCallback(async () => {
+    try {
+      await sdk.actions.addMiniApp();
+    } catch (err) {
+      console.error("Error adding mini app:", err);
+    }
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -110,18 +113,20 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
             isSDKLoaded: true,
           });
 
-          // Auto-connect Farcaster wallet if in Mini App and not already connected
-          if (isInMiniApp && !isConnected) {
-            try {
-              connect({ connector: farcasterConnector });
-            } catch (err) {
-              console.error("Failed to auto-connect Farcaster wallet:", err);
-            }
-          }
-
           // Call ready() to hide the splash screen
           // Safe to call even outside Mini App context
           await sdk.actions.ready();
+
+          // Prompt user to add mini app if in Farcaster context but not yet added
+          if (
+            isInMiniApp &&
+            context &&
+            !context.client.added &&
+            !hasAttemptedAddMiniApp.current
+          ) {
+            hasAttemptedAddMiniApp.current = true;
+            await handleAddMiniApp();
+          }
         }
       } catch (error) {
         console.error("Failed to initialize Farcaster SDK:", error);
@@ -139,7 +144,7 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [connect, isConnected]);
+  }, [handleAddMiniApp]);
 
   return (
     <FarcasterContext.Provider value={farcasterState}>
