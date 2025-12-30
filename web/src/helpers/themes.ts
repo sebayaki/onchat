@@ -22,6 +22,75 @@ export interface Theme {
   colors: ThemeColors;
 }
 
+export interface ThemeContextType {
+  currentTheme: Theme;
+  setTheme: (themeId: string) => void;
+  themes: Theme[];
+  hideMobileTabs: boolean;
+  hideBrand: boolean;
+  /** True when running as embedded widget - disables URL/history manipulation */
+  isWidget: boolean;
+}
+
+export const THEME_VARS = [
+  { id: "primary", label: "Primary Color" },
+  { id: "primary-muted", label: "Primary Muted" },
+  { id: "text-dim", label: "Text Dim" },
+  { id: "color-system", label: "System Color" },
+  { id: "color-error", label: "Error Color" },
+  { id: "color-info", label: "Info Color" },
+  { id: "color-action", label: "Action Color" },
+  { id: "color-nick", label: "Nick Color" },
+  { id: "color-channel", label: "Channel Color" },
+  { id: "color-timestamp", label: "Timestamp Color" },
+  { id: "color-content", label: "Content Color" },
+  { id: "bg-primary", label: "Background Primary" },
+  { id: "bg-secondary", label: "Background Secondary" },
+  { id: "bg-tertiary", label: "Background Tertiary" },
+  { id: "bg-hover", label: "Background Hover" },
+];
+
+export const CONTROL_VARS = {
+  HIDE_MOBILE_TABS: "hide-mobile-tabs",
+  HIDE_BRAND: "hide-brand",
+};
+
+/**
+ * Apply theme CSS variables to an element
+ */
+export function applyThemeVars(
+  target: HTMLElement,
+  theme: Theme,
+  overrides: Record<string, string> = {}
+) {
+  const colors = theme.colors;
+  target.style.setProperty("--primary", colors.primary);
+  target.style.setProperty("--primary-muted", colors.primaryMuted);
+  target.style.setProperty("--text-dim", colors.textDim);
+  target.style.setProperty("--color-system", colors.colorSystem);
+  target.style.setProperty("--color-error", colors.colorError);
+  target.style.setProperty("--color-info", colors.colorInfo);
+  target.style.setProperty("--color-action", colors.colorAction);
+  target.style.setProperty("--color-nick", colors.colorNick);
+  target.style.setProperty("--color-channel", colors.colorChannel);
+  target.style.setProperty("--color-timestamp", colors.colorTimestamp);
+  target.style.setProperty("--color-content", colors.colorContent);
+  target.style.setProperty("--bg-primary", colors.bgPrimary);
+  target.style.setProperty("--bg-secondary", colors.bgSecondary);
+  target.style.setProperty("--bg-tertiary", colors.bgTertiary);
+  target.style.setProperty("--bg-hover", colors.bgHover);
+
+  // Apply individual overrides
+  for (const key in overrides) {
+    const value = overrides[key];
+    if (value) {
+      const formattedValue =
+        value.length === 6 && !value.startsWith("#") ? `#${value}` : value;
+      target.style.setProperty(`--${key}`, formattedValue);
+    }
+  }
+}
+
 export const themes: Theme[] = [
   {
     id: "base-blue",

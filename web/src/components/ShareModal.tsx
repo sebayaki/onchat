@@ -3,7 +3,7 @@ import { type ChannelInfo } from "@/helpers/contracts";
 import CopyButton from "./CopyButton";
 import { themes } from "@/helpers/themes";
 import { ChevronDownIcon } from "./Icons";
-import { THEME_VARS, CONTROL_VARS } from "@/context/ThemeContext";
+import { THEME_VARS, CONTROL_VARS } from "../helpers/themes";
 
 // Type for the OnChat widget global
 interface OnChatWidget {

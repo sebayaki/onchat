@@ -8,59 +8,36 @@
  * Vite aliases @/context/ThemeContext to this file during widget build.
  */
 
-import { createContext, useContext, type ReactNode } from "react";
-import { themes, type Theme } from "../helpers/themes";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useMemo,
+  type ReactNode,
+} from "react";
+import {
+  themes,
+  ThemeContextType,
+  THEME_VARS,
+  CONTROL_VARS,
+  applyThemeVars,
+} from "../helpers/themes";
 
-// Re-export constants for compatibility
-export const THEME_VARS = [
-  { id: "primary", label: "Primary Color" },
-  { id: "primary-muted", label: "Primary Muted" },
-  { id: "text-dim", label: "Text Dim" },
-  { id: "color-system", label: "System Color" },
-  { id: "color-error", label: "Error Color" },
-  { id: "color-info", label: "Info Color" },
-  { id: "color-action", label: "Action Color" },
-  { id: "color-nick", label: "Nick Color" },
-  { id: "color-channel", label: "Channel Color" },
-  { id: "color-timestamp", label: "Timestamp Color" },
-  { id: "color-content", label: "Content Color" },
-  { id: "bg-primary", label: "Background Primary" },
-  { id: "bg-secondary", label: "Background Secondary" },
-  { id: "bg-tertiary", label: "Background Tertiary" },
-  { id: "bg-hover", label: "Background Hover" },
-];
-
-export const CONTROL_VARS = {
-  HIDE_MOBILE_TABS: "hide-mobile-tabs",
-  HIDE_BRAND: "hide-brand",
-};
-
-// Theme context type (matches main app)
-interface ThemeContextType {
-  currentTheme: Theme;
-  setTheme: (themeId: string) => void;
-  themes: Theme[];
-  hideMobileTabs: boolean;
-  hideBrand: boolean;
-  /** True when running as embedded widget - disables URL/history manipulation */
-  isWidget: boolean;
-}
+// Re-export for compatibility
+export { THEME_VARS, CONTROL_VARS };
 
 // Create context with default values
-export const ThemeContext = createContext<ThemeContextType>({
-  currentTheme: themes[0],
-  setTheme: () => {},
-  themes,
-  hideMobileTabs: false,
-  hideBrand: false,
-  isWidget: true,
-});
+export const ThemeContext = createContext<ThemeContextType | undefined>(
+  undefined
+);
 
 // Widget options that can be set during mount
 let widgetOptions: {
   theme?: string;
   hideMobileTabs?: boolean;
   hideBrand?: boolean;
+  colors?: Record<string, string>;
 } = {};
 
 // Called by widget mount to set initial options
@@ -70,12 +47,39 @@ export function setWidgetThemeOptions(options: typeof widgetOptions) {
 
 // Theme provider for widget
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const currentTheme =
-    themes.find((t) => t.id === widgetOptions.theme) || themes[0];
+  const [themeId, setThemeId] = useState(widgetOptions.theme);
+
+  const currentTheme = useMemo(
+    () => themes.find((t) => t.id === themeId) || themes[0],
+    [themeId]
+  );
+
+  // Apply theme whenever it changes
+  useEffect(() => {
+    // In widget context, we apply theme to the shadow host
+    // We can find the shadow host by looking up from the current script context
+    // or by targeting the .onchat-widget-root if we had a ref.
+    // However, since we're in Shadow DOM, we can just find the root
+    const root = document.querySelector("#onchat-mount")?.parentElement;
+    if (root instanceof ShadowRoot) {
+      applyThemeVars(
+        root.host as HTMLElement,
+        currentTheme,
+        widgetOptions.colors
+      );
+    } else {
+      // Fallback to document element if not in shadow DOM (e.g. during dev)
+      applyThemeVars(
+        document.documentElement,
+        currentTheme,
+        widgetOptions.colors
+      );
+    }
+  }, [currentTheme]);
 
   const value: ThemeContextType = {
     currentTheme,
-    setTheme: () => {}, // No-op in widget mode
+    setTheme: setThemeId,
     themes,
     hideMobileTabs: widgetOptions.hideMobileTabs ?? false,
     hideBrand: widgetOptions.hideBrand ?? false,

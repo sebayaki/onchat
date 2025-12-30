@@ -26,7 +26,7 @@ import { wagmiAdapter as globalWagmiAdapter } from "../configs/wagmi";
 import { initializeAppKit } from "../configs/appkit";
 
 import { setWidgetThemeOptions } from "./ThemeContext";
-import { themes, type Theme } from "../helpers/themes";
+import { themes } from "../helpers/themes";
 import { renderWidget, type OnChatWidgetOptions } from "./WidgetComponents";
 
 // Inline CSS - injected at build time by Vite
@@ -36,41 +36,7 @@ import widgetStyles from "./widget.css?inline";
 export type { OnChatWidgetOptions };
 
 // Apply theme CSS variables to shadow root host
-function applyThemeToShadow(
-  shadowRoot: ShadowRoot,
-  theme: Theme,
-  colorOverrides?: Record<string, string>
-) {
-  const host = shadowRoot.host as HTMLElement;
-
-  const colors = theme.colors;
-  host.style.setProperty("--primary", colors.primary);
-  host.style.setProperty("--primary-muted", colors.primaryMuted);
-  host.style.setProperty("--text-dim", colors.textDim);
-  host.style.setProperty("--color-system", colors.colorSystem);
-  host.style.setProperty("--color-error", colors.colorError);
-  host.style.setProperty("--color-info", colors.colorInfo);
-  host.style.setProperty("--color-action", colors.colorAction);
-  host.style.setProperty("--color-nick", colors.colorNick);
-  host.style.setProperty("--color-channel", colors.colorChannel);
-  host.style.setProperty("--color-timestamp", colors.colorTimestamp);
-  host.style.setProperty("--color-content", colors.colorContent);
-  host.style.setProperty("--bg-primary", colors.bgPrimary);
-  host.style.setProperty("--bg-secondary", colors.bgSecondary);
-  host.style.setProperty("--bg-tertiary", colors.bgTertiary);
-  host.style.setProperty("--bg-hover", colors.bgHover);
-
-  // Apply custom color overrides
-  if (colorOverrides) {
-    for (const [key, value] of Object.entries(colorOverrides)) {
-      if (value) {
-        const formattedValue =
-          value.length === 6 && !value.startsWith("#") ? `#${value}` : value;
-        host.style.setProperty(`--${key}`, formattedValue);
-      }
-    }
-  }
-}
+// Apply theme CSS variables to shadow root host (removed - handled by ThemeProvider)
 
 // Singleton state
 let widgetInstance: {
@@ -111,6 +77,7 @@ export function mount(
     theme: options.theme,
     hideMobileTabs: options.hideMobileTabs,
     hideBrand: options.hideBrand,
+    colors: options.colors,
   });
 
   // Style the container
@@ -142,10 +109,6 @@ export function mount(
   // Initialize AppKit and get adapter
   initializeAppKit(true);
   const wagmiAdapter = globalWagmiAdapter;
-
-  // Apply theme CSS variables to shadow root
-  const theme = themes.find((t) => t.id === options.theme) || themes[0];
-  applyThemeToShadow(shadowRoot, theme, options.colors);
 
   // Render widget
   const root = renderWidget(mountPoint, options, wagmiAdapter);
