@@ -60,7 +60,8 @@ export interface ChatLine {
     | "action"
     | "command"
     | "user"
-    | "channelList";
+    | "channelList"
+    | "userList";
   timestamp: Date;
   content: string | ReactNode;
   sender?: string;
@@ -71,6 +72,7 @@ export interface ChatLine {
   isPending?: boolean;
   transactionHash?: string;
   channels?: ChannelListItem[];
+  users?: string[]; // For userList type - array of addresses
 }
 
 interface UseChatReturn {
@@ -759,20 +761,19 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               break;
             }
 
-            addLine("info", `═══ Users in #${currentChannel.slug} ═══`);
             setIsLoading(true);
             try {
               // Fetch profiles for all members to ensure we have them for the list
               await fetchUserProfilesBulk(members);
-              for (const member of members) {
-                addLine(
-                  "user",
-                  member, // We'll use the content field to store the address for 'user' type lines
-                  formatAddress(member),
-                  member,
-                  currentChannel.slug
-                );
-              }
+              // Add a single userList line with all members for front-end pagination
+              const newLine: ChatLine = {
+                id: crypto.randomUUID(),
+                type: "userList",
+                timestamp: new Date(),
+                content: `═══ Users in #${currentChannel.slug} (${members.length}) ═══`,
+                users: members,
+              };
+              setLines((prev) => [...prev, newLine]);
             } catch (err) {
               console.error("Failed to fetch profiles for /who:", err);
               // Fallback to just listing addresses if profile fetch fails

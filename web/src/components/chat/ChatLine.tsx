@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, ReactNode } from "react";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import BaseScanIcon from "@/assets/logos/basescan.svg?url";
 import FarcasterIcon from "@/assets/logos/farcaster.svg?url";
@@ -6,6 +6,8 @@ import CopyButton from "../CopyButton";
 import { type ChatLine, type ChannelListItem } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { formatTime, formatAddress } from "@/helpers/format";
+
+type ProfilesRecord = Record<string, FarcasterUserProfile | null>;
 
 export function ActionButtons({
   address,
@@ -200,7 +202,54 @@ function MessageContent({ content }: { content: string | React.ReactNode }) {
   );
 }
 
-const CHANNELS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 20;
+
+function PaginatedList<T>({
+  items,
+  title,
+  timeStr,
+  renderItem,
+  getKey,
+}: {
+  items: T[];
+  title: string;
+  timeStr: string;
+  renderItem: (item: T) => ReactNode;
+  getKey: (item: T) => string;
+}) {
+  const [visibleCount, setVisibleCount] = useState(ITEMS_PER_PAGE);
+  const hasMore = visibleCount < items.length;
+  const visibleItems = items.slice(0, visibleCount);
+
+  return (
+    <div className="chat-line text-[var(--color-info)] flex flex-col items-start">
+      <div className="flex items-start">
+        <span className="chat-timestamp">[{timeStr}]</span>
+        <span className="chat-prefix text-[var(--color-info)]">*</span>
+        <span className="chat-content">{title}</span>
+      </div>
+      {visibleItems.map((item) => (
+        <div
+          key={getKey(item)}
+          className="flex items-start pl-[calc(var(--timestamp-width)+0.5rem)]"
+        >
+          <span className="chat-prefix text-[var(--color-info)]">*</span>
+          {renderItem(item)}
+        </div>
+      ))}
+      {hasMore && (
+        <div className="pl-[calc(var(--timestamp-width)+0.5rem)]">
+          <button
+            onClick={() => setVisibleCount((prev) => prev + ITEMS_PER_PAGE)}
+            className="text-[var(--color-channel)] hover:text-[var(--primary)] transition-colors cursor-pointer font-mono text-[0.85rem] underline"
+          >
+            View more ({items.length - visibleCount} remaining)
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 function ChannelListDisplay({
   channels,
@@ -211,51 +260,64 @@ function ChannelListDisplay({
   title: string;
   timeStr: string;
 }) {
-  const [visibleCount, setVisibleCount] = useState(CHANNELS_PER_PAGE);
-  const hasMore = visibleCount < channels.length;
-  const visibleChannels = channels.slice(0, visibleCount);
-
   return (
-    <div className="chat-line text-[var(--color-info)] flex flex-col items-start">
-      <div className="flex items-start">
-        <span className="chat-timestamp">[{timeStr}]</span>
-        <span className="chat-prefix text-[var(--color-info)]">*</span>
-        <span className="chat-content">{title}</span>
-      </div>
-      {visibleChannels.map((ch) => (
-        <div
-          key={ch.slug}
-          className="flex items-start pl-[calc(var(--timestamp-width)+0.5rem)]"
-        >
-          <span className="chat-prefix text-[var(--color-info)]">*</span>
-          <span className="chat-content">
-            #{ch.slug} - {ch.memberCount.toString()} users,{" "}
-            {ch.messageCount.toString()} messages
-          </span>
-        </div>
-      ))}
-      {hasMore && (
-        <div className="pl-[calc(var(--timestamp-width)+0.5rem)]">
-          <button
-            onClick={() => setVisibleCount((prev) => prev + CHANNELS_PER_PAGE)}
-            className="text-[var(--color-channel)] hover:text-[var(--primary)] transition-colors cursor-pointer font-mono text-[0.85rem] underline"
-          >
-            View more ({channels.length - visibleCount} remaining)
-          </button>
+    <PaginatedList
+      items={channels}
+      title={title}
+      timeStr={timeStr}
+      getKey={(ch) => ch.slug}
+      renderItem={(ch) => (
+        <span className="chat-content">
+          #{ch.slug} - {ch.memberCount.toString()} users,{" "}
+          {ch.messageCount.toString()} messages
+        </span>
+      )}
+    />
+  );
+}
+
+function UserListDisplay({
+  users,
+  title,
+  timeStr,
+  profiles,
+}: {
+  users: string[];
+  title: string;
+  timeStr: string;
+  profiles: ProfilesRecord;
+}) {
+  return (
+    <PaginatedList
+      items={users}
+      title={title}
+      timeStr={timeStr}
+      getKey={(address) => address}
+      renderItem={(address) => (
+        <div className="min-w-0">
+          <UserDisplay
+            address={address}
+            formattedAddress={formatAddress(address)}
+            profile={profiles[address.toLowerCase()]}
+            showFullAddress={true}
+            showActions={true}
+          />
         </div>
       )}
-    </div>
+    />
   );
 }
 
 export function ChatLineComponent({
   line,
   profile,
+  profiles = {},
   isModerator,
   processCommand,
 }: {
   line: ChatLine;
   profile?: FarcasterUserProfile | null;
+  profiles?: ProfilesRecord;
   isModerator?: boolean;
   processCommand?: (input: string) => Promise<void>;
 }) {
@@ -405,6 +467,15 @@ export function ChatLineComponent({
           channels={line.channels}
           title={typeof line.content === "string" ? line.content : "Channels"}
           timeStr={timeStr}
+        />
+      ) : null;
+    case "userList":
+      return line.users ? (
+        <UserListDisplay
+          users={line.users}
+          title={typeof line.content === "string" ? line.content : "Users"}
+          timeStr={timeStr}
+          profiles={profiles}
         />
       ) : null;
     default:

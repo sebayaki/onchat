@@ -144,10 +144,12 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     const lastLine = lines[lines.length - 1];
     prevLinesLengthRef.current = lines.length;
 
-    // Force scroll for: bulk messages, initial loading, or command output (channelList, info, etc.)
+    // Force scroll for: bulk messages, initial loading, or command output (channelList, userList, info, etc.)
     const isCommandOutput =
       lastLine &&
-      ["channelList", "info", "error", "system"].includes(lastLine.type);
+      ["channelList", "userList", "info", "error", "system"].includes(
+        lastLine.type
+      );
     if (
       linesDiff > 5 ||
       (linesDiff > 0 && isInitialChannelLoading) ||

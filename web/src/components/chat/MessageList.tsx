@@ -39,6 +39,7 @@ export function MessageList({
                 ? profiles[line.senderAddress.toLowerCase()]
                 : null
             }
+            profiles={profiles}
             isModerator={isModerator}
             processCommand={processCommand}
           />
