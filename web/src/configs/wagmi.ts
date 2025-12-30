@@ -1,4 +1,4 @@
-import { cookieStorage, createStorage, http } from "@wagmi/core";
+import { createStorage, http } from "@wagmi/core";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { base } from "@reown/appkit/networks";
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
@@ -19,42 +19,16 @@ export const networks = [base];
 // Farcaster Mini App connector for embedded wallet support
 export const farcasterConnector = farcasterMiniApp();
 
-// Check if running in an iframe (third-party context)
-// In iframes, cookies may be blocked, so we use localStorage instead
-const isInIframe = typeof window !== "undefined" && window.self !== window.top;
-
-// Create a storage adapter that works in iframe contexts
-// localStorage works in iframes while third-party cookies are often blocked
-const storageAdapter = isInIframe
-  ? {
-      getItem: (key: string) => {
-        if (typeof window === "undefined") return null;
-        return window.localStorage.getItem(key);
-      },
-      setItem: (key: string, value: string) => {
-        if (typeof window === "undefined") return;
-        window.localStorage.setItem(key, value);
-      },
-      removeItem: (key: string) => {
-        if (typeof window === "undefined") return;
-        window.localStorage.removeItem(key);
-      },
-    }
-  : cookieStorage;
-
 // Set up the Wagmi Adapter (Config)
 // Reown AppKit handles wallet connections (WalletConnect, injected, etc.) automatically
 // Farcaster connector is added for Mini App embedded wallet support
 export const wagmiAdapter = new WagmiAdapter({
-  storage: createStorage({
-    storage: storageAdapter,
-  }),
+  storage: createStorage({ storage: localStorage }),
   ssr: true,
   projectId,
   networks,
   connectors: [
-    // In iframe context, don't use shimDisconnect as it may conflict with parent app's state
-    injected({ shimDisconnect: !isInIframe }),
+    injected(),
     coinbaseWallet({
       appName: "OnChat",
       appLogoUrl: `${APP_URL}/android-chrome-512x512.png`,
