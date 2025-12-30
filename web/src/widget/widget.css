@@ -76,68 +76,65 @@
 
 /* ==========================================================================
    Widget Height Containment System
-   
+
    Problem: ChatClient uses h-[100dvh] which is viewport-based and doesn't work
-   in embedded widgets. We need to reset ALL heights and use pure flexbox.
+   in embedded widgets. We override viewport heights to use parent-relative sizing.
+
+   KEY INSIGHT: Using height:auto causes container to grow with content!
+   Instead, we must CONSTRAIN the container to its parent using height:100%.
    ========================================================================== */
 
-/* 
- * CRITICAL: Remove ALL viewport and percentage heights in widget context.
- * Everything must use flexbox sizing (flex: 1) with min-height: 0 to allow shrinking.
- */
-
-/* Reset viewport height classes to use flexbox instead */
-/* Using escaped class selectors for Tailwind arbitrary values */
+/* Override viewport height classes to use parent-relative height */
 .onchat-widget-root .h-\[100dvh\],
 .onchat-widget-root .max-h-\[100dvh\],
 .onchat-widget-root .h-screen,
 .onchat-widget-root .max-h-screen,
 .onchat-widget-root .h-dvh,
-.onchat-widget-root .max-h-dvh,
-.onchat-widget-root .h-full {
-  height: auto !important;
-  max-height: none !important;
+.onchat-widget-root .max-h-dvh {
+  height: 100% !important;
+  max-height: 100% !important;
 }
 
-/* The main chat-container: fill parent using flexbox only */
+/* Limit MobileChannelHeader's expandable dropdown to reasonable size in widget */
+.onchat-widget-root .max-h-\[60vh\] {
+  max-height: 200px !important;
+}
+
+/* The main chat-container: use absolute positioning to guarantee bounds */
 .onchat-widget-root > .chat-container,
 .onchat-widget-root > .h-\[100dvh\],
 .onchat-widget-root > div.flex.flex-col.h-\[100dvh\] {
-  flex: 1 1 0% !important;
+  position: absolute !important;
+  inset: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  height: auto !important;
-  max-height: none !important;
   min-height: 0 !important;
   overflow: hidden !important;
 }
 
-/* All flex-1 elements: ensure proper flex sizing */
+/* All flex-1 elements: fill remaining space */
 .onchat-widget-root .flex-1 {
   flex: 1 1 0% !important;
   min-height: 0 !important;
-  height: auto !important;
 }
 
 .onchat-widget-root .min-h-0 {
   min-height: 0 !important;
 }
 
-/* Main content panel (sidebar + message area) */
+/* Main content panel (sidebar + message area) - must shrink to fit */
 .onchat-widget-root .chat-container > .flex.flex-1,
 .onchat-widget-root .chat-container > div.flex.flex-1,
 .onchat-widget-root .chat-container > .relative.flex {
   flex: 1 1 0% !important;
   min-height: 0 !important;
-  height: auto !important;
   overflow: hidden !important;
 }
 
-/* Message list - must scroll within flex bounds */
+/* Message list - scrollable within flex bounds */
 .onchat-widget-root .overflow-y-auto {
   flex: 1 1 0% !important;
   min-height: 0 !important;
-  height: auto !important;
 }
 
 /* Inner content panels */
@@ -145,10 +142,9 @@
 .onchat-widget-root div.flex-1.flex.flex-col {
   flex: 1 1 0% !important;
   min-height: 0 !important;
-  height: auto !important;
 }
 
-/* Ensure shrink-0 elements don't affect flex calculation */
+/* Fixed-height elements: header, footer, nav, MobileChannelHeader */
 .onchat-widget-root .shrink-0,
 .onchat-widget-root header,
 .onchat-widget-root footer,
