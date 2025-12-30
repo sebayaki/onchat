@@ -19,6 +19,9 @@ export const initializeAppKit = (isWidget = false) => {
     projectId,
     networks: [base],
     defaultNetwork: base,
+    // Allow users on unsupported chains to connect - we handle switching programmatically
+    // This prevents the "Switch Network" modal which doesn't work well in widget/Shadow DOM context
+    allowUnsupportedChain: true,
     metadata: {
       name: isWidget ? `${APP_NAME} Widget` : APP_NAME,
       description: APP_DESCRIPTION,
