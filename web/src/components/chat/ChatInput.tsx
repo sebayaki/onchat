@@ -1,5 +1,6 @@
 import { type ChannelInfo } from "@/helpers/contracts";
 import { RefObject } from "react";
+import { SendIcon } from "../Icons";
 
 export function ChatInput({
   input,
@@ -72,6 +73,16 @@ export function ChatInput({
         <div className="text-[var(--color-action)] animate-[blink_1s_infinite]">
           ...
         </div>
+      )}
+      {!isLoading && !showJoinButton && isConnected && (
+        <button
+          type="submit"
+          disabled={!input.trim()}
+          className="shrink-0 p-1 text-[var(--primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
+          aria-label="Send message"
+        >
+          <SendIcon size={22} />
+        </button>
       )}
     </form>
   );
