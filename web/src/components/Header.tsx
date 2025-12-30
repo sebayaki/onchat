@@ -49,13 +49,15 @@ export function Header({
               #{currentChannel.slug}
             </span>
           )}
-          <button
-            onClick={onShareClick}
-            className="bg-transparent border-none p-1 cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center shrink-0 group"
-            title={currentChannel ? "Share Channel" : "Share App"}
-          >
-            <ShareIcon size={16} className="text-[var(--primary)]" />
-          </button>
+          {!hideBrand && (
+            <button
+              onClick={onShareClick}
+              className="bg-transparent border-none p-1 cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center shrink-0 group"
+              title={currentChannel ? "Share Channel" : "Share App"}
+            >
+              <ShareIcon size={16} className="text-[var(--primary)]" />
+            </button>
+          )}
         </div>
       </div>
       <div className="flex items-center gap-3">
