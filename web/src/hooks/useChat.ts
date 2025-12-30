@@ -42,6 +42,7 @@ import {
 } from "@/context/EventContext";
 import { fetchUserProfilesBulk } from "@/helpers/farcaster";
 import { renderWhoisChannels } from "@/components/WhoisChannels";
+import { STORAGE_KEYS } from "@/configs/constants";
 
 export interface ChatLine {
   id: string;
@@ -373,6 +374,17 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     address,
     loadJoinedChannels,
   ]);
+
+  // Persist last channel to localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (currentChannel?.slug) {
+      localStorage.setItem(STORAGE_KEYS.LAST_CHANNEL, currentChannel.slug);
+    } else if (currentChannel === null && !isInitialChannelLoading) {
+      localStorage.removeItem(STORAGE_KEYS.LAST_CHANNEL);
+    }
+  }, [currentChannel, isInitialChannelLoading]);
 
   // Process user input
   const processCommand = useCallback(
