@@ -18,29 +18,24 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "OnChat - On-Chain Chat on Base",
+  metadataBase: new URL("https://onchat.sebayaki.com"),
+  title: "OnChat",
   description:
-    "Fully permissionless, on-chain chat. Create channels, send messages, all stored on Base.",
-  keywords: [
-    "chat",
-    "blockchain",
-    "base",
-    "ethereum",
-    "web3",
-    "decentralized",
-    "on-chain",
-  ],
+    "A fully permissionless, on-chain chat protocol built on the Base.",
+  keywords: ["chat", "onchain", "base", "social", "farcaster"],
   openGraph: {
-    title: "OnChat - On-Chain Chat on Base",
+    title: "OnChat",
     description:
-      "Fully permissionless, on-chain chat. Create channels, send messages, all stored on Base.",
+      "A fully permissionless, on-chain chat protocol built on the Base.",
     type: "website",
+    images: ["/og-image.jpg"],
   },
   twitter: {
     card: "summary_large_image",
-    title: "OnChat - On-Chain Chat on Base",
+    title: "OnChat",
     description:
-      "Fully permissionless, on-chain chat. Create channels, send messages, all stored on Base.",
+      "A fully permissionless, on-chain chat protocol built on the Base.",
+    images: ["/og-image.jpg"],
   },
   icons: {
     icon: [
