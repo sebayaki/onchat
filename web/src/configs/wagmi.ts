@@ -1,4 +1,4 @@
-import { createStorage, http } from "@wagmi/core";
+import { http } from "@wagmi/core";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { base } from "@reown/appkit/networks";
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
@@ -23,8 +23,6 @@ export const farcasterConnector = farcasterMiniApp();
 // Reown AppKit handles wallet connections (WalletConnect, injected, etc.) automatically
 // Farcaster connector is added for Mini App embedded wallet support
 export const wagmiAdapter = new WagmiAdapter({
-  storage: createStorage({ storage: localStorage }),
-  ssr: true,
   projectId,
   networks,
   connectors: [
