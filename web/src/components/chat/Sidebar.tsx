@@ -1,6 +1,8 @@
 "use client";
 
 import { SidebarContent } from "./SidebarContent";
+import { type ChannelInfo } from "@/helpers/contracts";
+import { type FarcasterUserProfile } from "@/helpers/farcaster";
 
 export function Sidebar({
   activeTab,
