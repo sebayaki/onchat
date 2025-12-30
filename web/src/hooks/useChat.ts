@@ -442,11 +442,10 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         setIsLoading(false);
       };
 
-      // Echo command
-      addLine("command", input, undefined, currentChannel?.slug);
-
       // Check if it's a command
       if (trimmed.startsWith("/")) {
+        // Echo command
+        addLine("command", input, undefined, currentChannel?.slug);
         const parts = trimmed.slice(1).split(" ");
         const command = parts[0].toLowerCase();
         const args = parts.slice(1);
