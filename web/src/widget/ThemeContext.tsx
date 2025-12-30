@@ -9,44 +9,18 @@
  */
 
 import { createContext, useContext, type ReactNode } from "react";
-import { themes, type Theme } from "../helpers/themes";
+import { themes } from "../helpers/themes";
+import {
+  THEME_VARS,
+  CONTROL_VARS,
+  getThemeById,
+  type ThemeContextType,
+} from "../helpers/theme-shared";
 
-// Re-export constants for compatibility
-export const THEME_VARS = [
-  { id: "primary", label: "Primary Color" },
-  { id: "primary-muted", label: "Primary Muted" },
-  { id: "text-dim", label: "Text Dim" },
-  { id: "color-system", label: "System Color" },
-  { id: "color-error", label: "Error Color" },
-  { id: "color-info", label: "Info Color" },
-  { id: "color-action", label: "Action Color" },
-  { id: "color-nick", label: "Nick Color" },
-  { id: "color-channel", label: "Channel Color" },
-  { id: "color-timestamp", label: "Timestamp Color" },
-  { id: "color-content", label: "Content Color" },
-  { id: "bg-primary", label: "Background Primary" },
-  { id: "bg-secondary", label: "Background Secondary" },
-  { id: "bg-tertiary", label: "Background Tertiary" },
-  { id: "bg-hover", label: "Background Hover" },
-];
+// Re-export for consumers
+export { THEME_VARS, CONTROL_VARS, type ThemeContextType };
 
-export const CONTROL_VARS = {
-  HIDE_MOBILE_TABS: "hide-mobile-tabs",
-  HIDE_BRAND: "hide-brand",
-};
-
-// Theme context type (matches main app)
-interface ThemeContextType {
-  currentTheme: Theme;
-  setTheme: (themeId: string) => void;
-  themes: Theme[];
-  hideMobileTabs: boolean;
-  hideBrand: boolean;
-  /** True when running as embedded widget - disables URL/history manipulation */
-  isWidget: boolean;
-}
-
-// Create context with default values
+// Create context with default values (widget can work without provider)
 export const ThemeContext = createContext<ThemeContextType>({
   currentTheme: themes[0],
   setTheme: () => {},
@@ -70,8 +44,7 @@ export function setWidgetThemeOptions(options: typeof widgetOptions) {
 
 // Theme provider for widget
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const currentTheme =
-    themes.find((t) => t.id === widgetOptions.theme) || themes[0];
+  const currentTheme = getThemeById(widgetOptions.theme);
 
   const value: ThemeContextType = {
     currentTheme,
