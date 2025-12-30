@@ -8,8 +8,6 @@ import {
   type ReactNode,
   useState,
   useEffect,
-  useCallback,
-  useRef,
   createContext,
   useContext,
 } from "react";
@@ -93,55 +91,31 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
     isInMiniApp: false,
     isSDKLoaded: false,
   });
-  const hasAttemptedAddMiniApp = useRef(false);
-
-  const handleAddMiniApp = useCallback(async () => {
-    try {
-      await sdk.actions.addMiniApp();
-    } catch (err) {
-      console.error("Error adding mini app:", err);
-    }
-  }, []);
 
   useEffect(() => {
     let mounted = true;
 
     const initFarcaster = async () => {
-      try {
-        // Get the Farcaster context to check if we're in a Mini App
-        const context = await sdk.context;
-        const isInMiniApp = !!context;
+      // Assume we're in a mini app if we're in an iframe
+      const isInIframe =
+        typeof window !== "undefined" && window !== window.parent;
+      const isInMiniApp = isInIframe;
 
-        if (mounted) {
-          setFarcasterState({
-            isInMiniApp,
-            isSDKLoaded: true,
-          });
+      console.log("[FarcasterHandler] isInIframe:", isInIframe);
 
-          // Call ready() to hide the splash screen
-          // Safe to call even outside Mini App context
-          await sdk.actions.ready();
+      if (mounted) {
+        setFarcasterState({
+          isInMiniApp,
+          isSDKLoaded: true,
+        });
+      }
 
-          // Prompt user to add mini app if in Farcaster context but not yet added
-          const ctx = context as { client?: { added?: boolean } } | null;
-          if (
-            isInMiniApp &&
-            ctx?.client &&
-            !ctx.client.added &&
-            !hasAttemptedAddMiniApp.current
-          ) {
-            hasAttemptedAddMiniApp.current = true;
-            await handleAddMiniApp();
-          }
-        }
-      } catch (error) {
-        console.error("Failed to initialize Farcaster SDK:", error);
-        if (mounted) {
-          setFarcasterState({
-            isInMiniApp: false,
-            isSDKLoaded: true,
-          });
-        }
+      // Don't block on SDK calls - they can interfere with wallet connection
+      // Just fire and forget the ready() call
+      if (isInMiniApp) {
+        sdk.actions.ready().catch((e) => {
+          console.warn("[FarcasterHandler] ready() failed:", e);
+        });
       }
     };
 
@@ -150,7 +124,7 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [handleAddMiniApp]);
+  }, []);
 
   return (
     <FarcasterContext.Provider value={farcasterState}>

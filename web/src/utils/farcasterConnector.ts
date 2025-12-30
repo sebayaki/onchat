@@ -122,11 +122,24 @@ export const farcasterSDK = {
 let requestId = 0;
 const getRequestId = () => ++requestId;
 
+// Request queue to serialize requests (Farcaster only allows one at a time)
+let pendingRequest: Promise<unknown> | null = null;
+
 // The provider that communicates with Farcaster
 async function sendEthRequest(
   method: string,
   params?: unknown
 ): Promise<unknown> {
+  // Wait for any pending request to complete
+  if (pendingRequest) {
+    console.log("[Farcaster Connector] Waiting for pending request...");
+    try {
+      await pendingRequest;
+    } catch {
+      // Ignore errors from previous request
+    }
+  }
+
   const host = getMiniAppHost();
   const request = {
     id: getRequestId(),
@@ -137,35 +150,47 @@ async function sendEthRequest(
 
   console.log("[Farcaster Connector] Sending eth request:", request);
 
+  const requestPromise = (async () => {
+    try {
+      // Try v2 first
+      const response = await Promise.race([
+        host.ethProviderRequestV2(request),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Request timeout")), 30000)
+        ),
+      ]);
+
+      console.log("[Farcaster Connector] Response (v2):", response);
+
+      // Parse response
+      const parsed = response as {
+        result?: unknown;
+        error?: { message?: string; code?: number };
+      };
+      if (parsed.error) {
+        throw new Error(parsed.error.message || "Unknown error");
+      }
+      return parsed.result;
+    } catch (e) {
+      // Try v1 fallback
+      if (e instanceof Error && e.message.includes("apply")) {
+        console.log("[Farcaster Connector] Falling back to v1...");
+        const response = await host.ethProviderRequest(request);
+        console.log("[Farcaster Connector] Response (v1):", response);
+        return response;
+      }
+      throw e;
+    }
+  })();
+
+  pendingRequest = requestPromise;
+
   try {
-    // Try v2 first
-    const response = await Promise.race([
-      host.ethProviderRequestV2(request),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Request timeout")), 30000)
-      ),
-    ]);
-
-    console.log("[Farcaster Connector] Response (v2):", response);
-
-    // Parse response
-    const parsed = response as {
-      result?: unknown;
-      error?: { message?: string };
-    };
-    if (parsed.error) {
-      throw new Error(parsed.error.message || "Unknown error");
+    return await requestPromise;
+  } finally {
+    if (pendingRequest === requestPromise) {
+      pendingRequest = null;
     }
-    return parsed.result;
-  } catch (e) {
-    // Try v1 fallback
-    if (e instanceof Error && e.message.includes("apply")) {
-      console.log("[Farcaster Connector] Falling back to v1...");
-      const response = await host.ethProviderRequest(request);
-      console.log("[Farcaster Connector] Response (v1):", response);
-      return response;
-    }
-    throw e;
   }
 }
 
