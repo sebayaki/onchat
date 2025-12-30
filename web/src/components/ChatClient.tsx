@@ -18,6 +18,7 @@ import { useWalletClient } from "wagmi";
 // Sub-components
 import { Header } from "./Header";
 import { Sidebar } from "./chat/Sidebar";
+import { MobileChannelHeader } from "./chat/MobileChannelHeader";
 import { RewardsView } from "./RewardsView";
 import { MessageList } from "./chat/MessageList";
 import { ChatInput } from "./chat/ChatInput";
@@ -274,6 +275,20 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
           enterChannel(null);
           setActiveTab("chat");
         }}
+      />
+
+      <MobileChannelHeader
+        currentChannel={currentChannel}
+        joinedChannels={joinedChannels}
+        members={members}
+        moderators={moderators}
+        profiles={profiles}
+        isConnected={isConnected}
+        isLoadingChannels={isLoadingChannels}
+        processCommand={processCommand}
+        setActiveTab={setActiveTab}
+        setShowChannelBrowser={setShowChannelBrowser}
+        setShowCreateChannel={setShowCreateChannel}
       />
 
       <div className="flex flex-1 min-h-0 overflow-hidden relative">

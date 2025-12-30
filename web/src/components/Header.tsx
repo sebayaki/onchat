@@ -45,7 +45,7 @@ export function Header({
         </button>
         <div className="flex items-center gap-2 min-w-0">
           {currentChannel && (
-            <span className="text-[var(--color-channel)] text-[0.9rem] max-sm:text-[0.8rem] truncate max-w-[150px] sm:max-w-[300px]">
+            <span className="text-[var(--color-channel)] text-[0.9rem] max-sm:hidden truncate max-w-[150px] sm:max-w-[300px]">
               #{currentChannel.slug}
             </span>
           )}
