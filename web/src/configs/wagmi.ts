@@ -26,12 +26,12 @@ export const wagmiAdapter = new WagmiAdapter({
   projectId,
   networks,
   connectors: [
+    farcasterConnector,
     injected(),
     coinbaseWallet({
       appName: "OnChat",
       appLogoUrl: `${APP_URL}/android-chrome-512x512.png`,
     }),
-    farcasterConnector,
   ],
   client({ chain }) {
     const transport = fallback(
