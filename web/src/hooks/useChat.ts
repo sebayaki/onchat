@@ -64,6 +64,7 @@ interface UseChatReturn {
   moderators: string[];
   isModerator: boolean;
   isConnected: boolean;
+  isWalletLoading: boolean;
   address: string | undefined;
   isLoading: boolean;
   isInitialChannelLoading: boolean;
@@ -76,7 +77,9 @@ interface UseChatReturn {
 }
 
 export function useChat(initialChannelSlug?: string): UseChatReturn {
-  const { address, isConnected } = useAppKitAccount();
+  const { address, isConnected, status: accountStatus } = useAppKitAccount();
+  const isWalletLoading =
+    accountStatus === "connecting" || accountStatus === "reconnecting";
   const { data: walletClient } = useWalletClient();
   const { onMessageSent, onChannelEvent, onModerationEvent } = useEvents();
 
@@ -506,7 +509,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             setIsLoading(false);
             break;
 
-          case "join":
+          case "join": {
             if (!isConnected || !walletClient) {
               addLine("error", "Please connect your wallet first");
               break;
@@ -599,6 +602,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             }
             setIsLoading(false);
             break;
+          }
 
           case "part":
           case "leave":
@@ -637,7 +641,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             setIsLoading(false);
             break;
 
-          case "create":
+          case "create": {
             if (!isConnected || !walletClient) {
               addLine("error", "Please connect your wallet first");
               break;
@@ -690,6 +694,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             }
             setIsLoading(false);
             break;
+          }
 
           case "who":
           case "names":
@@ -735,7 +740,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             await handleWhois(address);
             break;
 
-          case "whois":
+          case "whois": {
             if (args.length === 0) {
               addLine("error", "Usage: /whois 0xWalletAddress");
               break;
@@ -754,9 +759,10 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             );
             await handleWhois(target);
             break;
+          }
 
           case "msg":
-          case "say":
+          case "say": {
             if (!currentChannel) {
               addLine("error", "Join a channel first with /join #channel");
               break;
@@ -770,6 +776,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
             await sendMessageToChannel(msgContent);
             break;
+          }
 
           case "clear":
             setLines([]);
@@ -1227,6 +1234,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     moderators,
     isModerator: isUserModerator,
     isConnected,
+    isWalletLoading,
     address,
     isLoading,
     isInitialChannelLoading,

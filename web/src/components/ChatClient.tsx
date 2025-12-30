@@ -35,6 +35,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     moderators,
     isModerator,
     isConnected,
+    isWalletLoading,
     address,
     isLoading,
     isInitialChannelLoading,
@@ -340,6 +341,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 handleSubmit={handleSubmit}
                 isLoading={isLoading}
                 isConnected={isConnected}
+                isWalletLoading={isWalletLoading}
                 currentChannel={currentChannel}
                 showJoinButton={showJoinButton}
                 handleJoinChannel={handleJoinChannel}
