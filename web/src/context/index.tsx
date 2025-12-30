@@ -1,5 +1,9 @@
 "use client";
 
+// IMPORTANT: This patch must be imported FIRST, before any Farcaster SDK imports!
+// It fixes nested iframe communication by redirecting window.parent to window.top
+import "@/utils/farcasterPatch";
+
 import { wagmiAdapter, projectId } from "@/configs/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createAppKit } from "@reown/appkit/react";
