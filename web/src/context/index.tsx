@@ -46,11 +46,15 @@ createAppKit({
   networks: [base],
   defaultNetwork: base,
   metadata: metadata,
+  // IMPORTANT: Hide wallet browser to prevent blocked WalletConnect API calls
+  // Farcaster's CSP blocks explorer-api.walletconnect.com
+  allWallets: "HIDE",
   features: {
-    analytics: true,
+    // Disable features that make external API calls (blocked by Farcaster CSP)
+    analytics: false,
     email: false,
     socials: false,
-    onramp: true,
+    onramp: false,
     swaps: false,
     send: false,
     history: false,
