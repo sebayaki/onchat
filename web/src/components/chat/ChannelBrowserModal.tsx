@@ -1,6 +1,7 @@
 "use client";
 
 import { type ChannelInfo } from "@/helpers/contracts";
+import { UserIcon, ChatIcon } from "../Icons";
 
 export function ChannelBrowserModal({
   showChannelBrowser,
@@ -63,10 +64,16 @@ export function ChannelBrowserModal({
                     <span className="text-[var(--color-channel)] text-[0.9rem] truncate">
                       #{ch.slug}
                     </span>
-                    <span className="text-[var(--primary-muted)] text-[0.7rem] whitespace-nowrap">
-                      {ch.memberCount.toString()} users •{" "}
-                      {ch.messageCount.toString()} msgs
-                    </span>
+                    <div className="flex items-center gap-3 text-[var(--primary-muted)] text-[0.7rem] whitespace-nowrap">
+                      <div className="flex items-center gap-1">
+                        <UserIcon size={12} className="opacity-70" />
+                        <span>{ch.memberCount.toString()}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <ChatIcon size={12} className="opacity-70" />
+                        <span>{ch.messageCount.toString()}</span>
+                      </div>
+                    </div>
                   </div>
                   <button
                     className="bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-3 py-1 font-mono text-[0.75rem] cursor-pointer transition-all hover:not-disabled:bg-[var(--primary)] hover:not-disabled:text-[var(--bg-primary)] disabled:opacity-40 disabled:cursor-not-allowed shrink-0"

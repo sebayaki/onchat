@@ -4,6 +4,7 @@ import { type ChannelInfo } from "@/helpers/contracts";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { formatAddress } from "@/helpers/format";
 import { UserDisplay } from "./ChatLine";
+import { UserIcon, ChatIcon } from "../Icons";
 
 export function SidebarContent({
   joinedChannels,
@@ -73,7 +74,7 @@ export function SidebarContent({
             </>
           ) : joinedChannels.length > 0 ? (
             [...joinedChannels]
-              .sort((a, b) => Number(b.memberCount - a.memberCount))
+              .sort((a, b) => Number(b.messageCount - a.messageCount))
               .map((channel) => (
                 <li
                   key={channel.slug}
@@ -88,10 +89,19 @@ export function SidebarContent({
                     onChannelClick?.();
                   }}
                 >
-                  #{channel.slug}
-                  <span className="ml-1 text-[0.75rem]">
-                    ({channel.memberCount.toString()})
-                  </span>
+                  <div className="flex items-center justify-between w-full min-w-0">
+                    <span className="truncate flex-1">#{channel.slug}</span>
+                    <div className="flex items-center gap-2 shrink-0 ml-2 text-[0.65rem] text-[var(--primary-muted)]">
+                      <div className="flex items-center gap-0.5">
+                        <UserIcon size={10} className="opacity-70" />
+                        <span>{channel.memberCount.toString()}</span>
+                      </div>
+                      <div className="flex items-center gap-0.5">
+                        <ChatIcon size={10} className="opacity-70" />
+                        <span>{channel.messageCount.toString()}</span>
+                      </div>
+                    </div>
+                  </div>
                 </li>
               ))
           ) : (

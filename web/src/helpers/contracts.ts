@@ -181,8 +181,8 @@ export async function getLatestChannels(
       messageCount: info.messageCount,
     }))
     .sort((a, b) => {
-      if (b.memberCount > a.memberCount) return 1;
-      if (b.memberCount < a.memberCount) return -1;
+      if (b.messageCount > a.messageCount) return 1;
+      if (b.messageCount < a.messageCount) return -1;
       return 0;
     });
 }
