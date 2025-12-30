@@ -1,7 +1,11 @@
-# sudo certbot certonly --email seb@hunt.town --agree-tos -d onchat.sebayaki.com
-
 #!/bin/bash
 set -e # script will exit if any command fails
+
+# To setup SSL certificate:
+# sudo certbot certonly --email seb@hunt.town --agree-tos -d onchat.sebayaki.com
+
+# Ensure we're in the web directory
+cd "$(dirname "$0")/.."
 
 # Configuration
 DEPLOY_DIR_BASE="/srv/onchat"
