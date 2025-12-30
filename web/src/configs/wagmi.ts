@@ -1,7 +1,6 @@
 import { http } from "@wagmi/core";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { base } from "@reown/appkit/networks";
-import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
 import { injected, coinbaseWallet } from "wagmi/connectors";
 import { createClient, fallback } from "viem";
 import { BASE_RPC_ENDPOINTS } from "@/configs/rpcs";
@@ -16,12 +15,9 @@ if (!projectId) {
 
 export const networks = [base];
 
-// Farcaster Mini App connector for embedded wallet support
-export const farcasterConnector = farcasterMiniApp();
-
 // Set up the Wagmi Adapter (Config)
-// Reown AppKit handles wallet connections (WalletConnect, injected, etc.) automatically
-// Farcaster connector is added for Mini App embedded wallet support
+// Reown AppKit handles wallet connections including Farcaster
+// Make sure to add https://farcaster.xyz to allowed domains in Reown Dashboard
 export const wagmiAdapter = new WagmiAdapter({
   projectId,
   networks,
@@ -31,7 +27,6 @@ export const wagmiAdapter = new WagmiAdapter({
       appName: "OnChat",
       appLogoUrl: `${APP_URL}/android-chrome-512x512.png`,
     }),
-    farcasterConnector,
   ],
   client({ chain }) {
     const transport = fallback(
