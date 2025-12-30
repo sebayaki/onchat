@@ -40,6 +40,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     isLoading,
     isInitialChannelLoading,
     isLoadingChannels,
+    scrollSignal,
     processCommand,
     enterChannel,
   } = useChat(channelSlug);
@@ -161,25 +162,20 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     }
   }, [lines, isInitialChannelLoading]);
 
-  // Scroll to bottom when switching channels (after /join completes)
-  const prevChannelRef = useRef<string | null | undefined>(undefined);
+  // Scroll to bottom when signaled (e.g., after /join completes)
   useEffect(() => {
+    if (scrollSignal === 0) return; // Skip initial render
+
     const container = messagesContainerRef.current;
     if (!container) return;
 
-    const prevSlug = prevChannelRef.current;
-    const newSlug = currentChannel?.slug ?? null;
-    prevChannelRef.current = newSlug;
-
-    // Only scroll when actually switching to a different channel (not on initial undefined)
-    if (prevSlug !== undefined && prevSlug !== newSlug && newSlug !== null) {
+    // Double RAF to ensure DOM is fully updated
+    requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          container.scrollTop = container.scrollHeight;
-        });
+        container.scrollTop = container.scrollHeight;
       });
-    }
-  }, [currentChannel]);
+    });
+  }, [scrollSignal]);
 
   // Focus input on mount and after loading completes
   useEffect(() => {

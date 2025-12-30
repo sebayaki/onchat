@@ -89,6 +89,7 @@ interface UseChatReturn {
   isLoading: boolean;
   isInitialChannelLoading: boolean;
   isLoadingChannels: boolean;
+  scrollSignal: number; // Incremented when chat should scroll to bottom
 
   // Actions
   processCommand: (input: string) => Promise<void>;
@@ -118,6 +119,8 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
   const [isLoadingChannels, setIsLoadingChannels] = useState(
     isConnected && !!address
   );
+  // Signal to trigger scroll to bottom (incremented when needed)
+  const [scrollSignal, setScrollSignal] = useState(0);
 
   const lineIdCounter = useRef(0);
   // Track processed tx hashes to avoid duplicates from optimistic updates
@@ -649,6 +652,9 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                 ...prev.filter((l) => l.type !== "message"),
                 ...messageLines,
               ]);
+
+              // Signal to scroll to bottom after joining
+              setScrollSignal((s) => s + 1);
             } catch (err: unknown) {
               const errorMessage = handleTransactionError(err);
               if (errorMessage !== null) {
@@ -1327,6 +1333,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     isLoading,
     isInitialChannelLoading,
     isLoadingChannels,
+    scrollSignal,
     processCommand,
     clearLines,
     enterChannel,
