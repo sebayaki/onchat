@@ -152,6 +152,16 @@ body {
   scrollbar-width: thin;
 }
 
+.scrollbar-overlay {
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.scrollbar-overlay::-webkit-scrollbar {
+  display: none;
+}
+
 .scrollbar-track-transparent::-webkit-scrollbar-track {
   background: transparent;
 }

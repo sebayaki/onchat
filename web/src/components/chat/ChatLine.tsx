@@ -7,22 +7,24 @@ import FarcasterIcon from "@/assets/logos/farcaster.svg";
 import CopyButton from "../CopyButton";
 import { type ChatLine } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
-import { formatTime } from "@/helpers/format";
+import { formatTime, formatAddress } from "@/helpers/format";
 
 export function ActionButtons({
   address,
   username,
   hideBasescan = false,
+  className = "",
 }: {
   address: string;
   username?: string;
   hideBasescan?: boolean;
+  className?: string;
 }) {
   return (
-    <div className="flex items-center">
+    <div className={`flex items-center shrink-0 ${className}`}>
       <CopyButton
         textToCopy={address}
-        className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity cursor-pointer"
+        className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity cursor-pointer shrink-0"
         iconClassName="w-3.5 h-3.5"
       />
       {!hideBasescan && (
@@ -30,7 +32,7 @@ export function ActionButtons({
           href={`https://basescan.org/address/${address}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity"
+          className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity shrink-0"
         >
           <Image
             src={BaseScanIcon}
@@ -46,7 +48,7 @@ export function ActionButtons({
           href={`https://farcaster.xyz/${username}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity"
+          className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity shrink-0"
         >
           <Image
             src={FarcasterIcon}
@@ -79,7 +81,11 @@ export function UserDisplay({
   isSidebar?: boolean;
 }) {
   const displayAddress =
-    showFullAddress && address ? address : formattedAddress;
+    showFullAddress && address
+      ? address
+      : address
+      ? formatAddress(address, !!profile)
+      : formattedAddress;
 
   if (!profile) {
     return (
@@ -89,12 +95,18 @@ export function UserDisplay({
         } ${className}`}
       >
         <span
-          className={`text-[var(--color-nick)] ${isSidebar ? "truncate" : ""}`}
+          className={`text-[var(--color-nick)] ${
+            isSidebar ? "truncate min-w-0" : ""
+          }`}
         >
           {displayAddress}
         </span>
         {showActions && address && (
-          <ActionButtons address={address} hideBasescan={isSidebar} />
+          <ActionButtons
+            address={address}
+            hideBasescan={isSidebar}
+            className={isSidebar ? "ml-auto" : ""}
+          />
         )}
       </span>
     );
@@ -118,16 +130,16 @@ export function UserDisplay({
         />
       )}
       <span
-        className={`font-bold shrink-0 text-[var(--color-nick)] ${
-          isSidebar ? "truncate max-w-[100px]" : ""
+        className={`font-bold text-[var(--color-nick)] ${
+          isSidebar ? "truncate max-w-[140px] min-w-0" : "shrink-0"
         }`}
       >
         @{profile.username}
       </span>
       <span className="text-[var(--text-dim)] shrink-0">-</span>
       <span
-        className={`shrink-0 text-[var(--color-nick)] ${
-          isSidebar ? "truncate" : ""
+        className={`text-[var(--color-nick)] ${
+          isSidebar ? "truncate min-w-0" : "shrink-0"
         }`}
       >
         {displayAddress}
@@ -137,6 +149,7 @@ export function UserDisplay({
           address={address}
           username={profile.username}
           hideBasescan={isSidebar}
+          className={isSidebar ? "ml-auto" : ""}
         />
       )}
     </span>

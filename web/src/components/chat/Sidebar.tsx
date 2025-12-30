@@ -35,7 +35,7 @@ export function Sidebar({
     <aside
       className={`${
         activeTab === "channels" ? "flex" : "hidden"
-      } sm:flex w-[220px] bg-[var(--bg-secondary)] border-r border-[var(--bg-tertiary)] flex-col shrink-0 overflow-hidden max-md:w-[180px] max-sm:absolute max-sm:inset-0 max-sm:w-full max-sm:z-20`}
+      } sm:flex w-[260px] bg-[var(--bg-secondary)] border-r border-[var(--bg-tertiary)] flex-col shrink-0 overflow-hidden max-md:w-[220px] max-sm:absolute max-sm:inset-0 max-sm:w-full max-sm:z-20`}
     >
       <SidebarContent
         joinedChannels={joinedChannels}

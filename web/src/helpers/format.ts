@@ -1,9 +1,10 @@
 import { formatEther } from "viem";
 
 /**
- * Format address for display (0x1234...5678)
+ * Format address for display (0x1234...5678 or 0x1234)
  */
-export function formatAddress(address: string): string {
+export function formatAddress(address: string, prefixOnly = false): string {
+  if (prefixOnly) return address.slice(0, 6);
   return `${address.slice(0, 6)}...${address.slice(-4)}`;
 }
 
