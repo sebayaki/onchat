@@ -38,10 +38,13 @@
   color: var(--primary);
   width: 100%;
   height: 100%;
+  min-height: 0;
+  max-height: 100%;
   overflow: hidden;
   /* Establish flex context for proper height inheritance */
   display: flex;
   flex-direction: column;
+  flex: 1 1 0%;
 }
 
 @media (max-width: 640px) {
@@ -57,8 +60,8 @@
 .onchat-widget-root {
   width: 100%;
   height: 100%;
-  min-height: 0; /* Allow shrinking in flex parent */
-  max-height: 100%; /* Prevent exceeding parent */
+  min-height: 0 !important; /* Allow shrinking in flex parent */
+  max-height: 100% !important; /* Prevent exceeding parent */
   display: flex;
   flex-direction: column;
   /* Enable container queries for responsive layout based on widget size, not viewport */
@@ -67,62 +70,92 @@
   /* Ensure proper height inheritance */
   position: relative;
   overflow: hidden;
+  /* Override any inline minHeight from WidgetComponents.tsx */
+  flex: 1 1 0% !important;
 }
 
 /* ==========================================================================
    Widget Height Containment System
-
+   
    Problem: ChatClient uses h-[100dvh] which is viewport-based and doesn't work
-   in embedded widgets. We need to override all viewport heights to use flex-based
-   sizing relative to the container.
+   in embedded widgets. We need to reset ALL heights and use pure flexbox.
    ========================================================================== */
 
-/* Override ALL viewport height utilities in widget context */
+/* 
+ * CRITICAL: Remove ALL viewport and percentage heights in widget context.
+ * Everything must use flexbox sizing (flex: 1) with min-height: 0 to allow shrinking.
+ */
+
+/* Reset viewport height classes to use flexbox instead */
+/* Using escaped class selectors for Tailwind arbitrary values */
 .onchat-widget-root .h-\[100dvh\],
-.onchat-widget-root .h-screen,
-.onchat-widget-root .h-dvh,
 .onchat-widget-root .max-h-\[100dvh\],
+.onchat-widget-root .h-screen,
 .onchat-widget-root .max-h-screen,
-.onchat-widget-root .max-h-dvh {
-  height: 100% !important;
-  max-height: 100% !important;
+.onchat-widget-root .h-dvh,
+.onchat-widget-root .max-h-dvh,
+.onchat-widget-root .h-full {
+  height: auto !important;
+  max-height: none !important;
 }
 
-/* The main chat-container must fill available space using flexbox */
+/* The main chat-container: fill parent using flexbox only */
 .onchat-widget-root > .chat-container,
-.onchat-widget-root > div.h-\[100dvh\] {
+.onchat-widget-root > .h-\[100dvh\],
+.onchat-widget-root > div.flex.flex-col.h-\[100dvh\] {
   flex: 1 1 0% !important;
   display: flex !important;
   flex-direction: column !important;
-  height: 100% !important;
-  max-height: 100% !important;
-  min-height: 0 !important; /* Critical: allows flex children to shrink */
+  height: auto !important;
+  max-height: none !important;
+  min-height: 0 !important;
   overflow: hidden !important;
 }
 
-/* All flex-1 children must allow shrinking */
+/* All flex-1 elements: ensure proper flex sizing */
 .onchat-widget-root .flex-1 {
   flex: 1 1 0% !important;
   min-height: 0 !important;
+  height: auto !important;
 }
 
 .onchat-widget-root .min-h-0 {
   min-height: 0 !important;
 }
 
-/* Main content panel (the middle area with sidebar and messages) */
+/* Main content panel (sidebar + message area) */
 .onchat-widget-root .chat-container > .flex.flex-1,
-.onchat-widget-root .chat-container > div.flex.flex-1 {
+.onchat-widget-root .chat-container > div.flex.flex-1,
+.onchat-widget-root .chat-container > .relative.flex {
   flex: 1 1 0% !important;
   min-height: 0 !important;
+  height: auto !important;
   overflow: hidden !important;
 }
 
-/* Message list scroll container */
+/* Message list - must scroll within flex bounds */
 .onchat-widget-root .overflow-y-auto {
+  flex: 1 1 0% !important;
   min-height: 0 !important;
-  flex-shrink: 1 !important;
+  height: auto !important;
 }
+
+/* Inner content panels */
+.onchat-widget-root .flex-col.flex-1,
+.onchat-widget-root div.flex-1.flex.flex-col {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: auto !important;
+}
+
+/* Ensure shrink-0 elements don't affect flex calculation */
+.onchat-widget-root .shrink-0,
+.onchat-widget-root header,
+.onchat-widget-root footer,
+.onchat-widget-root nav {
+  flex-shrink: 0 !important;
+}
+
 
 /* ============================================================================
    Widget Layout
