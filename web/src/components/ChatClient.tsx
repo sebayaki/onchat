@@ -326,6 +326,9 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 messagesEndRef={messagesEndRef}
                 isModerator={isModerator}
                 processCommand={processCommand}
+                showChannelButtons={isConnected && !currentChannel}
+                onBrowseChannels={() => setShowChannelBrowser(true)}
+                onCreateChannel={() => setShowCreateChannel(true)}
               />
               <ChatInput
                 input={input}

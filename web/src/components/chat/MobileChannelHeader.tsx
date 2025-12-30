@@ -33,6 +33,11 @@ export function MobileChannelHeader({
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  // Don't show mobile channel header if no channel is joined
+  if (!currentChannel) {
+    return null;
+  }
+
   return (
     <div className="sm:hidden flex flex-col border-b border-[var(--bg-tertiary)] bg-[var(--bg-primary)] shrink-0">
       <button
@@ -44,13 +49,11 @@ export function MobileChannelHeader({
             Channel:
           </span>
           <span className="text-[var(--color-channel)] text-[0.9rem] font-bold truncate">
-            #{currentChannel?.slug || "lobby"}
+            #{currentChannel.slug}
           </span>
-          {currentChannel && (
-            <span className="text-[var(--text-dim)] text-[0.7rem] shrink-0">
-              ({currentChannel.memberCount.toString()})
-            </span>
-          )}
+          <span className="text-[var(--text-dim)] text-[0.7rem] shrink-0">
+            ({currentChannel.memberCount.toString()})
+          </span>
         </div>
         <ChevronDownIcon
           size={20}

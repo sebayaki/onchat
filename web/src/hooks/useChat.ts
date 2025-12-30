@@ -243,7 +243,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
     addLine("system", "Welcome to OnChat");
     addLine("system", "Fully permissionless, on-chain chat");
-    addLine("system", "────────────────────────────────────");
+    addLine("system", "───────────────────────");
     addLine("info", "Type /help for available commands");
     if (!isConnected) {
       addLine("info", "Connect your wallet to start chatting");
