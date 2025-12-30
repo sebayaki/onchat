@@ -27,18 +27,43 @@ cleanup_ssh() {
 }
 trap cleanup_ssh EXIT
 
-echo "Installing dependencies..." && npm install
-echo "Building widget (outputs to public/widget.js)..." && npm run build:widget
+echo "Installing dependencies..."
+npm install
+
+echo "Building widget (outputs to public/widget.js)..."
+npm run build:widget
 
 echo "Pushing latest changes and tagging..."
-git pull && npm version patch --no-git-tag-version
-VERSION=$(node -p "require('./package.json').version")
+# Ensure all changes are staged before pulling
 git add .
-git commit -m "v$VERSION"
+
+# Create a temporary commit if there are any changes, to allow rebase to work
+if ! git diff --cached --quiet; then
+  git commit -m "chore: pre-deploy save"
+fi
+
+# Pull latest changes from remote
+git pull --rebase
+
+# Increment version
+npm version patch --no-git-tag-version
+VERSION=$(node -p "require('./package.json').version")
+
+# Finalize the commit with the new version
+git add .
+# Amend the temporary commit if it exists, otherwise create a new version commit
+if [ "$(git log -1 --pretty=%B)" = "chore: pre-deploy save" ]; then
+  git commit --amend -m "v$VERSION"
+else
+  git commit -m "v$VERSION"
+fi
+
 git tag "v$VERSION"
 git push && git push --tags
 
-echo "Building static export..." && rm -rf dist && npm run build
+echo "Building static export..."
+rm -rf dist
+npm run build
 
 # Create directories only if they don't exist
 ssh $SSH_OPTS $HOST "
@@ -59,8 +84,8 @@ else
   tar -C dist/ -zcf $archive_name.tar.gz .
 fi
 
-scp $SSH_OPTS -C $archive_name.tar.gz $HOST:$RELEASE_DIR/$TIMESTAMP/ && \
-ssh $SSH_OPTS $HOST "cd $RELEASE_DIR/$TIMESTAMP && tar -zxf $archive_name.tar.gz && rm $archive_name.tar.gz" && \
+scp $SSH_OPTS -C $archive_name.tar.gz $HOST:$RELEASE_DIR/$TIMESTAMP/
+ssh $SSH_OPTS $HOST "cd $RELEASE_DIR/$TIMESTAMP && tar -zxf $archive_name.tar.gz && rm $archive_name.tar.gz"
 rm $archive_name.tar.gz
 
 # Update symlink
