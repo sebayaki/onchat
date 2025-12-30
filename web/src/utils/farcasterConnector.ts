@@ -3,20 +3,13 @@
  *
  * This fixes the nested iframe issue where the default SDK uses window.parent,
  * which points to the intermediate frame instead of the Farcaster host.
+ *
+ * Uses Comlink's message format to properly communicate with the Farcaster host.
  */
 
 import { createConnector } from "@wagmi/core";
 import { getAddress, numberToHex, type Hex } from "viem";
-
-// Simple ID generator for RPC requests
-let requestId = 0;
-const getRequestId = () => ++requestId;
-
-// Pending requests map
-const pendingRequests = new Map<
-  number,
-  { resolve: (value: unknown) => void; reject: (error: Error) => void }
->();
+import { wrap } from "comlink";
 
 // Get the target window for communication (prefer top, fallback to parent)
 function getTargetWindow(): Window {
@@ -43,132 +36,106 @@ function getTargetWindow(): Window {
   return window;
 }
 
-// Set up message listener for responses (only once)
-let listenerSetup = false;
-function setupMessageListener() {
-  if (listenerSetup || typeof window === "undefined") return;
-  listenerSetup = true;
+// Create a Comlink-compatible endpoint for window.top
+function createTopWindowEndpoint() {
+  const target = getTargetWindow();
 
-  window.addEventListener("message", (event) => {
-    // Handle Comlink-style responses from Farcaster
-    if (event.data && typeof event.data === "object") {
-      const data = event.data;
-
-      // Debug: log all messages
-      if (data.type?.includes("frame") || data.id !== undefined) {
-        console.log("[Farcaster Connector] Received message:", data);
-      }
-
-      // Handle direct response format
-      if (typeof data.id === "number" && pendingRequests.has(data.id)) {
-        const { resolve, reject } = pendingRequests.get(data.id)!;
-        pendingRequests.delete(data.id);
-
-        if (data.error) {
-          reject(new Error(data.error.message || JSON.stringify(data.error)));
-        } else {
-          resolve(data.result);
-        }
-        return;
-      }
-
-      // Handle Farcaster frame response format
-      if (
-        data.type === "fc:frame:ethProviderResponse" &&
-        pendingRequests.has(data.requestId)
-      ) {
-        const { resolve, reject } = pendingRequests.get(data.requestId)!;
-        pendingRequests.delete(data.requestId);
-
-        if (data.error) {
-          reject(new Error(data.error.message || JSON.stringify(data.error)));
-        } else {
-          resolve(data.result);
-        }
-        return;
-      }
-    }
-  });
+  return {
+    postMessage: (message: unknown, transfer?: Transferable[]) => {
+      console.log("[Farcaster Connector] Sending Comlink message:", message);
+      target.postMessage(message, "*", transfer || []);
+    },
+    addEventListener: (
+      _type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions
+    ) => {
+      window.addEventListener("message", listener as EventListener, options);
+    },
+    removeEventListener: (
+      _type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | EventListenerOptions
+    ) => {
+      window.removeEventListener("message", listener as EventListener, options);
+    },
+  };
 }
 
-// Send RPC request to Farcaster host
-async function sendRequest(method: string, params?: unknown): Promise<unknown> {
-  setupMessageListener();
+// Create the miniAppHost proxy using Comlink with window.top
+let miniAppHost: ReturnType<typeof createMiniAppHost> | null = null;
 
-  const targetWindow = getTargetWindow();
-  const id = getRequestId();
+function createMiniAppHost() {
+  const endpoint = createTopWindowEndpoint();
+  return wrap<{
+    ethProviderRequest: (request: unknown) => Promise<unknown>;
+    ethProviderRequestV2: (request: unknown) => Promise<unknown>;
+    context: Promise<unknown>;
+    getCapabilities: () => Promise<string[]>;
+  }>(endpoint as never);
+}
 
-  console.log("[Farcaster Connector] Sending request:", { id, method, params });
+function getMiniAppHost() {
+  if (!miniAppHost) {
+    miniAppHost = createMiniAppHost();
+  }
+  return miniAppHost;
+}
 
-  return new Promise((resolve, reject) => {
-    const timeout = setTimeout(() => {
-      pendingRequests.delete(id);
-      console.error("[Farcaster Connector] Request timeout:", method);
-      reject(new Error(`Request timeout: ${method}`));
-    }, 30000);
+// RPC request store for tracking requests
+let requestId = 0;
+const getRequestId = () => ++requestId;
 
-    pendingRequests.set(id, {
-      resolve: (value) => {
-        clearTimeout(timeout);
-        console.log("[Farcaster Connector] Request resolved:", {
-          id,
-          method,
-          value,
-        });
-        resolve(value);
-      },
-      reject: (error) => {
-        clearTimeout(timeout);
-        console.error("[Farcaster Connector] Request rejected:", {
-          id,
-          method,
-          error,
-        });
-        reject(error);
-      },
-    });
+// The provider that communicates with Farcaster
+async function sendEthRequest(
+  method: string,
+  params?: unknown
+): Promise<unknown> {
+  const host = getMiniAppHost();
+  const request = {
+    id: getRequestId(),
+    jsonrpc: "2.0",
+    method,
+    params: params ?? [],
+  };
 
-    // Try multiple message formats that Farcaster might accept
+  console.log("[Farcaster Connector] Sending eth request:", request);
 
-    // Format 1: Farcaster frame format
-    targetWindow.postMessage(
-      {
-        type: "fc:frame:ethProviderRequest",
-        requestId: id,
-        request: { method, params },
-      },
-      "*"
-    );
+  try {
+    // Try v2 first
+    const response = await Promise.race([
+      host.ethProviderRequestV2(request),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Request timeout")), 30000)
+      ),
+    ]);
 
-    // Format 2: Comlink-style format (backup)
-    targetWindow.postMessage(
-      {
-        id,
-        type: "CALL",
-        path: ["ethProviderRequestV2"],
-        argumentList: [{ id, method, params }],
-      },
-      "*"
-    );
-  });
+    console.log("[Farcaster Connector] Response (v2):", response);
+
+    // Parse response
+    const parsed = response as {
+      result?: unknown;
+      error?: { message?: string };
+    };
+    if (parsed.error) {
+      throw new Error(parsed.error.message || "Unknown error");
+    }
+    return parsed.result;
+  } catch (e) {
+    // Try v1 fallback
+    if (e instanceof Error && e.message.includes("apply")) {
+      console.log("[Farcaster Connector] Falling back to v1...");
+      const response = await host.ethProviderRequest(request);
+      console.log("[Farcaster Connector] Response (v1):", response);
+      return response;
+    }
+    throw e;
+  }
 }
 
 // The actual connector
 export function farcasterMiniAppCustom() {
   return createConnector((config) => {
-    // Provider implementation
-    const provider = {
-      async request({
-        method,
-        params,
-      }: {
-        method: string;
-        params?: unknown[];
-      }): Promise<unknown> {
-        return sendRequest(method, params);
-      },
-    };
-
     return {
       id: "farcaster",
       name: "Farcaster",
@@ -178,9 +145,9 @@ export function farcasterMiniAppCustom() {
       async connect({ chainId } = {}): Promise<any> {
         console.log("[Farcaster Connector] Connecting...");
 
-        const accounts = (await provider.request({
-          method: "eth_requestAccounts",
-        })) as string[];
+        const accounts = (await sendEthRequest(
+          "eth_requestAccounts"
+        )) as string[];
 
         console.log("[Farcaster Connector] Accounts:", accounts);
 
@@ -203,16 +170,12 @@ export function farcasterMiniAppCustom() {
       },
 
       async getAccounts() {
-        const accounts = (await provider.request({
-          method: "eth_accounts",
-        })) as string[];
+        const accounts = (await sendEthRequest("eth_accounts")) as string[];
         return accounts.map((x) => getAddress(x));
       },
 
       async getChainId() {
-        const hexChainId = (await provider.request({
-          method: "eth_chainId",
-        })) as Hex;
+        const hexChainId = (await sendEthRequest("eth_chainId")) as Hex;
         return parseInt(hexChainId, 16);
       },
 
@@ -232,10 +195,9 @@ export function farcasterMiniAppCustom() {
           throw new Error(`Chain ${chainId} not found`);
         }
 
-        await provider.request({
-          method: "wallet_switchEthereumChain",
-          params: [{ chainId: numberToHex(chainId) }],
-        });
+        await sendEthRequest("wallet_switchEthereumChain", [
+          { chainId: numberToHex(chainId) },
+        ]);
 
         config.emitter.emit("change", { chainId });
 
@@ -262,7 +224,17 @@ export function farcasterMiniAppCustom() {
       },
 
       async getProvider() {
-        return provider;
+        return {
+          request: async ({
+            method,
+            params,
+          }: {
+            method: string;
+            params?: unknown[];
+          }) => {
+            return sendEthRequest(method, params);
+          },
+        };
       },
     };
   });
