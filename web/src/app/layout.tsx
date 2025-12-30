@@ -11,6 +11,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 const APP_URL = "https://onchat.sebayaki.com";
 
+// We use a placeholder that Nginx will replace with the actual request path at runtime.
+// This allows sharing specific channel URLs (e.g. /vibecoding) while using a static build.
+const REQUEST_PATH =
+  process.env.NODE_ENV === "production" ? "__REQUEST_PATH__" : "/";
+
 const fcMiniappConfig = JSON.stringify({
   version: "next",
   imageUrl: `${APP_URL}/og-image.jpg`,
@@ -19,7 +24,7 @@ const fcMiniappConfig = JSON.stringify({
     action: {
       type: "launch_frame",
       name: "OnChat",
-      url: APP_URL,
+      url: `${APP_URL}${REQUEST_PATH}`,
       splashImageUrl: `${APP_URL}/app-icon-200x200.png`,
       splashBackgroundColor: "#000000",
     },
@@ -44,6 +49,7 @@ export const metadata: Metadata = {
     title: "OnChat",
     description:
       "A fully permissionless, on-chain chat protocol built on the Base.",
+    url: REQUEST_PATH,
     type: "website",
     images: ["/og-image.jpg"],
   },
