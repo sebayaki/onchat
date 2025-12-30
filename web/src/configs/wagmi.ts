@@ -22,48 +22,34 @@ export const farcasterConnector = farcasterMiniApp();
 // Set up the Wagmi Adapter (Config)
 // Reown AppKit handles wallet connections (WalletConnect, injected, etc.) automatically
 // Farcaster connector is added for Mini App embedded wallet support
-const createWagmiAdapter = () => {
-  if (typeof window !== "undefined" && window._onchatWagmiAdapter) {
-    return window._onchatWagmiAdapter;
-  }
+export const wagmiAdapter = new WagmiAdapter({
+  projectId,
+  networks,
+  connectors: [
+    farcasterConnector,
+    injected(),
+    coinbaseWallet({
+      appName: "OnChat",
+      appLogoUrl: `${APP_URL}/android-chrome-512x512.png`,
+    }),
+  ],
+  client({ chain }) {
+    const transport = fallback(
+      BASE_RPC_ENDPOINTS.map((url) =>
+        http(url, {
+          timeout: 2_000,
+          retryCount: 0,
+          batch: true,
+        })
+      ),
+      { rank: false }
+    );
 
-  const adapter = new WagmiAdapter({
-    projectId,
-    networks,
-    connectors: [
-      farcasterConnector,
-      injected(),
-      coinbaseWallet({
-        appName: "OnChat",
-        appLogoUrl: `${APP_URL}/android-chrome-512x512.png`,
-      }),
-    ],
-    client({ chain }) {
-      const transport = fallback(
-        BASE_RPC_ENDPOINTS.map((url) =>
-          http(url, {
-            timeout: 2_000,
-            retryCount: 0,
-            batch: true,
-          })
-        ),
-        { rank: false }
-      );
-
-      return createClient({
-        chain,
-        transport,
-      });
-    },
-  });
-
-  if (typeof window !== "undefined") {
-    window._onchatWagmiAdapter = adapter;
-  }
-
-  return adapter;
-};
-
-export const wagmiAdapter = createWagmiAdapter();
+    return createClient({
+      chain,
+      transport,
+    });
+  },
+});
 
 export const config = wagmiAdapter.wagmiConfig;

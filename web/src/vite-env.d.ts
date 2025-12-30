@@ -26,8 +26,6 @@ interface Window {
     unmount: () => boolean;
     themes: import("./helpers/themes").Theme[];
   };
-  _onchatAppKitInitialized?: boolean;
-  _onchatWagmiAdapter?: import("@reown/appkit-adapter-wagmi").WagmiAdapter;
 }
 
 // Allow ?inline CSS imports

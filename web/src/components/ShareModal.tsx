@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { type ChannelInfo } from "@/helpers/contracts";
 import CopyButton from "./CopyButton";
 import { themes } from "@/helpers/themes";
@@ -58,20 +58,6 @@ export function ShareModal({
     [CONTROL_VARS.HIDE_BRAND]: !!currentChannel,
   });
   const [isThemeDropdownOpen, setIsThemeDropdownOpen] = useState(false);
-  const [widgetLoaded, setWidgetLoaded] = useState(!!window.OnChat);
-  const previewRef = useRef<HTMLDivElement>(null);
-  const widgetInstanceRef = useRef<{ unmount: () => void } | null>(null);
-
-  // Load widget script
-  useEffect(() => {
-    if (!window.OnChat && showShareModal) {
-      const script = document.createElement("script");
-      script.src = "/widget.js";
-      script.async = true;
-      script.onload = () => setWidgetLoaded(true);
-      document.head.appendChild(script);
-    }
-  }, [showShareModal]);
 
   // Initialize theme state when modal opens
   useEffect(() => {
@@ -98,91 +84,6 @@ export function ShareModal({
       return () => clearTimeout(timeoutId);
     }
   }, [showShareModal, currentChannel]);
-
-  // Mount/unmount widget preview
-  useEffect(() => {
-    if (
-      !showShareModal ||
-      !widgetLoaded ||
-      !previewRef.current ||
-      !window.OnChat
-    ) {
-      return;
-    }
-
-    // Unmount previous instance
-    if (widgetInstanceRef.current) {
-      widgetInstanceRef.current.unmount();
-      widgetInstanceRef.current = null;
-    }
-
-    // Clear the container
-    previewRef.current.innerHTML = "";
-
-    // Build widget options
-    const widgetOpts: {
-      channel?: string;
-      theme?: string;
-      hideMobileTabs?: boolean;
-      hideBrand?: boolean;
-      height?: string;
-      colors?: Record<string, string>;
-    } = {
-      height: "100%",
-    };
-
-    if (currentChannel?.slug) {
-      widgetOpts.channel = currentChannel.slug;
-    }
-    if (selectedThemeId && selectedThemeId !== "classic-blue") {
-      widgetOpts.theme = selectedThemeId;
-    }
-    if (controls[CONTROL_VARS.HIDE_MOBILE_TABS]) {
-      widgetOpts.hideMobileTabs = true;
-    }
-    if (controls[CONTROL_VARS.HIDE_BRAND]) {
-      widgetOpts.hideBrand = true;
-    }
-
-    // Check for color overrides
-    const colors: Record<string, string> = {};
-    Object.entries(theme).forEach(([key, value]) => {
-      const selectedTheme = themes.find((t) => t.id === selectedThemeId);
-      if (!selectedTheme) return;
-      const themeKey = key.replace(/-([a-z])/g, (g) =>
-        g[1].toUpperCase()
-      ) as keyof typeof selectedTheme.colors;
-      const baseColor = rgbToHex(selectedTheme.colors[themeKey] as string);
-      if (value && value.toLowerCase() !== baseColor.toLowerCase()) {
-        colors[key] = value;
-      }
-    });
-    if (Object.keys(colors).length > 0) {
-      widgetOpts.colors = colors;
-    }
-
-    // Mount the widget
-    try {
-      widgetInstanceRef.current =
-        window.OnChat?.mount(previewRef.current, widgetOpts) || null;
-    } catch (err) {
-      console.error("Failed to mount widget preview:", err);
-    }
-
-    return () => {
-      if (widgetInstanceRef.current) {
-        widgetInstanceRef.current.unmount();
-        widgetInstanceRef.current = null;
-      }
-    };
-  }, [
-    showShareModal,
-    widgetLoaded,
-    selectedThemeId,
-    controls,
-    theme,
-    currentChannel,
-  ]);
 
   if (!showShareModal) return null;
 
@@ -527,16 +428,11 @@ export function ShareModal({
               </div>
             </div>
             <div className="flex-1 overflow-hidden">
-              {widgetLoaded ? (
-                <div
-                  ref={previewRef}
-                  className="w-full h-full pointer-events-none"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-[var(--text-dim)] text-[0.75rem]">
-                  Loading widget...
-                </div>
-              )}
+              <iframe
+                src={fullShareUrl}
+                className="w-full h-full border-none pointer-events-none"
+                title="Widget Preview"
+              />
             </div>
           </div>
         </div>
