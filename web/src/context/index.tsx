@@ -1,6 +1,6 @@
 "use client";
 
-import { wagmiAdapter, projectId, farcasterConnector } from "@/configs/wagmi";
+import { wagmiAdapter, projectId } from "@/configs/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { createAppKit } from "@reown/appkit/react";
 import { base } from "@reown/appkit/networks";
@@ -13,7 +13,7 @@ import {
   createContext,
   useContext,
 } from "react";
-import { WagmiProvider, type Config, useConnect } from "wagmi";
+import { WagmiProvider, type Config, useConnect, useConnectors } from "wagmi";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { APP_URL, APP_NAME, APP_DESCRIPTION } from "@/configs/constants";
 import { EventProvider } from "./EventContext";
@@ -96,8 +96,14 @@ function FarcasterAutoConnect({
   isSDKLoaded: boolean;
 }) {
   const { mutate: connectWallet } = useConnect();
+  const connectors = useConnectors();
   const { isConnected } = useAppKitAccount();
   const hasAttemptedAutoConnect = useRef(false);
+
+  // Find the Farcaster connector from wagmi's registered connectors
+  const getFarcasterConnector = useCallback(() => {
+    return connectors.find((c) => c.id === "farcaster");
+  }, [connectors]);
 
   // Auto-connect to Farcaster wallet when in Mini App context
   useEffect(() => {
@@ -107,18 +113,29 @@ function FarcasterAutoConnect({
       !isConnected &&
       !hasAttemptedAutoConnect.current
     ) {
-      hasAttemptedAutoConnect.current = true;
-      connectWallet({ connector: farcasterConnector });
+      const connector = getFarcasterConnector();
+      if (connector) {
+        hasAttemptedAutoConnect.current = true;
+        connectWallet({ connector });
+      }
     }
-  }, [isInMiniApp, isSDKLoaded, isConnected, connectWallet]);
+  }, [
+    isInMiniApp,
+    isSDKLoaded,
+    isConnected,
+    connectWallet,
+    getFarcasterConnector,
+  ]);
 
   // Function to manually connect to Farcaster wallet
-  // This can be called even outside Mini App context - the connector handles it
   const connectFarcasterWallet = useCallback(() => {
     if (!isConnected) {
-      connectWallet({ connector: farcasterConnector });
+      const connector = getFarcasterConnector();
+      if (connector) {
+        connectWallet({ connector });
+      }
     }
-  }, [isConnected, connectWallet]);
+  }, [isConnected, connectWallet, getFarcasterConnector]);
 
   return (
     <FarcasterContext.Provider
