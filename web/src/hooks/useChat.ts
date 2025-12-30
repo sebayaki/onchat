@@ -613,7 +613,6 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               // Load recent messages
               const messages = await getLatestMessages(slugHash, 0, 20);
               const orderedMessages = [...messages].reverse();
-              setLines((prev) => prev.filter((l) => l.type !== "message"));
 
               // Determine if user is moderator to show hidden messages
               const isMod =
@@ -623,23 +622,33 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                     (m) => m.toLowerCase() === address.toLowerCase()
                   ));
 
+              // Build message lines to add in batch (for proper scroll behavior)
+              const messageLines: ChatLine[] = [];
               for (let i = 0; i < orderedMessages.length; i++) {
                 const msg = orderedMessages[i];
                 const msgIndex =
                   Number(channelInfo.messageCount) - orderedMessages.length + i;
 
                 if (!msg.isHidden || isMod) {
-                  addLine(
-                    "message",
-                    msg.content,
-                    formatAddress(msg.sender),
-                    msg.sender,
-                    channelToJoin,
-                    msgIndex,
-                    msg.isHidden
-                  );
+                  messageLines.push({
+                    id: `line-${lineIdCounter.current++}`,
+                    type: "message",
+                    timestamp: new Date(),
+                    content: msg.content,
+                    sender: formatAddress(msg.sender),
+                    senderAddress: msg.sender,
+                    channel: channelToJoin,
+                    messageIndex: msgIndex,
+                    isHidden: msg.isHidden,
+                  });
                 }
               }
+
+              // Clear old messages and add new ones in a single update
+              setLines((prev) => [
+                ...prev.filter((l) => l.type !== "message"),
+                ...messageLines,
+              ]);
             } catch (err: unknown) {
               const errorMessage = handleTransactionError(err);
               if (errorMessage !== null) {
