@@ -9,6 +9,7 @@ import { AccountDropdown } from "./AccountDropdown";
 export function Header({
   currentChannel,
   isConnected,
+  hasWalletClient,
   address,
   ownerBalance,
   onRewardsClick,
@@ -20,6 +21,7 @@ export function Header({
 }: {
   currentChannel: ChannelInfo | null;
   isConnected: boolean;
+  hasWalletClient: boolean;
   address?: string;
   ownerBalance: bigint;
   onRewardsClick: () => void;
@@ -61,7 +63,7 @@ export function Header({
         </div>
       </div>
       <div className="flex items-center gap-3">
-        {isConnected && address ? (
+        {isConnected && hasWalletClient && address ? (
           <>
             <button
               onClick={onRewardsClick}
