@@ -165,12 +165,10 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     setIsLoadingChannels(true);
     try {
       const hashes = await getUserChannels(address as `0x${string}`, 0, 100);
-      const channels: ChannelInfo[] = [];
-      for (const hash of hashes) {
-        const info = await getChannel(hash);
-        if (info) channels.push(info);
-      }
-      setJoinedChannels(channels);
+      const channels = await Promise.all(
+        hashes.map((hash) => getChannel(hash))
+      );
+      setJoinedChannels(channels.filter(Boolean));
     } catch (err) {
       console.error("Failed to load joined channels:", err);
     } finally {
