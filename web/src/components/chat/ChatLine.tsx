@@ -1,7 +1,6 @@
 import { useState, ReactNode } from "react";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import BaseScanIcon from "@/assets/logos/basescan.svg?url";
-import FarcasterIcon from "@/assets/logos/farcaster.svg?url";
 import CopyButton from "../CopyButton";
 import { type ChatLine, type ChannelListItem } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
@@ -9,14 +8,50 @@ import { formatTime, formatAddress } from "@/helpers/format";
 
 type ProfilesRecord = Record<string, FarcasterUserProfile | null>;
 
+function CopyableAddress({
+  displayText,
+  fullAddress,
+  className = "",
+}: {
+  displayText: string;
+  fullAddress: string;
+  className?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(fullAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  return (
+    <span className="relative inline-flex">
+      <span
+        onClick={handleCopy}
+        className={`cursor-pointer hover:opacity-70 transition-opacity ${className}`}
+      >
+        {displayText}
+      </span>
+      {copied && (
+        <span className="absolute inset-0 flex items-center justify-center bg-[var(--bg-tertiary)] text-[var(--primary)]! text-[0.7rem] rounded whitespace-nowrap pointer-events-none animate-fade-in-out z-10">
+          COPIED
+        </span>
+      )}
+    </span>
+  );
+}
+
 export function ActionButtons({
   address,
-  username,
   hideBasescan = false,
   className = "",
 }: {
   address: string;
-  username?: string;
   hideBasescan?: boolean;
   className?: string;
 }) {
@@ -37,22 +72,6 @@ export function ActionButtons({
           <img
             src={BaseScanIcon}
             alt="BaseScan"
-            width={14}
-            height={14}
-            className="w-3.5 h-3.5"
-          />
-        </a>
-      )}
-      {username && (
-        <a
-          href={`https://farcaster.xyz/${username}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity shrink-0"
-        >
-          <img
-            src={FarcasterIcon}
-            alt="Farcaster"
             width={14}
             height={14}
             className="w-3.5 h-3.5"
@@ -94,13 +113,13 @@ export function UserDisplay({
           isSidebar ? "min-w-0 flex-1" : ""
         } ${className}`}
       >
-        <span
+        <CopyableAddress
+          displayText={displayAddress}
+          fullAddress={address || formattedAddress}
           className={`text-[var(--color-nick)] ${
             isSidebar ? "truncate min-w-0" : ""
           }`}
-        >
-          {displayAddress}
-        </span>
+        />
         {showActions && address && (
           <ActionButtons
             address={address}
@@ -128,25 +147,27 @@ export function UserDisplay({
           className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full shrink-0"
         />
       )}
-      <span
-        className={`font-bold text-[var(--color-nick)] ${
+      <a
+        href={`https://farcaster.xyz/${profile.username}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`font-bold text-[var(--color-nick)]! hover:opacity-70 transition-opacity ${
           isSidebar ? "truncate max-w-[140px] min-w-0" : "shrink-0"
         }`}
       >
         @{profile.username}
-      </span>
+      </a>
       <span className="text-[var(--text-dim)] shrink-0">-</span>
-      <span
+      <CopyableAddress
+        displayText={displayAddress}
+        fullAddress={address || ""}
         className={`text-[var(--color-nick)] ${
           isSidebar ? "truncate min-w-0" : "shrink-0"
         }`}
-      >
-        {displayAddress}
-      </span>
+      />
       {showActions && address && (
         <ActionButtons
           address={address}
-          username={profile.username}
           hideBasescan={isSidebar}
           className={isSidebar ? "ml-auto" : ""}
         />
