@@ -185,7 +185,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     }
   }, [isLoading]);
 
-  // Update URL when channel changes (skip in widget mode to avoid breaking parent app)
+  // Update URL and metadata when channel changes (skip in widget mode to avoid breaking parent app)
   useEffect(() => {
     if (isWidget) return;
 
@@ -195,6 +195,34 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
     const params = new URLSearchParams(window.location.search).toString();
     const search = params ? `?${params}` : "";
+
+    const title = currentChannel?.slug
+      ? `#${currentChannel.slug} - OnChat`
+      : "OnChat";
+
+    // Update browser title
+    document.title = title;
+
+    // Update meta tags for social sharing
+    const metaTags = [
+      { name: "title", content: title },
+      { property: "og:title", content: title },
+      { name: "twitter:title", content: title },
+    ];
+
+    metaTags.forEach((tag) => {
+      let element = tag.name
+        ? document.querySelector(`meta[name="${tag.name}"]`)
+        : document.querySelector(`meta[property="${tag.property}"]`);
+
+      if (!element) {
+        element = document.createElement("meta");
+        if (tag.name) element.setAttribute("name", tag.name);
+        if (tag.property) element.setAttribute("property", tag.property);
+        document.head.appendChild(element);
+      }
+      element.setAttribute("content", tag.content);
+    });
 
     if (currentChannel?.slug) {
       const newPath = `/${currentChannel.slug}${search}`;
