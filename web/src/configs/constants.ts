@@ -20,7 +20,7 @@ export const IRC_COLORS = {
 } as const;
 
 export const MAX_MESSAGE_LENGTH = 500;
-export const MESSAGES_PER_PAGE = 50;
+export const MESSAGES_PER_PAGE = 30;
 
 export const STORAGE_KEYS = {
   LAST_CHANNEL: "onchat_last_channel",

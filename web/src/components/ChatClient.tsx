@@ -41,8 +41,11 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     isInitialChannelLoading,
     isLoadingChannels,
     scrollSignal,
+    hasMore,
+    isLoadingMore,
     processCommand,
     enterChannel,
+    loadMoreMessages,
   } = useChat(channelSlug);
 
   const { open } = useAppKit();
@@ -137,12 +140,39 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
   // Handle new messages and channel switches
   const prevLinesLengthRef = useRef(0);
+  const lastScrollHeightRef = useRef(0);
+  const isPrependingRef = useRef(false);
+
+  // Set prepending flag when isLoadingMore starts
+  useEffect(() => {
+    if (isLoadingMore) {
+      const container = messagesContainerRef.current;
+      if (container) {
+        lastScrollHeightRef.current = container.scrollHeight;
+        isPrependingRef.current = true;
+      }
+    }
+  }, [isLoadingMore]);
+
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
 
     const linesDiff = lines.length - prevLinesLengthRef.current;
     const lastLine = lines[lines.length - 1];
+
+    // If we just finished prepending, adjust scroll to maintain position
+    if (isPrependingRef.current && !isLoadingMore && linesDiff > 0) {
+      const newScrollHeight = container.scrollHeight;
+      const scrollDiff = newScrollHeight - lastScrollHeightRef.current;
+      if (scrollDiff > 0) {
+        container.scrollTop = scrollDiff;
+      }
+      isPrependingRef.current = false;
+      prevLinesLengthRef.current = lines.length;
+      return;
+    }
+
     prevLinesLengthRef.current = lines.length;
 
     // Force scroll for: bulk messages, initial loading, or command output (channelList, userList, info, etc.)
@@ -448,6 +478,9 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 showChannelButtons={isConnected && !currentChannel}
                 onBrowseChannels={() => setShowChannelBrowser(true)}
                 onCreateChannel={() => setShowCreateChannel(true)}
+                hasMore={hasMore && !!currentChannel}
+                isLoadingMore={isLoadingMore}
+                onLoadMore={loadMoreMessages}
               />
               <ChatInput
                 input={input}

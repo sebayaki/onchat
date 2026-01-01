@@ -1,6 +1,6 @@
 import { basePublicClient } from "@/configs/viem";
 import { ONCHAT_ABI, ONCHAT_BUYBACK_BURNER_ABI } from "@/configs/abis";
-import { CONTRACTS } from "@/configs/constants";
+import { CONTRACTS, MESSAGES_PER_PAGE } from "@/configs/constants";
 import { type WalletClient, keccak256, toBytes } from "viem";
 import { base } from "viem/chains";
 import { formatNumber } from "./format";
@@ -162,7 +162,7 @@ export async function getChannelBySlug(slug: string): Promise<ChannelInfo> {
  */
 export async function getLatestChannels(
   offset: number = 0,
-  limit: number = 20
+  limit: number = MESSAGES_PER_PAGE
 ): Promise<ChannelInfo[]> {
   const result = await basePublicClient.readContract({
     address: CONTRACTS.ONCHAT_ADDRESS,
@@ -196,7 +196,7 @@ export async function getAllChannels(): Promise<ChannelInfo[]> {
 
   if (total === 0) return [];
 
-  const batchSize = 50;
+  const batchSize = MESSAGES_PER_PAGE;
   const offsets: number[] = [];
   for (let offset = 0; offset < total; offset += batchSize) {
     offsets.push(offset);
@@ -235,7 +235,7 @@ export async function getMessageCount(
 export async function getLatestMessages(
   slugHash: `0x${string}`,
   offset: number = 0,
-  limit: number = 50
+  limit: number = MESSAGES_PER_PAGE
 ): Promise<Message[]> {
   const result = await basePublicClient.readContract({
     address: CONTRACTS.ONCHAT_ADDRESS,

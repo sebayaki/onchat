@@ -5,6 +5,7 @@ import CopyButton from "../CopyButton";
 import { type ChatLine, type ChannelListItem } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { formatTime, formatAddress } from "@/helpers/format";
+import { MESSAGES_PER_PAGE } from "@/configs/constants";
 
 type ProfilesRecord = Record<string, FarcasterUserProfile | null>;
 
@@ -223,7 +224,7 @@ function MessageContent({ content }: { content: string | React.ReactNode }) {
   );
 }
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = MESSAGES_PER_PAGE;
 
 function PaginatedList<T>({
   items,

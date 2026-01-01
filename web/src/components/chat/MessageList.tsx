@@ -2,6 +2,7 @@ import { type ChatLine } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { ChatLineComponent } from "./ChatLine";
 import { RefObject } from "react";
+import { MESSAGES_PER_PAGE } from "@/configs/constants";
 
 export function MessageList({
   lines,
@@ -13,6 +14,9 @@ export function MessageList({
   showChannelButtons,
   onBrowseChannels,
   onCreateChannel,
+  hasMore,
+  isLoadingMore,
+  onLoadMore,
 }: {
   lines: ChatLine[];
   profiles: Record<string, FarcasterUserProfile | null>;
@@ -23,6 +27,9 @@ export function MessageList({
   showChannelButtons?: boolean;
   onBrowseChannels?: () => void;
   onCreateChannel?: () => void;
+  hasMore?: boolean;
+  isLoadingMore?: boolean;
+  onLoadMore?: () => void;
 }) {
   return (
     <div
@@ -30,6 +37,19 @@ export function MessageList({
       className="flex-1 overflow-y-auto px-4 py-2 bg-[var(--bg-primary)] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-[var(--bg-tertiary)] hover:scrollbar-thumb-[var(--bg-hover)]"
     >
       <div className="flex flex-col gap-[2px]">
+        {hasMore && (
+          <div className="flex justify-center py-2 mb-2 border-b border-[var(--bg-tertiary)]/50">
+            <button
+              onClick={onLoadMore}
+              disabled={isLoadingMore}
+              className="text-[var(--color-channel)] hover:text-[var(--primary)] transition-colors cursor-pointer font-mono text-[0.85rem] underline disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoadingMore
+                ? "Loading more messages..."
+                : `Load older messages (${MESSAGES_PER_PAGE} more)`}
+            </button>
+          </div>
+        )}
         {lines.map((line: ChatLine) => (
           <ChatLineComponent
             key={line.id}

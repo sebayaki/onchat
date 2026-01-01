@@ -42,7 +42,7 @@ import {
 } from "@/context/EventContext";
 import { fetchUserProfilesBulk } from "@/helpers/farcaster";
 import { renderWhoisChannels } from "@/components/WhoisChannels";
-import { STORAGE_KEYS } from "@/configs/constants";
+import { STORAGE_KEYS, MESSAGES_PER_PAGE } from "@/configs/constants";
 
 export interface ChannelListItem {
   slug: string;
@@ -90,11 +90,14 @@ interface UseChatReturn {
   isInitialChannelLoading: boolean;
   isLoadingChannels: boolean;
   scrollSignal: number; // Incremented when chat should scroll to bottom
+  hasMore: boolean;
+  isLoadingMore: boolean;
 
   // Actions
   processCommand: (input: string) => Promise<void>;
   clearLines: () => void;
   enterChannel: (slug: string | null | undefined) => Promise<void>;
+  loadMoreMessages: () => Promise<void>;
 }
 
 export function useChat(initialChannelSlug?: string): UseChatReturn {
@@ -122,6 +125,10 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
   // Signal to trigger scroll to bottom (incremented when needed)
   const [scrollSignal, setScrollSignal] = useState(0);
 
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const messagesLoadedRef = useRef(0);
+
   const lineIdCounter = useRef(0);
   // Track processed tx hashes to avoid duplicates from optimistic updates
   const processedTxHashes = useRef<Set<string>>(new Set());
@@ -138,12 +145,13 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       messageIndex?: number,
       isHidden?: boolean,
       isPending?: boolean,
-      transactionHash?: string
+      transactionHash?: string,
+      timestamp?: Date
     ) => {
       const line: ChatLine = {
         id: `line-${lineIdCounter.current++}`,
         type,
-        timestamp: new Date(),
+        timestamp: timestamp || new Date(),
         content,
         sender,
         senderAddress,
@@ -205,6 +213,8 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
       const cleanSlug = slug.replace("#", "").toLowerCase();
       setIsInitialChannelLoading(true);
+      messagesLoadedRef.current = 0;
+      setHasMore(false);
       try {
         const channelInfo = await getChannelBySlug(cleanSlug);
         const slugHash = computeSlugHash(cleanSlug);
@@ -213,8 +223,17 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         await loadMembers(slugHash);
 
         // Load recent messages
-        const messages = await getLatestMessages(slugHash, 0, 20);
+        const messages = await getLatestMessages(
+          slugHash,
+          0,
+          MESSAGES_PER_PAGE
+        );
         const orderedMessages = [...messages].reverse();
+        messagesLoadedRef.current = messages.length;
+        setHasMore(
+          messages.length === MESSAGES_PER_PAGE &&
+            Number(channelInfo.messageCount) > MESSAGES_PER_PAGE
+        );
 
         // Clear existing messages when switching channels
         setLines((prev) => prev.filter((l) => l.type !== "message"));
@@ -227,7 +246,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
         for (let i = 0; i < orderedMessages.length; i++) {
           const msg = orderedMessages[i];
-          // In latest messages (newest first), if limit=20, offset=0:
+          // In latest messages (newest first), if limit=30, offset=0:
           // messages[0] is index length-1
           // messages[1] is index length-2
           // ...
@@ -246,7 +265,10 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               msg.sender,
               cleanSlug,
               msgIndex,
-              msg.isHidden
+              msg.isHidden,
+              false,
+              undefined,
+              new Date(msg.timestamp * 1000)
             );
           }
         }
@@ -581,6 +603,8 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
             const channelToJoin = args[0].replace("#", "");
             setIsLoading(true);
+            messagesLoadedRef.current = 0;
+            setHasMore(false);
 
             try {
               const slugHash = computeSlugHash(channelToJoin);
@@ -612,8 +636,17 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               );
 
               // Load recent messages
-              const messages = await getLatestMessages(slugHash, 0, 20);
+              const messages = await getLatestMessages(
+                slugHash,
+                0,
+                MESSAGES_PER_PAGE
+              );
               const orderedMessages = [...messages].reverse();
+              messagesLoadedRef.current = messages.length;
+              setHasMore(
+                messages.length === MESSAGES_PER_PAGE &&
+                  Number(channelInfo.messageCount) > MESSAGES_PER_PAGE
+              );
 
               // Determine if user is moderator to show hidden messages
               const isMod =
@@ -634,7 +667,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   messageLines.push({
                     id: `line-${lineIdCounter.current++}`,
                     type: "message",
-                    timestamp: new Date(),
+                    timestamp: new Date(msg.timestamp * 1000),
                     content: msg.content,
                     sender: formatAddress(msg.sender),
                     senderAddress: msg.sender,
@@ -1307,6 +1340,77 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     ]
   );
 
+  const loadMoreMessages = useCallback(async () => {
+    if (
+      !currentChannel ||
+      isLoadingMore ||
+      !hasMore ||
+      messagesLoadedRef.current === 0
+    )
+      return;
+
+    setIsLoadingMore(true);
+    try {
+      const slugHash = computeSlugHash(currentChannel.slug);
+      const limit = MESSAGES_PER_PAGE;
+      const offset = messagesLoadedRef.current;
+
+      const messages = await getLatestMessages(slugHash, offset, limit);
+
+      if (messages.length === 0) {
+        setHasMore(false);
+        return;
+      }
+
+      // Determine if user is moderator to show hidden messages
+      const isMod =
+        address &&
+        (currentChannel.owner.toLowerCase() === address.toLowerCase() ||
+          moderators.some((m) => m.toLowerCase() === address.toLowerCase()));
+
+      const moreLines: ChatLine[] = [];
+      for (let i = 0; i < messages.length; i++) {
+        const msg = messages[i];
+        // messages are newest first. offset MESSAGES_PER_PAGE means we start from index MESSAGES_PER_PAGE back from the end.
+        // If messageCount is 120:
+        // offset 0, limit 30: indices [119..90]
+        // offset 30, limit 30: indices [89..60]
+        // messages[0] in this batch is index 89
+        // messages[i] is index (messageCount - 1 - offset - i)
+        const msgIndex = Number(currentChannel.messageCount) - 1 - offset - i;
+
+        if (!msg.isHidden || isMod) {
+          moreLines.push({
+            id: `line-${lineIdCounter.current++}`,
+            type: "message",
+            timestamp: new Date(msg.timestamp * 1000),
+            content: msg.content,
+            sender: formatAddress(msg.sender),
+            senderAddress: msg.sender,
+            channel: currentChannel.slug,
+            messageIndex: msgIndex,
+            isHidden: msg.isHidden,
+          });
+        }
+      }
+
+      // messages[0] is newest in this batch, which should be the LAST one in the prepended list
+      // So we reverse the batch to have them in chronological order
+      const orderedMoreLines = moreLines.reverse();
+
+      setLines((prev) => [...orderedMoreLines, ...prev]);
+      messagesLoadedRef.current += messages.length;
+      setHasMore(
+        messages.length === limit &&
+          messagesLoadedRef.current < Number(currentChannel.messageCount)
+      );
+    } catch (err) {
+      console.error("Failed to load more messages:", err);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [currentChannel, isLoadingMore, hasMore, address, moderators]);
+
   const clearLines = useCallback(() => {
     setLines([]);
   }, []);
@@ -1332,8 +1436,11 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     isInitialChannelLoading,
     isLoadingChannels,
     scrollSignal,
+    hasMore,
+    isLoadingMore,
     processCommand,
     clearLines,
     enterChannel,
+    loadMoreMessages,
   };
 }
