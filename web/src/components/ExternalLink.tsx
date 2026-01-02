@@ -8,10 +8,12 @@ import { useFarcaster } from "@/context";
 export function ExternalLink({
   href,
   className,
+  title,
   children,
 }: {
   href: string;
   className?: string;
+  title?: string;
   children: React.ReactNode;
 }) {
   const { isInMiniApp } = useFarcaster();
@@ -38,6 +40,7 @@ export function ExternalLink({
       target="_blank"
       rel="noopener noreferrer"
       className={className}
+      title={title}
       onClick={handleClick}
     >
       {children}

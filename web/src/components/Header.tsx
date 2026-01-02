@@ -3,6 +3,7 @@ import { formatNumber } from "@/helpers/format";
 import { type ChannelInfo } from "@/helpers/contracts";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { AccountDropdown } from "./AccountDropdown";
+import { ExternalLink } from "./ExternalLink";
 import FarcasterLogo from "@/assets/logos/farcaster.svg";
 import XLogo from "@/assets/logos/x-logo.svg";
 import { APP_URL } from "@/configs/constants";
@@ -57,14 +58,12 @@ export function Header({
           )}
           {!hideBrand && currentChannel && (
             <>
-              <a
+              <ExternalLink
                 href={`https://farcaster.xyz/~/compose?text=${encodeURIComponent(
                   getShareMessage(currentChannel.slug)
                 )}&embeds[]=${encodeURIComponent(
                   `${APP_URL}/${currentChannel.slug}`
                 )}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="p-1 cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center shrink-0"
                 title="Share on Farcaster"
               >
@@ -74,20 +73,18 @@ export function Header({
                   width={17}
                   height={17}
                 />
-              </a>
-              <a
+              </ExternalLink>
+              <ExternalLink
                 href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
                   getShareMessage(currentChannel.slug)
                 )}&url=${encodeURIComponent(
                   `${APP_URL}/${currentChannel.slug}`
                 )}`}
-                target="_blank"
-                rel="noopener noreferrer"
                 className="p-1 cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center shrink-0"
                 title="Share on X"
               >
                 <img src={XLogo} alt="Share on X" width={14} height={14} />
-              </a>
+              </ExternalLink>
             </>
           )}
           {!hideBrand && (
