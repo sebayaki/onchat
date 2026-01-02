@@ -2,6 +2,7 @@ import { useState, ReactNode } from "react";
 import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import BaseScanIcon from "@/assets/logos/basescan.svg?url";
 import CopyButton from "../CopyButton";
+import { ExternalLink } from "../ExternalLink";
 import { type ChatLine, type ChannelListItem } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { formatTime, formatAddress } from "@/helpers/format";
@@ -64,10 +65,8 @@ export function ActionButtons({
         iconClassName="w-3.5 h-3.5"
       />
       {!hideBasescan && (
-        <a
+        <ExternalLink
           href={`https://basescan.org/address/${address}`}
-          target="_blank"
-          rel="noopener noreferrer"
           className="p-1 hover:bg-[var(--bg-tertiary)] rounded transition-colors hover:opacity-70 opacity-100 transition-opacity shrink-0"
         >
           <img
@@ -77,7 +76,7 @@ export function ActionButtons({
             height={14}
             className="w-3.5 h-3.5"
           />
-        </a>
+        </ExternalLink>
       )}
     </div>
   );
@@ -148,16 +147,14 @@ export function UserDisplay({
           className="w-3.5 h-3.5 sm:w-4 sm:h-4 rounded-full shrink-0"
         />
       )}
-      <a
-        href={`https://farcaster.xyz/${profile.username}`}
-        target="_blank"
-        rel="noopener noreferrer"
+      <ExternalLink
+        href={`https://warpcast.com/${profile.username}`}
         className={`font-bold text-[var(--color-nick)]! hover:opacity-70 transition-opacity ${
           isSidebar ? "truncate max-w-[140px] min-w-0" : "shrink-0"
         }`}
       >
         @{profile.username}
-      </a>
+      </ExternalLink>
       <span className="text-[var(--text-dim)] shrink-0">-</span>
       <CopyableAddress
         displayText={displayAddress}
@@ -207,15 +204,13 @@ function MessageContent({ content }: { content: string | React.ReactNode }) {
       {parts.map((part, i) => {
         if (part.startsWith("http://") || part.startsWith("https://")) {
           return (
-            <a
+            <ExternalLink
               key={i}
               href={part}
-              target="_blank"
-              rel="noopener noreferrer"
               className="underline hover:opacity-80 transition-opacity"
             >
               {part}
-            </a>
+            </ExternalLink>
           );
         }
         return part;
