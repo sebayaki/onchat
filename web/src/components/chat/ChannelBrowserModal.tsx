@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { type ChannelInfo } from "@/helpers/contracts";
 import { UserIcon, ChatIcon } from "../Icons";
 
@@ -20,6 +21,14 @@ export function ChannelBrowserModal({
   isConnected: boolean;
   isLoading: boolean;
 }) {
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredChannels = useMemo(() => {
+    if (!searchQuery.trim()) return allChannels;
+    const query = searchQuery.toLowerCase();
+    return allChannels.filter((ch) => ch.slug.toLowerCase().includes(query));
+  }, [allChannels, searchQuery]);
+
   if (!showChannelBrowser) return null;
 
   return (
@@ -42,6 +51,16 @@ export function ChannelBrowserModal({
             ×
           </button>
         </div>
+        <div className="px-4 py-3 border-b border-[var(--bg-tertiary)]">
+          <input
+            type="text"
+            placeholder="Search channels..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-[var(--bg-primary)] border border-[var(--bg-tertiary)] text-[var(--primary)] px-3 py-2 font-mono text-[0.85rem] outline-none focus:border-[var(--primary-muted)] placeholder:text-[var(--primary-muted)] placeholder:opacity-50"
+            autoFocus
+          />
+        </div>
         <div className="p-4 overflow-y-auto flex-1 font-mono max-sm:p-3">
           {loadingChannels ? (
             <div className="text-[var(--primary-muted)] text-center py-8 text-[0.85rem]">
@@ -51,9 +70,13 @@ export function ChannelBrowserModal({
             <div className="text-[var(--primary-muted)] text-center py-8 text-[0.85rem]">
               No channels yet. Be the first to create one!
             </div>
+          ) : filteredChannels.length === 0 ? (
+            <div className="text-[var(--primary-muted)] text-center py-8 text-[0.85rem]">
+              No channels match "{searchQuery}"
+            </div>
           ) : (
             <ul className="list-none p-0 m-0">
-              {allChannels.map((ch) => (
+              {filteredChannels.map((ch) => (
                 <li
                   key={ch.slugHash}
                   className="flex items-center justify-between py-2 border-b border-[var(--bg-tertiary)] last:border-none gap-2"

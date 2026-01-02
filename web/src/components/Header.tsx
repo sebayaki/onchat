@@ -3,6 +3,12 @@ import { formatNumber } from "@/helpers/format";
 import { type ChannelInfo } from "@/helpers/contracts";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { AccountDropdown } from "./AccountDropdown";
+import FarcasterLogo from "@/assets/logos/farcaster.svg";
+import XLogo from "@/assets/logos/x-logo.svg";
+import { APP_URL } from "@/configs/constants";
+
+const getShareMessage = (channelSlug: string) =>
+  `Come hang in #${channelSlug} - it's fully on-chain and kinda wild 🔥`;
 
 export function Header({
   currentChannel,
@@ -48,6 +54,41 @@ export function Header({
             <span className="text-[var(--color-channel)] text-[0.9rem] max-sm:hidden truncate max-w-[150px] sm:max-w-[300px]">
               #{currentChannel.slug}
             </span>
+          )}
+          {!hideBrand && currentChannel && (
+            <>
+              <a
+                href={`https://farcaster.xyz/~/compose?text=${encodeURIComponent(
+                  getShareMessage(currentChannel.slug)
+                )}&embeds[]=${encodeURIComponent(
+                  `${APP_URL}/${currentChannel.slug}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center shrink-0"
+                title="Share on Farcaster"
+              >
+                <img
+                  src={FarcasterLogo}
+                  alt="Share on Farcaster"
+                  width={17}
+                  height={17}
+                />
+              </a>
+              <a
+                href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                  getShareMessage(currentChannel.slug)
+                )}&url=${encodeURIComponent(
+                  `${APP_URL}/${currentChannel.slug}`
+                )}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1 cursor-pointer hover:opacity-80 transition-opacity flex items-center justify-center shrink-0"
+                title="Share on X"
+              >
+                <img src={XLogo} alt="Share on X" width={14} height={14} />
+              </a>
+            </>
           )}
           {!hideBrand && (
             <button
