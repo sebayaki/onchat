@@ -16,6 +16,7 @@ export function MobileChannelHeader({
   setActiveTab,
   setShowChannelBrowser,
   setShowCreateChannel,
+  unreadCounts,
 }: {
   currentChannel: ChannelInfo | null;
   joinedChannels: ChannelInfo[];
@@ -28,6 +29,7 @@ export function MobileChannelHeader({
   setActiveTab: (tab: "chat" | "channels" | "rewards") => void;
   setShowChannelBrowser: (show: boolean) => void;
   setShowCreateChannel: (show: boolean) => void;
+  unreadCounts: Record<string, number>;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -85,6 +87,7 @@ export function MobileChannelHeader({
               setShowCreateChannel={setShowCreateChannel}
               onChannelClick={() => setIsExpanded(false)}
               hideUsersOnMobile
+              unreadCounts={unreadCounts}
             />
           </div>
         </div>

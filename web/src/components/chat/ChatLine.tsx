@@ -244,19 +244,19 @@ function PaginatedList<T>({
   const visibleItems = items.slice(0, visibleCount);
 
   return (
-    <div className="chat-line text-[var(--color-info)] flex flex-col items-start">
-      <div className="flex items-start">
+    <div className="chat-line text-[var(--color-info)] flex flex-col items-start px-2 -mx-2">
+      <div className="flex items-start min-w-0 w-full">
         <span className="chat-timestamp">[{timeStr}]</span>
         <span className="chat-prefix text-[var(--color-info)]">*</span>
-        <span className="chat-content">{title}</span>
+        <span className="chat-content truncate flex-1">{title}</span>
       </div>
       {visibleItems.map((item) => (
         <div
           key={getKey(item)}
-          className="flex items-start pl-[calc(var(--timestamp-width)+0.5rem)]"
+          className="flex items-start pl-[calc(var(--timestamp-width)+0.5rem)] min-w-0 w-full"
         >
           <span className="chat-prefix text-[var(--color-info)]">*</span>
-          {renderItem(item)}
+          <div className="min-w-0 flex-1">{renderItem(item)}</div>
         </div>
       ))}
       {hasMore && (
@@ -336,12 +336,14 @@ export function ChatLineComponent({
   profiles = {},
   isModerator,
   processCommand,
+  lastReadId,
 }: {
   line: ChatLine;
   profile?: FarcasterUserProfile | null;
   profiles?: ProfilesRecord;
   isModerator?: boolean;
   processCommand?: (input: string) => Promise<void>;
+  lastReadId?: number;
 }) {
   const { isConnected } = useAppKitAccount();
   const timeStr = formatTime(line.timestamp);
@@ -353,7 +355,7 @@ export function ChatLineComponent({
 
       return (
         <div
-          className={`chat-line ${
+          className={`chat-line px-2 -mx-2 ${
             hasNowTalking
               ? "text-[var(--color-channel)]"
               : "text-[var(--color-system)]"
@@ -368,7 +370,7 @@ export function ChatLineComponent({
     }
     case "error":
       return (
-        <div className="chat-line text-[var(--color-error)]">
+        <div className="chat-line text-[var(--color-error)] px-2 -mx-2">
           <span className="chat-timestamp">[{timeStr}]</span>
           <span className="chat-prefix font-bold text-[var(--color-error)]">
             !
@@ -383,7 +385,7 @@ export function ChatLineComponent({
         !isConnected &&
         line.content === "Connect your wallet to start chatting";
       return (
-        <div className="chat-line text-[var(--color-info)] flex flex-col items-start">
+        <div className="chat-line text-[var(--color-info)] flex flex-col items-start px-2 -mx-2">
           <div className="flex items-start">
             <span className="chat-timestamp">[{timeStr}]</span>
             <span className="chat-prefix text-[var(--color-info)]">*</span>
@@ -397,7 +399,7 @@ export function ChatLineComponent({
     }
     case "action":
       return (
-        <div className="chat-line text-[var(--color-action)]">
+        <div className="chat-line text-[var(--color-action)] px-2 -mx-2">
           <span className="chat-timestamp">[{timeStr}]</span>
           <span className="chat-prefix text-[var(--color-action)]">→</span>
           <span className="chat-content">
@@ -407,7 +409,7 @@ export function ChatLineComponent({
       );
     case "command":
       return (
-        <div className="chat-line text-[var(--color-content)] font-mono">
+        <div className="chat-line text-[var(--color-content)] font-mono px-2 -mx-2">
           <span className="chat-timestamp">[{timeStr}]</span>
           <span className="text-[var(--color-channel)] mr-1">
             {line.channel ? `#${line.channel}>` : ">"}
@@ -420,11 +422,20 @@ export function ChatLineComponent({
     case "message": {
       const isHidden = line.isHidden;
       const isPending = line.isPending;
+      const isUnread =
+        line.messageIndex !== undefined &&
+        lastReadId !== undefined &&
+        line.messageIndex > lastReadId;
+
       return (
         <div
-          className={`chat-line chat-line-message text-[var(--primary)] ${
+          className={`chat-line chat-line-message text-[var(--primary)] transition-colors duration-500 ${
             isHidden ? "opacity-50 italic" : ""
-          } ${isPending ? "animate-blink" : ""}`}
+          } ${isPending ? "animate-blink" : ""} ${
+            isUnread
+              ? "bg-[var(--bg-tertiary)]! px-2 -mx-2 rounded-sm"
+              : "px-2 -mx-2"
+          }`}
         >
           <span className="chat-timestamp">[{timeStr}]</span>
           <span
@@ -469,7 +480,7 @@ export function ChatLineComponent({
     }
     case "user":
       return (
-        <div className="chat-line text-[var(--color-info)] flex items-start">
+        <div className="chat-line text-[var(--color-info)] flex items-start px-2 -mx-2">
           <span className="chat-timestamp">[{timeStr}]</span>
           <span className="chat-prefix text-[var(--color-info)]">*</span>
           <div className="min-w-0">

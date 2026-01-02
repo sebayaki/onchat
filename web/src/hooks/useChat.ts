@@ -89,15 +89,17 @@ interface UseChatReturn {
   isLoading: boolean;
   isInitialChannelLoading: boolean;
   isLoadingChannels: boolean;
-  scrollSignal: number; // Incremented when chat should scroll to bottom
   hasMore: boolean;
   isLoadingMore: boolean;
+  unreadCounts: Record<string, number>;
+  sessionLastReadId: number | undefined;
 
   // Actions
   processCommand: (input: string) => Promise<void>;
   clearLines: () => void;
   enterChannel: (slug: string | null | undefined) => Promise<void>;
   loadMoreMessages: () => Promise<void>;
+  markAsRead: (slug: string) => void;
 }
 
 export function useChat(initialChannelSlug?: string): UseChatReturn {
@@ -122,14 +124,18 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
   const [isLoadingChannels, setIsLoadingChannels] = useState(
     isConnected && !!address
   );
-  // Signal to trigger scroll to bottom (incremented when needed)
-  const [scrollSignal, setScrollSignal] = useState(0);
-
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
+  const [lastReadIds, setLastReadIds] = useState<Record<string, number>>({});
+  const [sessionLastReadId, setSessionLastReadId] = useState<
+    number | undefined
+  >(undefined);
   const messagesLoadedRef = useRef(0);
 
   const lineIdCounter = useRef(0);
+  const lastChannelRef = useRef<string | null>(null);
+  const lastAddressRef = useRef<string | null>(null);
   // Track processed tx hashes to avoid duplicates from optimistic updates
   const processedTxHashes = useRef<Set<string>>(new Set());
   const welcomeShownRef = useRef(false);
@@ -198,6 +204,55 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     }
   }, []);
 
+  // Helper to generate welcome lines for the lobby
+  const generateWelcomeLines = useCallback(() => {
+    const now = new Date();
+    const welcomeLines: ChatLine[] = [
+      {
+        id: `line-${lineIdCounter.current++}`,
+        type: "system",
+        timestamp: now,
+        content: "Welcome to OnChat",
+      },
+      {
+        id: `line-${lineIdCounter.current++}`,
+        type: "system",
+        timestamp: now,
+        content: "Fully permissionless, on-chain chat",
+      },
+      {
+        id: `line-${lineIdCounter.current++}`,
+        type: "system",
+        timestamp: now,
+        content: "───────────────────────",
+      },
+      {
+        id: `line-${lineIdCounter.current++}`,
+        type: "info",
+        timestamp: now,
+        content: "Type /help for available commands",
+      },
+    ];
+
+    if (!isConnected) {
+      welcomeLines.push({
+        id: `line-${lineIdCounter.current++}`,
+        type: "info",
+        timestamp: now,
+        content: "Connect your wallet to start chatting",
+      });
+    } else if (address) {
+      welcomeLines.push({
+        id: `line-${lineIdCounter.current++}`,
+        type: "system",
+        timestamp: now,
+        content: `Connected as ${formatAddress(address)}`,
+      });
+    }
+
+    return welcomeLines;
+  }, [isConnected, address]);
+
   // Enter a channel (fetch info and messages) without necessarily joining on-chain
   const enterChannel = useCallback(
     async (slug: string | null | undefined) => {
@@ -205,8 +260,8 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         setCurrentChannel(null);
         setMembers([]);
         setModerators([]);
-        // Clear messages when going to home
-        setLines((prev) => prev.filter((l) => l.type !== "message"));
+        // Show welcome messages when returning to lobby
+        setLines(generateWelcomeLines());
         setIsInitialChannelLoading(false);
         return;
       }
@@ -222,6 +277,15 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         setCurrentChannel(channelInfo);
         await loadMembers(slugHash);
 
+        // Clear all lines and add join sequence before loading new channel messages
+        setLines([]);
+        addLine("command", `/join #${cleanSlug}`, undefined, cleanSlug);
+        addLine("system", `* Now talking in #${cleanSlug}`);
+        addLine(
+          "info",
+          `Topic: On-chain chat on Base | ${channelInfo.memberCount} users`
+        );
+
         // Load recent messages
         const messages = await getLatestMessages(
           slugHash,
@@ -234,9 +298,6 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
           messages.length === MESSAGES_PER_PAGE &&
             Number(channelInfo.messageCount) > MESSAGES_PER_PAGE
         );
-
-        // Clear existing messages when switching channels
-        setLines((prev) => prev.filter((l) => l.type !== "message"));
 
         // Determine if user is moderator to show hidden messages
         const isMod =
@@ -284,7 +345,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         setIsInitialChannelLoading(false);
       }
     },
-    [loadMembers, addLine, address, moderators]
+    [loadMembers, addLine, address, moderators, generateWelcomeLines]
   );
 
   // Welcome message on mount (only once)
@@ -339,6 +400,21 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
   useEffect(() => {
     const unsubMessage = onMessageSent((event: MessageSentEvent) => {
       const channel = currentChannelRef.current;
+
+      // Update message count in joinedChannels
+      setJoinedChannels((prev) =>
+        prev.map((c) => {
+          if (computeSlugHash(c.slug) === event.slugHash) {
+            const newMessageCount =
+              event.messageIndex + BigInt(1) > c.messageCount
+                ? event.messageIndex + BigInt(1)
+                : c.messageCount;
+            return { ...c, messageCount: newMessageCount };
+          }
+          return c;
+        })
+      );
+
       if (!channel) return;
 
       // Only process messages for the current channel
@@ -603,12 +679,9 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
             const channelToJoin = args[0].replace("#", "");
             setIsLoading(true);
-            messagesLoadedRef.current = 0;
-            setHasMore(false);
 
             try {
               const slugHash = computeSlugHash(channelToJoin);
-              const channelInfo = await getChannelBySlug(channelToJoin);
 
               // Check if already a member
               const alreadyMember = await isMember(
@@ -627,65 +700,8 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                 await loadJoinedChannels();
               }
 
-              setCurrentChannel(channelInfo);
-              await loadMembers(slugHash);
-              addLine("system", `* Now talking in #${channelToJoin}`);
-              addLine(
-                "info",
-                `Topic: On-chain chat on Base | ${channelInfo.memberCount} users`
-              );
-
-              // Load recent messages
-              const messages = await getLatestMessages(
-                slugHash,
-                0,
-                MESSAGES_PER_PAGE
-              );
-              const orderedMessages = [...messages].reverse();
-              messagesLoadedRef.current = messages.length;
-              setHasMore(
-                messages.length === MESSAGES_PER_PAGE &&
-                  Number(channelInfo.messageCount) > MESSAGES_PER_PAGE
-              );
-
-              // Determine if user is moderator to show hidden messages
-              const isMod =
-                address &&
-                (channelInfo.owner.toLowerCase() === address.toLowerCase() ||
-                  moderators.some(
-                    (m) => m.toLowerCase() === address.toLowerCase()
-                  ));
-
-              // Build message lines to add in batch (for proper scroll behavior)
-              const messageLines: ChatLine[] = [];
-              for (let i = 0; i < orderedMessages.length; i++) {
-                const msg = orderedMessages[i];
-                const msgIndex =
-                  Number(channelInfo.messageCount) - orderedMessages.length + i;
-
-                if (!msg.isHidden || isMod) {
-                  messageLines.push({
-                    id: `line-${lineIdCounter.current++}`,
-                    type: "message",
-                    timestamp: new Date(msg.timestamp * 1000),
-                    content: msg.content,
-                    sender: formatAddress(msg.sender),
-                    senderAddress: msg.sender,
-                    channel: channelToJoin,
-                    messageIndex: msgIndex,
-                    isHidden: msg.isHidden,
-                  });
-                }
-              }
-
-              // Clear old messages and add new ones in a single update
-              setLines((prev) => [
-                ...prev.filter((l) => l.type !== "message"),
-                ...messageLines,
-              ]);
-
-              // Signal to scroll to bottom after joining
-              setScrollSignal((s) => s + 1);
+              // Use enterChannel to handle consistent UI state and message loading
+              await enterChannel(channelToJoin);
             } catch (err: unknown) {
               const errorMessage = handleTransactionError(err);
               if (errorMessage !== null) {
@@ -722,6 +738,12 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
             setIsLoading(true);
             try {
+              // Clear previous noise but keep the echo command we just added
+              setLines((prev) => {
+                const last = prev[prev.length - 1];
+                return last && last.type === "command" ? [last] : [];
+              });
+
               addLine("action", `Leaving #${currentChannel.slug}...`);
               const tx = await leaveChannel(
                 walletClient,
@@ -767,6 +789,12 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               break;
             }
 
+            // Clear previous noise but keep the echo command we just added
+            setLines((prev) => {
+              const last = prev[prev.length - 1];
+              return last && last.type === "command" ? [last] : [];
+            });
+
             setIsLoading(true);
             try {
               addLine("action", `Creating #${newChannel}...`);
@@ -776,11 +804,9 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               addLine("system", `* Channel #${newChannel} created!`);
 
               // Auto-join the channel
-              const channelInfo = await getChannelBySlug(newChannel);
-              setCurrentChannel(channelInfo);
-              await loadMembers(channelInfo.slugHash);
               await loadJoinedChannels();
-              addLine("system", `* Now talking in #${newChannel}`);
+              // Use enterChannel to handle consistent UI state and message loading
+              await enterChannel(newChannel);
             } catch (err: unknown) {
               const errorMessage = handleTransactionError(err);
               if (errorMessage !== null) {
@@ -1333,10 +1359,10 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       address,
       currentChannel,
       members,
-      moderators,
       addLine,
       loadJoinedChannels,
       loadMembers,
+      enterChannel,
     ]
   );
 
@@ -1415,6 +1441,99 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     setLines([]);
   }, []);
 
+  // Helper to get last read IDs from localStorage
+  const getStoredLastReadIds = useCallback((userAddress: string) => {
+    if (typeof window === "undefined") return {};
+    try {
+      const stored = localStorage.getItem(
+        `${STORAGE_KEYS.LAST_READ_MESSAGES}_${userAddress.toLowerCase()}`
+      );
+      return stored ? JSON.parse(stored) : {};
+    } catch (e) {
+      console.error("Failed to parse last read IDs:", e);
+      return {};
+    }
+  }, []);
+
+  // Helper to mark a channel as read
+  const markAsRead = useCallback(
+    (slug: string) => {
+      if (!address || !slug) return;
+
+      const channel = joinedChannels.find((c) => c.slug === slug);
+      if (!channel) return;
+
+      const lastId = Number(channel.messageCount) - 1;
+      const userAddress = address.toLowerCase();
+
+      setLastReadIds((prev) => {
+        const next = { ...prev, [slug]: lastId };
+        localStorage.setItem(
+          `${STORAGE_KEYS.LAST_READ_MESSAGES}_${userAddress}`,
+          JSON.stringify(next)
+        );
+        return next;
+      });
+
+      setUnreadCounts((prev) => ({
+        ...prev,
+        [slug]: 0,
+      }));
+    },
+    [address, joinedChannels]
+  );
+
+  // Load last read IDs when address changes
+  useEffect(() => {
+    if (address) {
+      const stored = getStoredLastReadIds(address);
+      setLastReadIds(stored);
+    } else {
+      setLastReadIds({});
+      setUnreadCounts({});
+    }
+  }, [address, getStoredLastReadIds]);
+
+  // Update unread counts when joinedChannels or lastReadIds change
+  useEffect(() => {
+    const counts: Record<string, number> = {};
+    joinedChannels.forEach((channel) => {
+      const lastReadId = lastReadIds[channel.slug] ?? -1;
+      const count = Math.max(
+        0,
+        Number(channel.messageCount) - (lastReadId + 1)
+      );
+      counts[channel.slug] = count;
+    });
+    setUnreadCounts(counts);
+  }, [joinedChannels, lastReadIds]);
+
+  // Capture sessionLastReadId when entering a channel or changing address
+  useEffect(() => {
+    if (address && currentChannel) {
+      if (
+        currentChannel.slug !== lastChannelRef.current ||
+        address !== lastAddressRef.current
+      ) {
+        const stored = getStoredLastReadIds(address);
+        setSessionLastReadId(stored[currentChannel.slug] ?? -1);
+        lastChannelRef.current = currentChannel.slug;
+        lastAddressRef.current = address;
+      }
+    } else if (!currentChannel) {
+      setSessionLastReadId(undefined);
+      lastChannelRef.current = null;
+      lastAddressRef.current = address || null;
+    }
+  }, [currentChannel, address, getStoredLastReadIds]);
+
+  // Automatically mark current channel as read when it changes or new messages arrive
+  useEffect(() => {
+    if (currentChannel && address) {
+      markAsRead(currentChannel.slug);
+    }
+  }, [currentChannel, address, joinedChannels, markAsRead]);
+
   const isUserModerator = !!(
     address &&
     currentChannel &&
@@ -1435,12 +1554,14 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     isLoading,
     isInitialChannelLoading,
     isLoadingChannels,
-    scrollSignal,
     hasMore,
     isLoadingMore,
+    unreadCounts,
+    sessionLastReadId,
     processCommand,
     clearLines,
     enterChannel,
     loadMoreMessages,
+    markAsRead,
   };
 }

@@ -15,6 +15,7 @@ export function Sidebar({
   setActiveTab,
   setShowChannelBrowser,
   setShowCreateChannel,
+  unreadCounts,
 }: {
   activeTab: string;
   joinedChannels: ChannelInfo[];
@@ -28,6 +29,7 @@ export function Sidebar({
   setActiveTab: (tab: "chat" | "channels" | "rewards") => void;
   setShowChannelBrowser: (show: boolean) => void;
   setShowCreateChannel: (show: boolean) => void;
+  unreadCounts: Record<string, number>;
 }) {
   // Mobile: show when channels tab active (full screen overlay)
   // Desktop (sm:): always visible as side panel
@@ -51,6 +53,7 @@ export function Sidebar({
         setActiveTab={setActiveTab}
         setShowChannelBrowser={setShowChannelBrowser}
         setShowCreateChannel={setShowCreateChannel}
+        unreadCounts={unreadCounts}
       />
     </aside>
   );

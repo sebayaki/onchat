@@ -17,6 +17,7 @@ export function MessageList({
   hasMore,
   isLoadingMore,
   onLoadMore,
+  lastReadId,
 }: {
   lines: ChatLine[];
   profiles: Record<string, FarcasterUserProfile | null>;
@@ -30,6 +31,7 @@ export function MessageList({
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
+  lastReadId?: number;
 }) {
   return (
     <div
@@ -62,6 +64,7 @@ export function MessageList({
             profiles={profiles}
             isModerator={isModerator}
             processCommand={processCommand}
+            lastReadId={lastReadId}
           />
         ))}
 

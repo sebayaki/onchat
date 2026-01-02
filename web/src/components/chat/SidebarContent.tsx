@@ -18,6 +18,7 @@ export function SidebarContent({
   setShowCreateChannel,
   onChannelClick,
   hideUsersOnMobile,
+  unreadCounts,
 }: {
   joinedChannels: ChannelInfo[];
   currentChannel: ChannelInfo | null;
@@ -32,6 +33,7 @@ export function SidebarContent({
   setShowCreateChannel: (show: boolean) => void;
   onChannelClick?: () => void;
   hideUsersOnMobile?: boolean;
+  unreadCounts?: Record<string, number>;
 }) {
   return (
     <>
@@ -95,7 +97,17 @@ export function SidebarContent({
                   }}
                 >
                   <div className="flex items-center justify-between w-full min-w-0">
-                    <span className="truncate flex-1">#{channel.slug}</span>
+                    <div className="flex items-center gap-2 truncate min-w-0">
+                      <span className="truncate">#{channel.slug}</span>
+                      {(() => {
+                        const count = unreadCounts?.[channel.slug] ?? 0;
+                        return count > 0 ? (
+                          <span className="bg-[var(--color-channel)] text-[var(--bg-primary)] text-[0.6rem] px-1 py-0 rounded-full font-bold min-w-[1.1rem] text-center leading-[1.1rem]">
+                            {count > 99 ? "99+" : count}
+                          </span>
+                        ) : null;
+                      })()}
+                    </div>
                     <div className="flex items-center gap-2 shrink-0 ml-2 text-[0.65rem] text-[var(--primary-muted)]">
                       <div className="flex items-center gap-0.5">
                         <UserIcon size={10} className="opacity-70" />

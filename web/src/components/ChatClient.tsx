@@ -40,9 +40,10 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     isLoading,
     isInitialChannelLoading,
     isLoadingChannels,
-    scrollSignal,
     hasMore,
     isLoadingMore,
+    unreadCounts,
+    sessionLastReadId,
     processCommand,
     enterChannel,
     loadMoreMessages,
@@ -190,22 +191,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         container.scrollTop = container.scrollHeight;
       });
     }
-  }, [lines, isInitialChannelLoading]);
-
-  // Scroll to bottom when signaled (e.g., after /join completes)
-  useEffect(() => {
-    if (scrollSignal === 0) return; // Skip initial render
-
-    const container = messagesContainerRef.current;
-    if (!container) return;
-
-    // Double RAF to ensure DOM is fully updated
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        container.scrollTop = container.scrollHeight;
-      });
-    });
-  }, [scrollSignal]);
+  }, [lines, isInitialChannelLoading, isLoadingMore]);
 
   // Focus input on mount and after loading completes
   useEffect(() => {
@@ -436,6 +422,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
           setActiveTab={setActiveTab}
           setShowChannelBrowser={setShowChannelBrowser}
           setShowCreateChannel={setShowCreateChannel}
+          unreadCounts={unreadCounts}
         />
       )}
 
@@ -453,6 +440,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
           setActiveTab={setActiveTab}
           setShowChannelBrowser={setShowChannelBrowser}
           setShowCreateChannel={setShowCreateChannel}
+          unreadCounts={unreadCounts}
         />
 
         <div
@@ -481,6 +469,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 hasMore={hasMore && !!currentChannel}
                 isLoadingMore={isLoadingMore}
                 onLoadMore={loadMoreMessages}
+                lastReadId={sessionLastReadId}
               />
               <ChatInput
                 input={input}
