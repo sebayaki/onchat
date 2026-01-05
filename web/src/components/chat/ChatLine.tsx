@@ -3,10 +3,31 @@ import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
 import BaseScanIcon from "@/assets/logos/basescan.svg?url";
 import CopyButton from "../CopyButton";
 import { ExternalLink } from "../ExternalLink";
+import { ReplyIcon } from "../Icons";
 import { type ChatLine, type ChannelListItem } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
 import { formatTime, formatAddress } from "@/helpers/format";
 import { MESSAGES_PER_PAGE } from "@/configs/constants";
+
+// Parse reply format: #{number} - content
+// Returns { replyToIndex, content } if it's a reply, or { replyToIndex: undefined, content } if not
+export function parseReplyContent(content: string | ReactNode): {
+  replyToIndex: number | undefined;
+  displayContent: string | ReactNode;
+} {
+  if (typeof content !== "string") {
+    return { replyToIndex: undefined, displayContent: content };
+  }
+
+  const replyMatch = content.match(/^#(\d+)\s*-\s*/);
+  if (replyMatch) {
+    const replyToIndex = parseInt(replyMatch[1], 10);
+    const displayContent = content.slice(replyMatch[0].length);
+    return { replyToIndex, displayContent };
+  }
+
+  return { replyToIndex: undefined, displayContent: content };
+}
 
 type ProfilesRecord = Record<string, FarcasterUserProfile | null>;
 
@@ -332,6 +353,9 @@ export function ChatLineComponent({
   isModerator,
   processCommand,
   lastReadId,
+  onReply,
+  isReply = false,
+  replyDepth = 0,
 }: {
   line: ChatLine;
   profile?: FarcasterUserProfile | null;
@@ -339,9 +363,20 @@ export function ChatLineComponent({
   isModerator?: boolean;
   processCommand?: (input: string) => Promise<void>;
   lastReadId?: number;
+  onReply?: (
+    messageIndex: number,
+    content: string,
+    senderAddress?: string
+  ) => void;
+  isReply?: boolean;
+  replyDepth?: number;
 }) {
   const { isConnected } = useAppKitAccount();
   const timeStr = formatTime(line.timestamp);
+
+  // Parse reply content for display
+  const { replyToIndex, displayContent } = parseReplyContent(line.content);
+  const effectiveContent = isReply ? displayContent : line.content;
 
   switch (line.type) {
     case "system": {
@@ -422,15 +457,24 @@ export function ChatLineComponent({
         lastReadId !== undefined &&
         line.messageIndex > lastReadId;
 
+      // Get reply prefix indicator if this is a reply (showing which message it replies to)
+      const replyPrefix =
+        replyToIndex !== undefined && !isReply ? (
+          <span className="text-[var(--text-dim)] mr-1">↩#{replyToIndex}</span>
+        ) : null;
+
       return (
         <div
-          className={`chat-line chat-line-message text-[var(--primary)] transition-colors duration-500 ${
+          className={`chat-line chat-line-message text-[var(--primary)] transition-colors duration-500 group ${
             isHidden ? "opacity-50 italic" : ""
           } ${isPending ? "animate-blink" : ""} ${
             isUnread
               ? "bg-[var(--bg-tertiary)]! px-2 -mx-2 rounded-sm"
               : "px-2 -mx-2"
-          }`}
+          } ${isReply ? "pl-4 border-l-2 border-[var(--bg-tertiary)]" : ""}`}
+          style={
+            replyDepth > 0 ? { marginLeft: `${replyDepth * 16}px` } : undefined
+          }
         >
           <span className="chat-timestamp">[{timeStr}]</span>
           <span
@@ -446,14 +490,34 @@ export function ChatLineComponent({
             <span className="ml-[1px]">&gt;</span>
           </span>
           <span className="chat-content">
+            {replyPrefix}
             {isHidden ? (
               <>
-                (Hidden) <MessageContent content={line.content} />
+                (Hidden) <MessageContent content={effectiveContent} />
               </>
             ) : (
-              <MessageContent content={line.content} />
+              <MessageContent content={effectiveContent} />
             )}
           </span>
+          {/* Reply button - shown for confirmed messages when not already a reply view */}
+          {onReply &&
+            line.messageIndex !== undefined &&
+            !isPending &&
+            !isHidden &&
+            isConnected && (
+              <button
+                onClick={() => {
+                  const contentStr =
+                    typeof line.content === "string" ? line.content : "";
+                  onReply(line.messageIndex!, contentStr, line.senderAddress);
+                }}
+                className="ml-1 p-0.5 text-[var(--text-dim)] hover:text-[var(--primary)] transition-colors cursor-pointer align-middle"
+                style={{ verticalAlign: "middle" }}
+                title="Reply to this message"
+              >
+                <ReplyIcon size={14} />
+              </button>
+            )}
           {isModerator &&
             line.messageIndex !== undefined &&
             !isPending &&

@@ -1,8 +1,111 @@
 import { type ChatLine } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
-import { ChatLineComponent } from "./ChatLine";
-import { RefObject } from "react";
+import { ChatLineComponent, parseReplyContent } from "./ChatLine";
+import { RefObject, useMemo } from "react";
 import { MESSAGES_PER_PAGE } from "@/configs/constants";
+
+// Group messages with their replies
+interface MessageWithReplies {
+  message: ChatLine;
+  replies: MessageWithReplies[];
+}
+
+function buildMessageTree(lines: ChatLine[]): MessageWithReplies[] {
+  // Create a map of messageIndex -> ChatLine for messages
+  const messagesByIndex = new Map<number, ChatLine>();
+  const repliesMap = new Map<number, ChatLine[]>(); // parentIndex -> replies
+  const topLevelMessages: ChatLine[] = [];
+
+  // First pass: categorize lines
+  for (const line of lines) {
+    if (line.type === "message" && line.messageIndex !== undefined) {
+      messagesByIndex.set(line.messageIndex, line);
+
+      // Check if this message is a reply
+      const { replyToIndex } = parseReplyContent(line.content);
+      if (replyToIndex !== undefined && messagesByIndex.has(replyToIndex)) {
+        // This is a reply to an existing message
+        const existing = repliesMap.get(replyToIndex) || [];
+        existing.push(line);
+        repliesMap.set(replyToIndex, existing);
+      } else {
+        // Top-level message (not a reply, or reply to a message we don't have)
+        topLevelMessages.push(line);
+      }
+    } else {
+      // Non-message lines are always top-level
+      topLevelMessages.push(line);
+    }
+  }
+
+  // Build tree recursively
+  function buildNode(line: ChatLine, depth: number = 0): MessageWithReplies {
+    const replies: MessageWithReplies[] = [];
+
+    if (line.type === "message" && line.messageIndex !== undefined) {
+      const directReplies = repliesMap.get(line.messageIndex) || [];
+      for (const reply of directReplies) {
+        replies.push(buildNode(reply, depth + 1));
+      }
+    }
+
+    return { message: line, replies };
+  }
+
+  return topLevelMessages.map((line) => buildNode(line, 0));
+}
+
+// Render a message and its replies recursively
+function renderMessageWithReplies(
+  node: MessageWithReplies,
+  profiles: Record<string, FarcasterUserProfile | null>,
+  isModerator: boolean,
+  processCommand: (input: string) => Promise<void>,
+  lastReadId: number | undefined,
+  onReply:
+    | ((messageIndex: number, content: string, senderAddress?: string) => void)
+    | undefined,
+  depth: number = 0
+): React.ReactNode[] {
+  const elements: React.ReactNode[] = [];
+  const { message, replies } = node;
+
+  elements.push(
+    <ChatLineComponent
+      key={message.id}
+      line={message}
+      profile={
+        message.senderAddress
+          ? profiles[message.senderAddress.toLowerCase()]
+          : null
+      }
+      profiles={profiles}
+      isModerator={isModerator}
+      processCommand={processCommand}
+      lastReadId={lastReadId}
+      onReply={onReply}
+      isReply={depth > 0}
+      replyDepth={depth}
+    />
+  );
+
+  // Render replies
+  for (const reply of replies) {
+    elements.push(
+      ...renderMessageWithReplies(
+        reply,
+        profiles,
+        isModerator,
+        processCommand,
+        lastReadId,
+        onReply,
+        depth + 1
+      )
+    );
+  }
+
+  return elements;
+}
 
 export function MessageList({
   lines,
@@ -18,6 +121,7 @@ export function MessageList({
   isLoadingMore,
   onLoadMore,
   lastReadId,
+  onReply,
 }: {
   lines: ChatLine[];
   profiles: Record<string, FarcasterUserProfile | null>;
@@ -32,7 +136,15 @@ export function MessageList({
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
   lastReadId?: number;
+  onReply?: (
+    messageIndex: number,
+    content: string,
+    senderAddress?: string
+  ) => void;
 }) {
+  // Build message tree with replies grouped under their parent messages
+  const messageTree = useMemo(() => buildMessageTree(lines), [lines]);
+
   return (
     <div
       ref={messagesContainerRef}
@@ -52,21 +164,17 @@ export function MessageList({
             </button>
           </div>
         )}
-        {lines.map((line: ChatLine) => (
-          <ChatLineComponent
-            key={line.id}
-            line={line}
-            profile={
-              line.senderAddress
-                ? profiles[line.senderAddress.toLowerCase()]
-                : null
-            }
-            profiles={profiles}
-            isModerator={isModerator}
-            processCommand={processCommand}
-            lastReadId={lastReadId}
-          />
-        ))}
+        {messageTree.map((node) =>
+          renderMessageWithReplies(
+            node,
+            profiles,
+            isModerator,
+            processCommand,
+            lastReadId,
+            onReply,
+            0
+          )
+        )}
 
         {/* Channel action buttons when connected but not in any channel */}
         {showChannelButtons && (

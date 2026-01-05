@@ -75,6 +75,11 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const [input, setInput] = useState("");
   const [commandHistory, setCommandHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState(-1);
+  const [replyContext, setReplyContext] = useState<{
+    messageIndex: number;
+    content: string;
+    senderAddress?: string;
+  } | null>(null);
   const [showChannelBrowser, setShowChannelBrowser] = useState(false);
   const [showCreateChannel, setShowCreateChannel] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -332,6 +337,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
       const command = input;
       setInput("");
       setHistoryIndex(-1);
+      setReplyContext(null); // Clear reply context after sending
       setCommandHistory((prev) => [command, ...prev.slice(0, 99)]);
 
       await processCommand(command);
@@ -389,6 +395,22 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     },
     [newChannelName, processCommand]
   );
+
+  // Handle reply button click - pre-fill input with reply format and show context
+  const handleReply = useCallback(
+    (messageIndex: number, content: string, senderAddress?: string) => {
+      setReplyContext({ messageIndex, content, senderAddress });
+      setInput(`#${messageIndex} - `);
+      inputRef.current?.focus();
+    },
+    []
+  );
+
+  // Cancel reply
+  const cancelReply = useCallback(() => {
+    setReplyContext(null);
+    setInput("");
+  }, []);
 
   return (
     <div className="flex flex-col h-[100dvh] max-h-[100dvh] overflow-hidden chat-container">
@@ -470,6 +492,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 isLoadingMore={isLoadingMore}
                 onLoadMore={loadMoreMessages}
                 lastReadId={sessionLastReadId}
+                onReply={handleReply}
               />
               <ChatInput
                 input={input}
@@ -485,6 +508,9 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 handleJoinChannel={handleJoinChannel}
                 channelSlug={channelSlug}
                 inputRef={inputRef}
+                replyContext={replyContext}
+                cancelReply={cancelReply}
+                profiles={profiles}
               />
             </>
           )}

@@ -73,6 +73,7 @@ export interface ChatLine {
   transactionHash?: string;
   channels?: ChannelListItem[];
   users?: string[]; // For userList type - array of addresses
+  replyToIndex?: number; // For reply messages - the parent message index
 }
 
 interface UseChatReturn {
