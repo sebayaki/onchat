@@ -510,6 +510,20 @@ export async function getSlugFromHash(
 // ============================================================================
 
 /**
+ * Check if a channel exists by slug
+ */
+export async function channelExists(slug: string): Promise<boolean> {
+  try {
+    const channel = await getChannelBySlug(slug);
+    // Channel exists if it has a non-empty slug
+    return channel.slug.length > 0;
+  } catch {
+    // Channel doesn't exist
+    return false;
+  }
+}
+
+/**
  * Create a new channel
  */
 export async function createChannel(
@@ -517,6 +531,14 @@ export async function createChannel(
   slug: string
 ): Promise<`0x${string}`> {
   await ensureBaseChain(walletClient);
+
+  // Check if channel already exists
+  const exists = await channelExists(slug);
+  if (exists) {
+    throw new Error(
+      `Channel #${slug} already exists. Join it with /join #${slug} or choose a different name.`
+    );
+  }
 
   const fee = await getChannelCreationFee();
 

@@ -1,5 +1,9 @@
 import { FormEvent, useEffect, useState } from "react";
-import { getChannelCreationFee, getWalletBalance } from "@/helpers/contracts";
+import {
+  getChannelCreationFee,
+  getWalletBalance,
+  channelExists,
+} from "@/helpers/contracts";
 import { formatEther } from "viem";
 
 export function CreateChannelModal({
@@ -23,6 +27,8 @@ export function CreateChannelModal({
 }) {
   const [creationFee, setCreationFee] = useState<bigint | null>(null);
   const [walletBalance, setWalletBalance] = useState<bigint | null>(null);
+  const [slugExists, setSlugExists] = useState(false);
+  const [checkingSlug, setCheckingSlug] = useState(false);
 
   useEffect(() => {
     if (!showCreateChannel) {
@@ -53,6 +59,40 @@ export function CreateChannelModal({
       cancelled = true;
     };
   }, [showCreateChannel, address]);
+
+  // Check if channel slug already exists (debounced)
+  useEffect(() => {
+    const slug = newChannelName.trim();
+    if (!slug) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const timeoutId = setTimeout(async () => {
+      setCheckingSlug(true);
+      try {
+        const exists = await channelExists(slug);
+        if (!cancelled) {
+          setSlugExists(exists);
+        }
+      } catch {
+        if (!cancelled) {
+          setSlugExists(false);
+        }
+      }
+      if (!cancelled) {
+        setCheckingSlug(false);
+      }
+    }, 300);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+      setSlugExists(false);
+      setCheckingSlug(false);
+    };
+  }, [newChannelName]);
 
   const hasInsufficientBalance =
     creationFee !== null &&
@@ -123,11 +163,24 @@ export function CreateChannelModal({
                 type="submit"
                 className="bg-[var(--primary)] border-none text-[var(--bg-primary)] py-2 px-4 font-mono text-[0.85rem] font-bold cursor-pointer transition-all hover:not-disabled:bg-[var(--primary)] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
                 disabled={
-                  !newChannelName.trim() || isLoading || hasInsufficientBalance
+                  !newChannelName.trim() ||
+                  isLoading ||
+                  hasInsufficientBalance ||
+                  slugExists ||
+                  checkingSlug
                 }
               >
-                {isLoading ? "Creating..." : "Create Channel"}
+                {isLoading
+                  ? "Creating..."
+                  : checkingSlug
+                  ? "Checking..."
+                  : "Create Channel"}
               </button>
+              {slugExists && (
+                <p className="text-[0.75rem] text-[var(--color-error)] text-center m-0">
+                  Channel #{newChannelName} already exists
+                </p>
+              )}
               {hasInsufficientBalance && (
                 <p className="text-[0.75rem] text-[var(--color-error)] text-center m-0">
                   Insufficient balance ({formatEther(walletBalance!)} ETH)
