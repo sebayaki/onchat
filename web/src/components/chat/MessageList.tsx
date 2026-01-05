@@ -1,6 +1,7 @@
 import { type ChatLine } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
-import { ChatLineComponent, parseReplyContent } from "./ChatLine";
+import { ChatLineComponent } from "./ChatLine";
+import { parseReplyContent } from "@/helpers/chat";
 import { RefObject, useMemo } from "react";
 import { MESSAGES_PER_PAGE } from "@/configs/constants";
 

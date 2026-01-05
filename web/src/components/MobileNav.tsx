@@ -3,11 +3,13 @@ import { ChatIcon, ChannelIcon, RewardIcon } from "@/components/Icons";
 export function MobileNav({
   activeTab,
   setActiveTab,
-  messageCount,
+  totalUnreadCount,
+  currentChannelUnreadCount,
 }: {
   activeTab: "chat" | "channels" | "rewards";
   setActiveTab: (tab: "chat" | "channels" | "rewards") => void;
-  messageCount?: bigint;
+  totalUnreadCount?: number;
+  currentChannelUnreadCount?: number;
 }) {
   // Hidden on desktop (sm:), visible on mobile
   return (
@@ -20,10 +22,17 @@ export function MobileNav({
             : "text-[var(--text-dim)]"
         }`}
       >
-        <ChannelIcon
-          size={20}
-          className={`${activeTab === "channels" ? "" : "opacity-50"}`}
-        />
+        <div className="relative">
+          <ChannelIcon
+            size={20}
+            className={`${activeTab === "channels" ? "" : "opacity-50"}`}
+          />
+          {totalUnreadCount !== undefined && totalUnreadCount > 0 && (
+            <div className="absolute -top-1.5 -right-2.5 bg-[var(--primary)] text-[var(--bg-primary)] text-[10px] font-bold px-1 min-w-[14px] h-[14px] rounded-full flex items-center justify-center border border-[var(--bg-secondary)]">
+              {totalUnreadCount > 99 ? "99+" : totalUnreadCount}
+            </div>
+          )}
+        </div>
         <span className="text-[0.65rem] uppercase font-bold tracking-[1px]">
           Channels
         </span>
@@ -41,11 +50,14 @@ export function MobileNav({
             size={20}
             className={`${activeTab === "chat" ? "" : "opacity-50"}`}
           />
-          {messageCount !== undefined && messageCount > BigInt(0) && (
-            <div className="absolute -top-1.5 -right-2.5 bg-[var(--primary)] text-[var(--bg-primary)] text-[10px] font-bold px-1 min-w-[14px] h-[14px] rounded-full flex items-center justify-center border border-[var(--bg-secondary)]">
-              {messageCount > BigInt(99) ? "99+" : messageCount.toString()}
-            </div>
-          )}
+          {currentChannelUnreadCount !== undefined &&
+            currentChannelUnreadCount > 0 && (
+              <div className="absolute -top-1.5 -right-2.5 bg-[var(--primary)] text-[var(--bg-primary)] text-[10px] font-bold px-1 min-w-[14px] h-[14px] rounded-full flex items-center justify-center border border-[var(--bg-secondary)]">
+                {currentChannelUnreadCount > 99
+                  ? "99+"
+                  : currentChannelUnreadCount}
+              </div>
+            )}
         </div>
         <span className="text-[0.65rem] uppercase font-bold tracking-[1px]">
           Chat

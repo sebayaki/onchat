@@ -521,7 +521,18 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         <MobileNav
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          messageCount={currentChannel?.messageCount}
+          totalUnreadCount={Object.values(unreadCounts).reduce(
+            (a, b) => a + b,
+            0
+          )}
+          currentChannelUnreadCount={
+            currentChannel && sessionLastReadId !== undefined
+              ? Math.max(
+                  0,
+                  Number(currentChannel.messageCount) - (sessionLastReadId + 1)
+                )
+              : undefined
+          }
         />
       )}
 
