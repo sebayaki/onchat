@@ -546,6 +546,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         showCreateChannel={showCreateChannel}
         setShowCreateChannel={setShowCreateChannel}
         isConnected={isConnected}
+        address={address}
         handleCreateChannel={handleCreateChannel}
         newChannelName={newChannelName}
         setNewChannelName={setNewChannelName}

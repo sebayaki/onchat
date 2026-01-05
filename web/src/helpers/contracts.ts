@@ -56,6 +56,15 @@ async function ensureBaseChain(walletClient: WalletClient): Promise<void> {
 // ============================================================================
 
 /**
+ * Get wallet ETH balance
+ */
+export async function getWalletBalance(
+  address: `0x${string}`
+): Promise<bigint> {
+  return await basePublicClient.getBalance({ address });
+}
+
+/**
  * Get channel creation fee
  */
 export async function getChannelCreationFee(): Promise<bigint> {
@@ -510,6 +519,18 @@ export async function createChannel(
   await ensureBaseChain(walletClient);
 
   const fee = await getChannelCreationFee();
+
+  // Check wallet balance before proceeding
+  const balance = await getWalletBalance(walletClient.account!.address);
+  if (balance < fee) {
+    throw new Error(
+      `Insufficient balance. You need at least ${formatNumber(fee, {
+        fromDecimals: 18,
+      })} ETH to create a channel (you have ${formatNumber(balance, {
+        fromDecimals: 18,
+      })} ETH).`
+    );
+  }
 
   console.log(
     "📜 Creating channel:",

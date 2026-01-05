@@ -1,11 +1,12 @@
 import { FormEvent, useEffect, useState } from "react";
-import { getChannelCreationFee } from "@/helpers/contracts";
+import { getChannelCreationFee, getWalletBalance } from "@/helpers/contracts";
 import { formatEther } from "viem";
 
 export function CreateChannelModal({
   showCreateChannel,
   setShowCreateChannel,
   isConnected,
+  address,
   handleCreateChannel,
   newChannelName,
   setNewChannelName,
@@ -14,26 +15,49 @@ export function CreateChannelModal({
   showCreateChannel: boolean;
   setShowCreateChannel: (show: boolean) => void;
   isConnected: boolean;
+  address?: string;
   handleCreateChannel: (e: FormEvent) => void;
   newChannelName: string;
   setNewChannelName: (val: string) => void;
   isLoading: boolean;
 }) {
   const [creationFee, setCreationFee] = useState<bigint | null>(null);
+  const [walletBalance, setWalletBalance] = useState<bigint | null>(null);
 
   useEffect(() => {
-    async function loadFee() {
+    if (!showCreateChannel) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadFeeAndBalance() {
       try {
         const fee = await getChannelCreationFee();
+        if (cancelled) return;
         setCreationFee(fee);
+
+        if (address) {
+          const balance = await getWalletBalance(address as `0x${string}`);
+          if (cancelled) return;
+          setWalletBalance(balance);
+        }
       } catch (err) {
         console.error("Failed to load channel creation fee:", err);
       }
     }
-    if (showCreateChannel) {
-      loadFee();
-    }
-  }, [showCreateChannel]);
+
+    loadFeeAndBalance();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [showCreateChannel, address]);
+
+  const hasInsufficientBalance =
+    creationFee !== null &&
+    walletBalance !== null &&
+    walletBalance < creationFee;
 
   if (!showCreateChannel) return null;
 
@@ -98,10 +122,17 @@ export function CreateChannelModal({
               <button
                 type="submit"
                 className="bg-[var(--primary)] border-none text-[var(--bg-primary)] py-2 px-4 font-mono text-[0.85rem] font-bold cursor-pointer transition-all hover:not-disabled:bg-[var(--primary)] disabled:opacity-50 disabled:cursor-not-allowed mt-2"
-                disabled={!newChannelName.trim() || isLoading}
+                disabled={
+                  !newChannelName.trim() || isLoading || hasInsufficientBalance
+                }
               >
                 {isLoading ? "Creating..." : "Create Channel"}
               </button>
+              {hasInsufficientBalance && (
+                <p className="text-[0.75rem] text-[var(--color-error)] text-center m-0">
+                  Insufficient balance ({formatEther(walletBalance!)} ETH)
+                </p>
+              )}
               <p className="text-[0.7rem] text-[var(--text-dim)] text-center m-0">
                 {creationFee !== null
                   ? `Creation Fee: ${formatEther(creationFee)} ETH`
