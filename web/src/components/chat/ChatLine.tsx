@@ -193,13 +193,23 @@ function ConnectButton() {
   );
 }
 
-function MessageContent({ content }: { content: string | React.ReactNode }) {
+function MessageContent({
+  content,
+  onChannelClick,
+}: {
+  content: string | React.ReactNode;
+  onChannelClick?: (slug: string) => void;
+}) {
   if (typeof content !== "string") {
     return <>{content}</>;
   }
 
-  // Basic URL regex that matches http/https
-  const parts = content.split(/(https?:\/\/[^\s]+)/g);
+  // Combined regex for URLs and channel links
+  // Channel: #[a-z][a-z-]{0,19} (1-20 chars, starts with letter, contains only a-z and -)
+  // URL: https?://[^\s]+
+  const parts = content.split(
+    /(https?:\/\/[^\s]+|#[a-z][a-z-]{0,19}(?![a-z-]))/g
+  );
 
   return (
     <>
@@ -213,6 +223,19 @@ function MessageContent({ content }: { content: string | React.ReactNode }) {
             >
               {part}
             </ExternalLink>
+          );
+        }
+        // Channel link: #channel-name (must start with a letter)
+        if (part.match(/^#[a-z][a-z-]{0,19}$/)) {
+          const slug = part.slice(1); // Remove the #
+          return (
+            <button
+              key={i}
+              onClick={() => onChannelClick?.(slug)}
+              className="text-[var(--color-channel)] hover:underline cursor-pointer bg-transparent border-none p-0 font-inherit"
+            >
+              {part}
+            </button>
           );
         }
         return part;
@@ -337,6 +360,7 @@ export function ChatLineComponent({
   onReply,
   isReply = false,
   replyDepth = 0,
+  onChannelClick,
 }: {
   line: ChatLine;
   profile?: FarcasterUserProfile | null;
@@ -351,6 +375,7 @@ export function ChatLineComponent({
   ) => void;
   isReply?: boolean;
   replyDepth?: number;
+  onChannelClick?: (slug: string) => void;
 }) {
   const { isConnected } = useAppKitAccount();
   const timeStr = formatTime(line.timestamp);
@@ -374,7 +399,10 @@ export function ChatLineComponent({
         >
           <span className="chat-timestamp">[{timeStr}]</span>
           <span className="chat-content">
-            <MessageContent content={line.content} />
+            <MessageContent
+              content={line.content}
+              onChannelClick={onChannelClick}
+            />
           </span>
         </div>
       );
@@ -387,7 +415,10 @@ export function ChatLineComponent({
             !
           </span>
           <span className="chat-content">
-            <MessageContent content={line.content} />
+            <MessageContent
+              content={line.content}
+              onChannelClick={onChannelClick}
+            />
           </span>
         </div>
       );
@@ -401,7 +432,10 @@ export function ChatLineComponent({
             <span className="chat-timestamp">[{timeStr}]</span>
             <span className="chat-prefix text-[var(--color-info)]">*</span>
             <span className="chat-content min-w-0">
-              <MessageContent content={line.content} />
+              <MessageContent
+                content={line.content}
+                onChannelClick={onChannelClick}
+              />
             </span>
           </div>
           {isConnectLine && <ConnectButton />}
@@ -414,7 +448,10 @@ export function ChatLineComponent({
           <span className="chat-timestamp">[{timeStr}]</span>
           <span className="chat-prefix text-[var(--color-action)]">→</span>
           <span className="chat-content">
-            <MessageContent content={line.content} />
+            <MessageContent
+              content={line.content}
+              onChannelClick={onChannelClick}
+            />
           </span>
         </div>
       );
@@ -426,7 +463,10 @@ export function ChatLineComponent({
             {line.channel ? `#${line.channel}>` : ">"}
           </span>
           <span className="chat-content">
-            <MessageContent content={line.content} />
+            <MessageContent
+              content={line.content}
+              onChannelClick={onChannelClick}
+            />
           </span>
         </div>
       );
@@ -474,10 +514,17 @@ export function ChatLineComponent({
             {replyPrefix}
             {isHidden ? (
               <>
-                (Hidden) <MessageContent content={effectiveContent} />
+                (Hidden){" "}
+                <MessageContent
+                  content={effectiveContent}
+                  onChannelClick={onChannelClick}
+                />
               </>
             ) : (
-              <MessageContent content={effectiveContent} />
+              <MessageContent
+                content={effectiveContent}
+                onChannelClick={onChannelClick}
+              />
             )}
           </span>
           {/* Reply button - shown for confirmed messages when not already a reply view */}

@@ -493,6 +493,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 onLoadMore={loadMoreMessages}
                 lastReadId={sessionLastReadId}
                 onReply={handleReply}
+                onChannelClick={handleJoinChannel}
               />
               <ChatInput
                 input={input}

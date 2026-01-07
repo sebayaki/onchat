@@ -66,6 +66,7 @@ function renderMessageWithReplies(
   onReply:
     | ((messageIndex: number, content: string, senderAddress?: string) => void)
     | undefined,
+  onChannelClick: ((slug: string) => void) | undefined,
   depth: number = 0
 ): React.ReactNode[] {
   const elements: React.ReactNode[] = [];
@@ -87,6 +88,7 @@ function renderMessageWithReplies(
       onReply={onReply}
       isReply={depth > 0}
       replyDepth={depth}
+      onChannelClick={onChannelClick}
     />
   );
 
@@ -100,6 +102,7 @@ function renderMessageWithReplies(
         processCommand,
         lastReadId,
         onReply,
+        onChannelClick,
         depth + 1
       )
     );
@@ -123,6 +126,7 @@ export function MessageList({
   onLoadMore,
   lastReadId,
   onReply,
+  onChannelClick,
 }: {
   lines: ChatLine[];
   profiles: Record<string, FarcasterUserProfile | null>;
@@ -142,6 +146,7 @@ export function MessageList({
     content: string,
     senderAddress?: string
   ) => void;
+  onChannelClick?: (slug: string) => void;
 }) {
   // Build message tree with replies grouped under their parent messages
   const messageTree = useMemo(() => buildMessageTree(lines), [lines]);
@@ -173,6 +178,7 @@ export function MessageList({
             processCommand,
             lastReadId,
             onReply,
+            onChannelClick,
             0
           )
         )}
