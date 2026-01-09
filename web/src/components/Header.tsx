@@ -99,6 +99,19 @@ export function Header({
         </div>
       </div>
       <div className="flex items-center gap-3">
+        <ExternalLink
+          href="https://www.producthunt.com/products/onchat?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-onchat"
+          className="max-md:hidden"
+          title="OnChat on Product Hunt"
+        >
+          <img
+            src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1060469&theme=light&t=1767937960287"
+            alt="OnChat - Fully permissionless, on-chain chat protocol | Product Hunt"
+            width="150"
+            height="30"
+            style={{ width: 150, height: 30 }}
+          />
+        </ExternalLink>
         {isConnected && hasWalletClient && address ? (
           <>
             <button
