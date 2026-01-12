@@ -72,16 +72,22 @@ function applyThemeToShadow(
   }
 }
 
-// Singleton state
-let widgetInstance: {
-  container: HTMLElement;
-  shadowRoot: ShadowRoot;
-  root: Root;
-  wagmiAdapter: WagmiAdapter;
-} | null = null;
+// Multiple instance state
+const widgetInstances = new Map<
+  HTMLElement,
+  {
+    container: HTMLElement;
+    shadowRoot: ShadowRoot;
+    root: Root;
+    wagmiAdapter: WagmiAdapter;
+  }
+>();
+
+// Counter for generating unique IDs when container has no ID
+let instanceCounter = 0;
 
 /**
- * Mount the OnChat widget to a DOM element (singleton - only one widget can exist)
+ * Mount the OnChat widget to a DOM element (supports multiple widgets)
  */
 export function mount(
   selector: string | HTMLElement,
@@ -96,14 +102,9 @@ export function mount(
     throw new Error(`OnChat: Could not find element: ${selector}`);
   }
 
-  // Singleton: if already mounted on same container, return existing unmount
-  if (widgetInstance && widgetInstance.container === container) {
-    return { unmount };
-  }
-
-  // If mounted on different container, unmount first
-  if (widgetInstance) {
-    unmount();
+  // If already mounted on this container, return existing unmount
+  if (widgetInstances.has(container)) {
+    return { unmount: () => unmount(container) };
   }
 
   // Set widget theme options before rendering
@@ -132,9 +133,10 @@ export function mount(
   styleEl.textContent = widgetStyles;
   shadowRoot.appendChild(styleEl);
 
-  // Create mount point inside shadow DOM
+  // Create mount point inside shadow DOM with dynamic ID
   const mountPoint = document.createElement("div");
-  mountPoint.id = "onchat-mount";
+  const containerId = container.id || `onchat-instance-${++instanceCounter}`;
+  mountPoint.id = `onchat-mount-${containerId}`;
   mountPoint.style.width = "100%";
   mountPoint.style.height = "100%";
   shadowRoot.appendChild(mountPoint);
@@ -150,23 +152,41 @@ export function mount(
   // Render widget
   const root = renderWidget(mountPoint, options, wagmiAdapter);
 
-  // Store singleton instance
-  widgetInstance = { container, shadowRoot, root, wagmiAdapter };
+  // Store instance in Map
+  widgetInstances.set(container, { container, shadowRoot, root, wagmiAdapter });
 
-  return { unmount };
+  return { unmount: () => unmount(container) };
 }
 
 /**
- * Unmount the widget
+ * Unmount the widget (optionally specify which one)
  */
-export function unmount(): boolean {
-  if (!widgetInstance) {
-    return false;
+export function unmount(containerOrSelector?: string | HTMLElement): boolean {
+  // If no argument, unmount all
+  if (!containerOrSelector) {
+    if (widgetInstances.size === 0) return false;
+    for (const instance of widgetInstances.values()) {
+      instance.root.unmount();
+      instance.shadowRoot.innerHTML = "";
+    }
+    widgetInstances.clear();
+    return true;
   }
 
-  widgetInstance.root.unmount();
-  widgetInstance.shadowRoot.innerHTML = "";
-  widgetInstance = null;
+  // Find specific container
+  const container =
+    typeof containerOrSelector === "string"
+      ? document.querySelector<HTMLElement>(containerOrSelector)
+      : containerOrSelector;
+
+  if (!container) return false;
+
+  const instance = widgetInstances.get(container);
+  if (!instance) return false;
+
+  instance.root.unmount();
+  instance.shadowRoot.innerHTML = "";
+  widgetInstances.delete(container);
   return true;
 }
 
