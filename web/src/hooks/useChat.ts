@@ -1,4 +1,10 @@
-import { useState, useCallback, useRef, useEffect, ReactNode } from "react";
+import React, {
+  useState,
+  useCallback,
+  useRef,
+  useEffect,
+  ReactNode,
+} from "react";
 import { useAppKitAccount } from "@reown/appkit/react";
 import { useWalletClient } from "wagmi";
 import { formatAddress, formatNumber } from "@/helpers/format";
@@ -41,7 +47,7 @@ import {
   type ModerationEvent,
 } from "@/context/EventContext";
 import { fetchUserProfilesBulk } from "@/helpers/farcaster";
-import { renderWhoisChannels } from "@/components/WhoisChannels";
+import { WhoisChannels } from "@/components/WhoisChannels";
 import { STORAGE_KEYS, MESSAGES_PER_PAGE } from "@/configs/constants";
 
 export interface ChannelListItem {
@@ -582,10 +588,10 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
             addLine(
               "info",
-              renderWhoisChannels({
-                channelCount,
+              React.createElement(WhoisChannels, {
                 channelDetails,
                 addr,
+                onChannelClick: enterChannel,
               })
             );
           }
