@@ -20,6 +20,24 @@
  *   </script>
  */
 
+// Patch customElements.define to prevent duplicate registration errors
+// This is needed because @reown/appkit uses Phosphor Icons web components,
+// and if the host page already has AppKit loaded, the icons will already be registered
+if (typeof window !== "undefined" && window.customElements) {
+  const originalDefine = window.customElements.define.bind(
+    window.customElements
+  );
+  window.customElements.define = function (
+    name: string,
+    constructor: CustomElementConstructor,
+    options?: ElementDefinitionOptions
+  ) {
+    if (!window.customElements.get(name)) {
+      originalDefine(name, constructor, options);
+    }
+  };
+}
+
 import type { Root } from "react-dom/client";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { wagmiAdapter as globalWagmiAdapter } from "../configs/wagmi";
