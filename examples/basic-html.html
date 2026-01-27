@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OnChat Widget - Basic Example</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 2rem;
+    }
+    
+    .container {
+      max-width: 1200px;
+      width: 100%;
+    }
+    
+    header {
+      text-align: center;
+      color: white;
+      margin-bottom: 2rem;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 0.5rem;
+      font-weight: 700;
+    }
+    
+    .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+    
+    .chat-container {
+      background: white;
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    .info {
+      background: #f3f4f6;
+      border-left: 4px solid #667eea;
+      padding: 1rem;
+      margin-bottom: 1.5rem;
+      border-radius: 4px;
+    }
+    
+    .info h3 {
+      margin-bottom: 0.5rem;
+      color: #374151;
+    }
+    
+    .info p {
+      color: #6b7280;
+      line-height: 1.6;
+    }
+    
+    .info code {
+      background: white;
+      padding: 0.2rem 0.4rem;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      color: #667eea;
+    }
+    
+    footer {
+      text-align: center;
+      color: white;
+      margin-top: 2rem;
+      opacity: 0.8;
+    }
+    
+    footer a {
+      color: white;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚀 OnChat Widget Demo</h1>
+      <p class="subtitle">Decentralized chat for your Base dApp</p>
+    </header>
+    
+    <div class="chat-container">
+      <div class="info">
+        <h3>💡 How to integrate</h3>
+        <p>
+          Adding OnChat to your dApp takes just 3 lines of code:
+        </p>
+        <pre style="margin-top: 1rem; overflow-x: auto;"><code>&lt;div id="onchat-widget"&gt;&lt;/div&gt;
+&lt;script src="https://onchat.sebayaki.com/widget.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  OnChat.mount('#onchat-widget', { 
+    channel: 'your-channel-name' 
+  });
+&lt;/script&gt;</code></pre>
+      </div>
+      
+      <!-- OnChat Widget Container -->
+      <div id="onchat-widget"></div>
+    </div>
+    
+    <footer>
+      <p>
+        Built with ❤️ for Base | 
+        <a href="https://github.com/sebayaki/onchat" target="_blank">GitHub</a> | 
+        <a href="https://onchat.sebayaki.com" target="_blank">Website</a>
+      </p>
+    </footer>
+  </div>
+
+  <!-- OnChat Widget Script -->
+  <script src="https://onchat.sebayaki.com/widget.js"></script>
+  <script>
+    // Mount the OnChat widget
+    OnChat.mount('#onchat-widget', {
+      channel: 'demo',           // Your channel name
+      height: '600px',           // Widget height
+      theme: 'dracula',          // Choose a theme
+      hideBrand: false,          // Show/hide "Powered by OnChat"
+      hideMobileTabs: false      // Show/hide mobile navigation
+    });
+  </script>
+</body>
+</html>
