@@ -17,20 +17,35 @@ function buildMessageTree(lines: ChatLine[]): MessageWithReplies[] {
   const repliesMap = new Map<number, ChatLine[]>(); // parentIndex -> replies
   const topLevelMessages: ChatLine[] = [];
 
-  // First pass: categorize lines
+  // First pass: build the complete messagesByIndex map for ALL messages
+  // This ensures we can find parent messages even if they appear later in the array
   for (const line of lines) {
     if (line.type === "message" && line.messageIndex !== undefined) {
       messagesByIndex.set(line.messageIndex, line);
+    }
+  }
 
+  // Second pass: categorize lines as top-level or replies
+  for (const line of lines) {
+    if (line.type === "message" && line.messageIndex !== undefined) {
       // Check if this message is a reply
       const { replyToIndex } = parseReplyContent(line.content);
-      if (replyToIndex !== undefined && messagesByIndex.has(replyToIndex)) {
+      // A message can be a reply if:
+      // 1. It has a replyToIndex
+      // 2. The parent message exists in our loaded messages
+      // 3. It's not trying to reply to itself (which would be invalid)
+      const isValidReply =
+        replyToIndex !== undefined &&
+        messagesByIndex.has(replyToIndex) &&
+        replyToIndex !== line.messageIndex;
+
+      if (isValidReply) {
         // This is a reply to an existing message
         const existing = repliesMap.get(replyToIndex) || [];
         existing.push(line);
         repliesMap.set(replyToIndex, existing);
       } else {
-        // Top-level message (not a reply, or reply to a message we don't have)
+        // Top-level message (not a reply, or reply to a message we don't have, or self-reference)
         topLevelMessages.push(line);
       }
     } else {
@@ -67,7 +82,7 @@ function renderMessageWithReplies(
     | ((messageIndex: number, content: string, senderAddress?: string) => void)
     | undefined,
   onChannelClick: ((slug: string) => void) | undefined,
-  depth: number = 0
+  depth: number = 0,
 ): React.ReactNode[] {
   const elements: React.ReactNode[] = [];
   const { message, replies } = node;
@@ -89,7 +104,7 @@ function renderMessageWithReplies(
       isReply={depth > 0}
       replyDepth={depth}
       onChannelClick={onChannelClick}
-    />
+    />,
   );
 
   // Render replies
@@ -103,8 +118,8 @@ function renderMessageWithReplies(
         lastReadId,
         onReply,
         onChannelClick,
-        depth + 1
-      )
+        depth + 1,
+      ),
     );
   }
 
@@ -144,7 +159,7 @@ export function MessageList({
   onReply?: (
     messageIndex: number,
     content: string,
-    senderAddress?: string
+    senderAddress?: string,
   ) => void;
   onChannelClick?: (slug: string) => void;
 }) {
@@ -179,8 +194,8 @@ export function MessageList({
             lastReadId,
             onReply,
             onChannelClick,
-            0
-          )
+            0,
+          ),
         )}
 
         {/* Channel action buttons when connected but not in any channel */}
