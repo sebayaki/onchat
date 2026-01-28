@@ -23,12 +23,30 @@ python3 -m http.server 8000
 # Then visit http://localhost:8000/basic-html.html
 ```
 
+### AI Agent
+**Directory**: `ai-agent/`
+
+A TypeScript CLI for AI agents to read, write, and engage with on-chain conversations. Uses viem for direct smart contract interaction — no browser or frontend needed.
+
+Perfect for:
+- AI agents that monitor and engage in on-chain chats
+- Bot integrations (Discord, Telegram, Farcaster → OnChat bridge)
+- Automated community engagement
+- CLI-based on-chain messaging
+
+**To run**:
+```bash
+cd ai-agent
+npm install
+npx tsx onchat.ts channels          # Browse channels
+npx tsx onchat.ts read onchat       # Read messages
+ONCHAT_PRIVATE_KEY=0x... npx tsx onchat.ts send onchat "gm!"  # Send a message
+```
+
 ---
 
 ## 📚 More Examples Coming Soon
 
-- **Next.js App Router** - Modern React with server components
-- **Vite + React** - Lightweight SPA setup
 - **Vue 3** - Composition API example
 - **Svelte** - Minimal framework example
 - **DeFi Dashboard** - Full dApp integration
