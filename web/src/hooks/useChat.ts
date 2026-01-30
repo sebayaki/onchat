@@ -118,18 +118,17 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
   const [lines, setLines] = useState<ChatLine[]>([]);
   const [currentChannel, setCurrentChannel] = useState<ChannelInfo | null>(
-    null
+    null,
   );
   const [joinedChannels, setJoinedChannels] = useState<ChannelInfo[]>([]);
   const [members, setMembers] = useState<string[]>([]);
   const [moderators, setModerators] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isInitialChannelLoading, setIsInitialChannelLoading] = useState(
-    !!initialChannelSlug
-  );
+  const [isInitialChannelLoading, setIsInitialChannelLoading] =
+    useState(!!initialChannelSlug);
   // Initialize as loading if we already have a connection to restore
   const [isLoadingChannels, setIsLoadingChannels] = useState(
-    isConnected && !!address
+    isConnected && !!address,
   );
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -159,7 +158,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       isHidden?: boolean,
       isPending?: boolean,
       transactionHash?: string,
-      timestamp?: Date
+      timestamp?: Date,
     ) => {
       const line: ChatLine = {
         id: `line-${lineIdCounter.current++}`,
@@ -176,7 +175,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       };
       setLines((prev) => [...prev, line]);
     },
-    []
+    [],
   );
 
   // Load user's joined channels
@@ -187,7 +186,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     try {
       const hashes = await getUserChannels(address as `0x${string}`, 0, 100);
       const channels = await Promise.all(
-        hashes.map((hash) => getChannel(hash))
+        hashes.map((hash) => getChannel(hash)),
       );
       setJoinedChannels(channels.filter(Boolean));
     } catch (err) {
@@ -290,20 +289,20 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         addLine("system", `* Now talking in #${cleanSlug}`);
         addLine(
           "info",
-          `Topic: On-chain chat on Base | ${channelInfo.memberCount} users`
+          `Topic: On-chain chat on Base | ${channelInfo.memberCount} users`,
         );
 
         // Load recent messages
         const messages = await getLatestMessages(
           slugHash,
           0,
-          MESSAGES_PER_PAGE
+          MESSAGES_PER_PAGE,
         );
         const orderedMessages = [...messages].reverse();
         messagesLoadedRef.current = messages.length;
         setHasMore(
           messages.length === MESSAGES_PER_PAGE &&
-            Number(channelInfo.messageCount) > MESSAGES_PER_PAGE
+            Number(channelInfo.messageCount) > MESSAGES_PER_PAGE,
         );
 
         // Determine if user is moderator to show hidden messages
@@ -336,7 +335,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               msg.isHidden,
               false,
               undefined,
-              new Date(msg.timestamp * 1000)
+              new Date(msg.timestamp * 1000),
             );
           }
         }
@@ -352,7 +351,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         setIsInitialChannelLoading(false);
       }
     },
-    [loadMembers, addLine, address, moderators, generateWelcomeLines]
+    [loadMembers, addLine, address, moderators, generateWelcomeLines],
   );
 
   // Welcome message on mount (only once)
@@ -419,7 +418,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             return { ...c, messageCount: newMessageCount };
           }
           return c;
-        })
+        }),
       );
 
       if (!channel) return;
@@ -431,7 +430,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       setLines((prev) => {
         const existingLineIndex = prev.findIndex(
           (l) =>
-            l.type === "message" && l.transactionHash === event.transactionHash
+            l.type === "message" && l.transactionHash === event.transactionHash,
         );
 
         if (existingLineIndex !== -1) {
@@ -481,7 +480,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               return { ...line, isHidden };
             }
             return line;
-          })
+          }),
         );
       }
     });
@@ -553,7 +552,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
           if (!profile) {
             addLine(
               "info",
-              `No Farcaster profile found for ${formatAddress(addr)}`
+              `No Farcaster profile found for ${formatAddress(addr)}`,
             );
           } else {
             addLine("info", `═══ Farcaster Profile: @${profile.username} ═══`);
@@ -562,7 +561,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             addLine("info", `FID: ${profile.fid}`);
             addLine(
               "info",
-              `Followers: ${profile.followersCount} | Following: ${profile.followingCount}`
+              `Followers: ${profile.followersCount} | Following: ${profile.followingCount}`,
             );
             if (profile.twitter)
               addLine("info", `Twitter: @${profile.twitter}`);
@@ -583,7 +582,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   isModerator(hash, addr as `0x${string}`),
                 ]);
                 return { info, isMod };
-              })
+              }),
             );
 
             addLine(
@@ -592,7 +591,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                 channelDetails,
                 addr,
                 onChannelClick: enterChannel,
-              })
+              }),
             );
           }
         } catch (err) {
@@ -620,11 +619,11 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             addLine("info", "  /who               List users in channel");
             addLine(
               "info",
-              "  /whois 0x...       Shows you information about a user"
+              "  /whois 0x...       Shows you information about a user",
             );
             addLine(
               "info",
-              "  /whoami            Shows you information about yourself"
+              "  /whoami            Shows you information about yourself",
             );
             addLine("info", "  /msg message       Send message (or just type)");
             addLine("info", "  /clear             Clear screen");
@@ -636,7 +635,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             addLine("info", "  /mode +o 0x...     Add moderator (owner only)");
             addLine(
               "info",
-              "  /mode -o 0x...     Remove moderator (owner only)"
+              "  /mode -o 0x...     Remove moderator (owner only)",
             );
             addLine("info", "  /mode +b 0x...     Ban user");
             addLine("info", "  /mode -b 0x...     Unban user");
@@ -650,7 +649,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               if (channels.length === 0) {
                 addLine(
                   "info",
-                  "No channels found. Create one with /create #channel-name"
+                  "No channels found. Create one with /create #channel-name",
                 );
               } else {
                 // Add a single channelList line with all channels for front-end pagination
@@ -693,7 +692,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               // Check if already a member
               const alreadyMember = await isMember(
                 slugHash,
-                address as `0x${string}`
+                address as `0x${string}`,
               );
 
               if (!alreadyMember) {
@@ -701,7 +700,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                 const tx = await joinChannel(walletClient, slugHash);
                 addLine(
                   "info",
-                  "Transaction sent, waiting for confirmation..."
+                  "Transaction sent, waiting for confirmation...",
                 );
                 await waitForTransaction(tx);
                 await loadJoinedChannels();
@@ -716,11 +715,11 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   addLine("error", errorMessage);
                 } else if (errorMessage.includes("ChannelNotFound")) {
                   console.warn(
-                    `[OnChat] Channel "${channelToJoin}" does not exist.`
+                    `[OnChat] Channel "${channelToJoin}" does not exist.`,
                   );
                   addLine(
                     "error",
-                    `Channel #${channelToJoin} does not exist. Create it with /create #${channelToJoin}`
+                    `Channel #${channelToJoin} does not exist. Create it with /create #${channelToJoin}`,
                   );
                 } else {
                   addLine("error", `Failed to join channel: ${errorMessage}`);
@@ -754,7 +753,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               addLine("action", `Leaving #${currentChannel.slug}...`);
               const tx = await leaveChannel(
                 walletClient,
-                currentChannel.slugHash
+                currentChannel.slugHash,
               );
               await waitForTransaction(tx);
               addLine("system", `* You have left #${currentChannel.slug}`);
@@ -791,7 +790,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             if (!/^[a-z-]{1,20}$/.test(newChannel)) {
               addLine(
                 "error",
-                "Channel name must be 1-20 characters, lowercase letters and hyphens only"
+                "Channel name must be 1-20 characters, lowercase letters and hyphens only",
               );
               break;
             }
@@ -822,7 +821,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                 } else if (errorMessage.includes("ChannelAlreadyExists")) {
                   addLine(
                     "error",
-                    `Channel #${newChannel} already exists. Use /join to join it.`
+                    `Channel #${newChannel} already exists. Use /join to join it.`,
                   );
                 } else {
                   addLine("error", `Failed to create channel: ${errorMessage}`);
@@ -871,7 +870,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               address,
               formatAddress(address),
               address,
-              currentChannel?.slug
+              currentChannel?.slug,
             );
             await handleWhois(address);
             break;
@@ -891,7 +890,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               target,
               formatAddress(target),
               target,
-              currentChannel?.slug
+              currentChannel?.slug,
             );
             await handleWhois(target);
             break;
@@ -932,7 +931,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                 "info",
                 `Creator Rewards: ${formatNumber(ownerBal, {
                   fromDecimals: 18,
-                })} ETH`
+                })} ETH`,
               );
               if (ownerBal > BigInt(0)) {
                 addLine("info", "Use /claim to claim your rewards");
@@ -956,7 +955,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   "info",
                   `Claiming ${formatNumber(ownerBal, {
                     fromDecimals: 18,
-                  })} ETH...`
+                  })} ETH...`,
                 );
                 const tx = await claimOwnerBalance(walletClient);
                 await waitForTransaction(tx);
@@ -964,7 +963,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   "system",
                   `✓ Claimed ${formatNumber(ownerBal, {
                     fromDecimals: 18,
-                  })} ETH creator rewards`
+                  })} ETH creator rewards`,
                 );
               } else {
                 addLine("info", "No creator rewards to claim");
@@ -1019,7 +1018,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             if (!channelSlug) {
               addLine(
                 "error",
-                "No channel specified. Join a channel or use /mode #channel"
+                "No channel specified. Join a channel or use /mode #channel",
               );
               break;
             }
@@ -1043,7 +1042,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                     channelInfo.owner.toLowerCase() === address?.toLowerCase()
                       ? " (you)"
                       : ""
-                  }`
+                  }`,
                 );
 
                 if (mods.length > 0) {
@@ -1093,24 +1092,24 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   addLine(
                     "action",
                     `Adding moderator ${formatAddress(
-                      targetAddr
-                    )} to #${channelSlug}...`
+                      targetAddr,
+                    )} to #${channelSlug}...`,
                   );
                   const tx = await addModerator(
                     walletClient,
                     slugHash,
-                    targetAddr
+                    targetAddr,
                   );
                   addLine(
                     "info",
-                    "Transaction sent, waiting for confirmation..."
+                    "Transaction sent, waiting for confirmation...",
                   );
                   await waitForTransaction(tx);
                   addLine(
                     "system",
                     `✓ ${formatAddress(
-                      targetAddr
-                    )} is now a moderator of #${channelSlug}`
+                      targetAddr,
+                    )} is now a moderator of #${channelSlug}`,
                   );
                   await loadMembers(slugHash);
                   break;
@@ -1120,24 +1119,24 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   addLine(
                     "action",
                     `Removing moderator ${formatAddress(
-                      targetAddr
-                    )} from #${channelSlug}...`
+                      targetAddr,
+                    )} from #${channelSlug}...`,
                   );
                   const tx = await removeModerator(
                     walletClient,
                     slugHash,
-                    targetAddr
+                    targetAddr,
                   );
                   addLine(
                     "info",
-                    "Transaction sent, waiting for confirmation..."
+                    "Transaction sent, waiting for confirmation...",
                   );
                   await waitForTransaction(tx);
                   addLine(
                     "system",
                     `✓ ${formatAddress(
-                      targetAddr
-                    )} is no longer a moderator of #${channelSlug}`
+                      targetAddr,
+                    )} is no longer a moderator of #${channelSlug}`,
                   );
                   await loadMembers(slugHash);
                   break;
@@ -1147,20 +1146,20 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   addLine(
                     "action",
                     `Banning ${formatAddress(
-                      targetAddr
-                    )} from #${channelSlug}...`
+                      targetAddr,
+                    )} from #${channelSlug}...`,
                   );
                   const tx = await banUser(walletClient, slugHash, targetAddr);
                   addLine(
                     "info",
-                    "Transaction sent, waiting for confirmation..."
+                    "Transaction sent, waiting for confirmation...",
                   );
                   await waitForTransaction(tx);
                   addLine(
                     "system",
                     `✓ ${formatAddress(
-                      targetAddr
-                    )} has been banned from #${channelSlug}`
+                      targetAddr,
+                    )} has been banned from #${channelSlug}`,
                   );
                   await loadMembers(slugHash);
                   break;
@@ -1170,24 +1169,24 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   addLine(
                     "action",
                     `Unbanning ${formatAddress(
-                      targetAddr
-                    )} from #${channelSlug}...`
+                      targetAddr,
+                    )} from #${channelSlug}...`,
                   );
                   const tx = await unbanUser(
                     walletClient,
                     slugHash,
-                    targetAddr
+                    targetAddr,
                   );
                   addLine(
                     "info",
-                    "Transaction sent, waiting for confirmation..."
+                    "Transaction sent, waiting for confirmation...",
                   );
                   await waitForTransaction(tx);
                   addLine(
                     "system",
                     `✓ ${formatAddress(
-                      targetAddr
-                    )} has been unbanned from #${channelSlug}`
+                      targetAddr,
+                    )} has been unbanned from #${channelSlug}`,
                   );
                   break;
                 }
@@ -1196,16 +1195,16 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   const msgIndex = parseInt(targetWallet!);
                   addLine(
                     "action",
-                    `Hiding message ${msgIndex} in #${channelSlug}...`
+                    `Hiding message ${msgIndex} in #${channelSlug}...`,
                   );
                   const tx = await hideMessage(
                     walletClient,
                     slugHash,
-                    msgIndex
+                    msgIndex,
                   );
                   addLine(
                     "info",
-                    "Transaction sent, waiting for confirmation..."
+                    "Transaction sent, waiting for confirmation...",
                   );
                   await waitForTransaction(tx);
                   addLine("system", `✓ Message ${msgIndex} has been hidden`);
@@ -1216,16 +1215,16 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                   const msgIndex = parseInt(targetWallet!);
                   addLine(
                     "action",
-                    `Unhiding message ${msgIndex} in #${channelSlug}...`
+                    `Unhiding message ${msgIndex} in #${channelSlug}...`,
                   );
                   const tx = await unhideMessage(
                     walletClient,
                     slugHash,
-                    msgIndex
+                    msgIndex,
                   );
                   addLine(
                     "info",
-                    "Transaction sent, waiting for confirmation..."
+                    "Transaction sent, waiting for confirmation...",
                   );
                   await waitForTransaction(tx);
                   addLine("system", `✓ Message ${msgIndex} has been unhidden`);
@@ -1242,14 +1241,14 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                 } else if (errorMessage.includes("NotChannelOwner")) {
                   addLine(
                     "error",
-                    "Only the channel owner can add/remove moderators"
+                    "Only the channel owner can add/remove moderators",
                   );
                 } else if (
                   errorMessage.includes("NotChannelOwnerOrModerator")
                 ) {
                   addLine(
                     "error",
-                    "Only the channel owner or moderators can ban/unban users"
+                    "Only the channel owner or moderators can ban/unban users",
                   );
                 } else if (errorMessage.includes("AlreadyModerator")) {
                   addLine("error", "User is already a moderator");
@@ -1262,13 +1261,13 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                 } else if (errorMessage.includes("NotMember")) {
                   addLine(
                     "error",
-                    "User must be a member of the channel to become a moderator"
+                    "User must be a member of the channel to become a moderator",
                   );
                 } else if (errorMessage.includes("CannotBanOwner")) {
                   addLine("error", "Cannot ban the channel owner");
                 } else if (errorMessage.includes("ChannelNotFound")) {
                   console.warn(
-                    `[OnChat] Channel "${channelSlug}" does not exist.`
+                    `[OnChat] Channel "${channelSlug}" does not exist.`,
                   );
                   addLine("error", `Channel #${channelSlug} not found`);
                 } else {
@@ -1283,7 +1282,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
           default:
             addLine(
               "error",
-              `Unknown command: /${command}. Type /help for available commands.`
+              `Unknown command: /${command}. Type /help for available commands.`,
             );
         }
       } else {
@@ -1315,20 +1314,20 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             currentChannel.slug,
             msgIndex,
             false,
-            true // isPending
+            true, // isPending
           );
 
           const tx = await sendMessage(
             walletClient,
             currentChannel.slugHash,
-            content
+            content,
           );
 
           // Update the optimistic message with the transaction hash
           setLines((prev) =>
             prev.map((l) =>
-              l.id === tempId ? { ...l, transactionHash: tx } : l
-            )
+              l.id === tempId ? { ...l, transactionHash: tx } : l,
+            ),
           );
 
           // Track tx hash to avoid duplicate from event subscription if it arrives early
@@ -1341,8 +1340,8 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
           // or we can also set it here as a fallback in case the event listener is slow
           setLines((prev) =>
             prev.map((l) =>
-              l.id === tempId && l.isPending ? { ...l, isPending: false } : l
-            )
+              l.id === tempId && l.isPending ? { ...l, isPending: false } : l,
+            ),
           );
         } catch (err: unknown) {
           // Remove the optimistic message if it failed to send
@@ -1370,7 +1369,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       loadJoinedChannels,
       loadMembers,
       enterChannel,
-    ]
+    ],
   );
 
   const loadMoreMessages = useCallback(async () => {
@@ -1435,7 +1434,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       messagesLoadedRef.current += messages.length;
       setHasMore(
         messages.length === limit &&
-          messagesLoadedRef.current < Number(currentChannel.messageCount)
+          messagesLoadedRef.current < Number(currentChannel.messageCount),
       );
     } catch (err) {
       console.error("Failed to load more messages:", err);
@@ -1453,7 +1452,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     if (typeof window === "undefined") return {};
     try {
       const stored = localStorage.getItem(
-        `${STORAGE_KEYS.LAST_READ_MESSAGES}_${userAddress.toLowerCase()}`
+        `${STORAGE_KEYS.LAST_READ_MESSAGES}_${userAddress.toLowerCase()}`,
       );
       return stored ? JSON.parse(stored) : {};
     } catch (e) {
@@ -1477,7 +1476,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         const next = { ...prev, [slug]: lastId };
         localStorage.setItem(
           `${STORAGE_KEYS.LAST_READ_MESSAGES}_${userAddress}`,
-          JSON.stringify(next)
+          JSON.stringify(next),
         );
         return next;
       });
@@ -1487,7 +1486,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
         [slug]: 0,
       }));
     },
-    [address, joinedChannels]
+    [address, joinedChannels],
   );
 
   // Load last read IDs when address changes
@@ -1508,7 +1507,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
       const lastReadId = lastReadIds[channel.slug] ?? -1;
       const count = Math.max(
         0,
-        Number(channel.messageCount) - (lastReadId + 1)
+        Number(channel.messageCount) - (lastReadId + 1),
       );
       counts[channel.slug] = count;
     });

@@ -25,6 +25,7 @@ import { FooterBar } from "./FooterBar";
 import { ChannelBrowserModal } from "./chat/ChannelBrowserModal";
 import { CreateChannelModal } from "./chat/CreateChannelModal";
 import { ShareModal } from "./ShareModal";
+import { HelpModal } from "./chat/HelpModal";
 
 export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const {
@@ -56,7 +57,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
   // Mobile state
   const [activeTab, setActiveTab] = useState<"chat" | "channels" | "rewards">(
-    "chat"
+    "chat",
   );
 
   // Fetch Farcaster profiles for all relevant addresses
@@ -65,7 +66,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     ...lines
       .filter(
         (l: ChatLine) =>
-          (l.type === "message" || l.type === "user") && l.senderAddress
+          (l.type === "message" || l.type === "user") && l.senderAddress,
       )
       .map((l: ChatLine) => l.senderAddress!),
     ...members,
@@ -83,6 +84,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const [showChannelBrowser, setShowChannelBrowser] = useState(false);
   const [showCreateChannel, setShowCreateChannel] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [allChannels, setAllChannels] = useState<ChannelInfo[]>([]);
   const [newChannelName, setNewChannelName] = useState("");
   const [loadingChannels, setLoadingChannels] = useState(false);
@@ -94,6 +96,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const sendButtonRef = useRef<HTMLButtonElement>(null);
 
   // Check if we are in the initial channel
   const isJoinedInInitialChannel =
@@ -185,7 +188,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     const isCommandOutput =
       lastLine &&
       ["channelList", "userList", "info", "error", "system"].includes(
-        lastLine.type
+        lastLine.type,
       );
     if (
       linesDiff > 5 ||
@@ -332,7 +335,13 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      if (!input.trim() || isLoading) return;
+      if (isLoading) return;
+
+      // If input is empty, show help modal
+      if (!input.trim()) {
+        setShowHelpModal(true);
+        return;
+      }
 
       const command = input;
       setInput("");
@@ -346,8 +355,18 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         inputRef.current?.focus();
       }
     },
-    [input, isLoading, processCommand]
+    [input, isLoading, processCommand],
   );
+
+  // Handle command selection from help modal
+  const handleHelpCommand = useCallback((command: string) => {
+    setInput(command + " ");
+    setShowHelpModal(false);
+    const isMobile = window.matchMedia("(pointer: coarse)").matches;
+    if (!isMobile) {
+      inputRef.current?.focus();
+    }
+  }, []);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -370,7 +389,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         }
       }
     },
-    [historyIndex, commandHistory]
+    [historyIndex, commandHistory],
   );
 
   const handleJoinChannel = useCallback(
@@ -378,7 +397,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
       setShowChannelBrowser(false);
       await processCommand(`/join #${slug}`);
     },
-    [processCommand]
+    [processCommand],
   );
 
   const handleCreateChannel = useCallback(
@@ -393,7 +412,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
       setNewChannelName("");
       await processCommand(`/create #${slug}`);
     },
-    [newChannelName, processCommand]
+    [newChannelName, processCommand],
   );
 
   // Handle reply button click - pre-fill input with reply format and show context
@@ -403,7 +422,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
       setInput(`#${messageIndex} - `);
       inputRef.current?.focus();
     },
-    []
+    [],
   );
 
   // Cancel reply
@@ -509,6 +528,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
                 handleJoinChannel={handleJoinChannel}
                 channelSlug={channelSlug}
                 inputRef={inputRef}
+                sendButtonRef={sendButtonRef}
                 replyContext={replyContext}
                 cancelReply={cancelReply}
                 profiles={profiles}
@@ -524,13 +544,13 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
           setActiveTab={setActiveTab}
           totalUnreadCount={Object.values(unreadCounts).reduce(
             (a, b) => a + b,
-            0
+            0,
           )}
           currentChannelUnreadCount={
             currentChannel && sessionLastReadId !== undefined
               ? Math.max(
                   0,
-                  Number(currentChannel.messageCount) - (sessionLastReadId + 1)
+                  Number(currentChannel.messageCount) - (sessionLastReadId + 1),
                 )
               : undefined
           }
@@ -569,6 +589,13 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         showShareModal={showShareModal}
         setShowShareModal={setShowShareModal}
         currentChannel={currentChannel}
+      />
+
+      <HelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        onSelectCommand={handleHelpCommand}
+        anchorRef={sendButtonRef}
       />
     </div>
   );

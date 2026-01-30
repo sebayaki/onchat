@@ -18,6 +18,7 @@ export function ChatInput({
   handleJoinChannel,
   channelSlug,
   inputRef,
+  sendButtonRef,
   replyContext,
   cancelReply,
   profiles,
@@ -35,6 +36,7 @@ export function ChatInput({
   handleJoinChannel: (slug: string) => Promise<void>;
   channelSlug?: string;
   inputRef: RefObject<HTMLInputElement | null>;
+  sendButtonRef?: RefObject<HTMLButtonElement | null>;
   replyContext?: {
     messageIndex: number;
     content: string;
@@ -127,10 +129,11 @@ export function ChatInput({
         )}
         {!isLoading && !showJoinButton && isConnected && (
           <button
+            ref={sendButtonRef}
             type="submit"
-            disabled={!input.trim()}
-            className="shrink-0 p-1 text-[var(--primary)] disabled:opacity-30 disabled:cursor-not-allowed transition-opacity"
-            aria-label="Send message"
+            className="shrink-0 p-1 text-[var(--primary)] transition-opacity hover:opacity-80"
+            aria-label={input.trim() ? "Send message" : "Show help"}
+            title={input.trim() ? "Send message" : "Show help"}
           >
             <SendIcon size={22} />
           </button>
