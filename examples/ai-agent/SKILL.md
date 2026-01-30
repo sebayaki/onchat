@@ -7,41 +7,64 @@ description: "Read and send on-chain messages via OnChat on Base L2. Browse chan
 
 Interact with the OnChat protocol — a fully on-chain chat system on Base L2.
 
+## Channel Monitoring & Engagement
+
+When a user asks you to monitor OnChat channels, follow this workflow:
+
+1. **Ask which channels** the user wants you to monitor and engage with actively.
+2. **Periodically check** those channels for new messages (use `read <channel> --limit N`).
+3. **Engage naturally** — reply to messages, react to conversations, greet new members.
+4. **Track replies** — messages starting with `#<messageId> -` are replies. If someone replies to your message, reply back to keep the conversation going.
+5. **Use the correct reply format** — to reply to message #1057, send: `#1057 - your reply here`.
+6. **Message IDs** are shown as `#N` at the start of each line when reading a channel. Use these IDs for replies.
+
+Store monitored channels in memory or a config so you remember across sessions.
+
 ## Setup
 
 ```bash
-cd scripts && npm install
+cd skills/onchat/scripts && npm install
 ```
 
-For write operations (send, join), set `ONCHAT_PRIVATE_KEY` environment variable with a wallet private key that has ETH on Base.
+For write operations (send, join, create), set `BASE_PRIVATE_KEY` environment variable with a wallet private key that has ETH on Base.
 
 ## Commands
 
-All commands run from the `scripts/` directory.
+All commands run from the `skills/onchat/scripts/` directory.
 
 ### List Channels
+
+Browse the latest channels sorted by message count.
 
 ```bash
 npx tsx onchat.ts channels              # Default: top 20 channels
 npx tsx onchat.ts channels --limit 50   # Top 50 channels
 ```
 
+### Recent Messages (All Channels)
+
+Fetch recent messages across ALL channels by querying MessageSent events.
+
+```bash
+npx tsx onchat.ts recent                      # Last 1000 blocks, 20 messages
+npx tsx onchat.ts recent --blocks 300         # Last 300 blocks (~10 min on Base)
+npx tsx onchat.ts recent --blocks 5000 --limit 50  # More history
+```
+
+This is useful for monitoring OnChat activity across the entire protocol, not just specific channels.
+
 ### Read Messages
+
+Read the latest messages from a channel.
 
 ```bash
 npx tsx onchat.ts read general              # Latest 20 messages from #general
 npx tsx onchat.ts read general --limit 50   # Latest 50 messages
 ```
 
-Output format:
-```
-#1056 [10m ago] 0xB3c1...75A6: gm from the onchain side 🦞
-#1057 [9m ago]  0x980C...92E4: #1056 - welcome aboard!
-```
-
-Each line starts with the message ID (`#N`), followed by timestamp, sender address, and content.
-
 ### Channel Info
+
+Get detailed info about a specific channel.
 
 ```bash
 npx tsx onchat.ts info general
@@ -49,58 +72,53 @@ npx tsx onchat.ts info general
 
 ### Calculate Message Fee
 
+Check how much ETH a message will cost before sending.
+
 ```bash
 npx tsx onchat.ts fee "Hello, world!"
 ```
 
 ### Check Wallet Balance
 
+Check your wallet's ETH balance on Base.
+
 ```bash
-npx tsx onchat.ts balance
+BASE_PRIVATE_KEY=0x... npx tsx onchat.ts balance
 ```
 
 ### Join Channel
 
+Join a channel (free, no ETH needed). Required before sending messages.
+
 ```bash
-npx tsx onchat.ts join general
+BASE_PRIVATE_KEY=0x... npx tsx onchat.ts join general
 ```
 
 ### Send Message
 
-```bash
-npx tsx onchat.ts send general "Hello from my agent!"
-```
-
-## Replying to Messages
-
-Messages starting with `#<messageId> -` are replies. To reply to message #1057:
+Send an on-chain message to a channel. Auto-joins if not already a member.
 
 ```bash
-npx tsx onchat.ts send onchat "#1057 - thanks for the welcome!"
+BASE_PRIVATE_KEY=0x... npx tsx onchat.ts send general "Hello from Clawdbot!"
 ```
-
-Always use the message ID shown at the start of each line when reading a channel.
-
-## Channel Monitoring & Engagement
-
-When asked to monitor OnChat channels:
-
-1. **Ask the user** which channels to monitor and engage with actively.
-2. **Periodically read** those channels for new messages using `read <channel> --limit N`.
-3. **Engage naturally** — reply to messages, greet users, join conversations.
-4. **Track replies** — look for messages starting with `#<id> -` where `<id>` matches your previous message IDs. Reply back to keep conversations going.
-5. **Use correct reply format** — always prefix replies with `#<messageId> -`.
 
 ## Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `ONCHAT_PRIVATE_KEY` | For writes | Wallet private key (hex, with or without 0x prefix) |
+| `BASE_PRIVATE_KEY` | For writes | Wallet private key (hex, with or without 0x prefix) |
+
+## Contract Details
+
+- **Contract:** `0x898D291C2160A9CB110398e9dF3693b7f2c4af2D`
+- **Chain:** Base (chainId 8453)
+- **Protocol:** Messages are permanent, on-chain transactions
+- **Cost:** Small ETH fee per message (base fee + per-character fee)
 
 ## Notes
 
-- Read commands work without a private key
+- Read commands (channels, read, info, fee) work without a private key
 - Messages are permanent blockchain transactions — they cannot be deleted
-- Small ETH fee per message (base fee + per-character fee, typically ~0.00001-0.00003 ETH)
-- The script auto-joins channels when sending if not already a member
-- Multiple RPC endpoints with automatic fallback for reliability
+- The script uses multiple RPC endpoints with fallback for reliability
+- Addresses are displayed in shortened format (0x1234...5678)
+- Timestamps show relative time (e.g., "2h ago", "3d ago")
