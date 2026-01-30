@@ -1,21 +1,5 @@
 #!/usr/bin/env tsx
 
-/**
- * OnChat CLI — Read, write, and engage with on-chain chat on Base L2.
- *
- * This script provides a complete interface for AI agents (or humans) to
- * interact with the OnChat protocol directly from the command line.
- *
- * Read operations work without any setup. For write operations (send, join),
- * set the ONCHAT_PRIVATE_KEY environment variable with a wallet private key
- * that has ETH on Base.
- *
- * Usage: npx tsx onchat.ts <command> [options]
- *
- * @see https://github.com/sebayaki/onchat
- * @see https://onchat.sebayaki.com
- */
-
 import {
   createPublicClient,
   createWalletClient,
@@ -24,6 +8,8 @@ import {
   formatEther,
   type PublicClient,
   type WalletClient,
+  type Transport,
+  type Chain,
   type Address,
   type Hex,
 } from "viem";
@@ -35,6 +21,8 @@ import { privateKeyToAccount } from "viem/accounts";
 const ONCHAT_ADDRESS = "0x898D291C2160A9CB110398e9dF3693b7f2c4af2D" as const;
 
 const ONCHAT_ABI = [
+  // Events
+  { type: "event", name: "MessageSent", inputs: [{ name: "slugHash", type: "bytes32", indexed: true }, { name: "sender", type: "address", indexed: true }, { name: "messageIndex", type: "uint256", indexed: true }, { name: "content", type: "string", indexed: false }] },
   // Read Functions
   { type: "function", name: "channelCreationFee", inputs: [], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
   { type: "function", name: "messageFeeBase", inputs: [], outputs: [{ name: "", type: "uint256" }], stateMutability: "view" },
@@ -81,9 +69,9 @@ function getPublicClient(): PublicClient {
 }
 
 function getWalletClient(): WalletClient {
-  const key = process.env.ONCHAT_PRIVATE_KEY;
+  const key = process.env.BASE_PRIVATE_KEY;
   if (!key) {
-    console.error("Error: ONCHAT_PRIVATE_KEY environment variable is required for write operations.");
+    console.error("Error: BASE_PRIVATE_KEY environment variable is required for write operations.");
     process.exit(1);
   }
   const privateKey = (key.startsWith("0x") ? key : `0x${key}`) as Hex;
@@ -137,6 +125,7 @@ function parseArgs(args: string[]): { positional: string[]; flags: Record<string
 async function cmdChannels(limit: number) {
   const client = getPublicClient();
 
+  // Get total channel count first
   const totalCount = await client.readContract({
     address: ONCHAT_ADDRESS,
     abi: ONCHAT_ABI,
@@ -152,6 +141,7 @@ async function cmdChannels(limit: number) {
     args: [BigInt(0), BigInt(fetchLimit)],
   });
 
+  // Sort by message count descending
   const sorted = [...channels].sort((a, b) => Number(b.messageCount - a.messageCount));
   const display = sorted.slice(0, limit);
 
@@ -180,6 +170,7 @@ async function cmdRead(slug: string, limit: number) {
     args: [slug],
   });
 
+  // Verify channel exists
   const channel = await client.readContract({
     address: ONCHAT_ADDRESS,
     abi: ONCHAT_ABI,
@@ -295,6 +286,7 @@ async function cmdJoin(slug: string) {
     args: [slug],
   });
 
+  // Verify channel exists
   const channel = await client.readContract({
     address: ONCHAT_ADDRESS,
     abi: ONCHAT_ABI,
@@ -307,6 +299,7 @@ async function cmdJoin(slug: string) {
     process.exit(1);
   }
 
+  // Check if already a member
   const already = await client.readContract({
     address: ONCHAT_ADDRESS,
     abi: ONCHAT_ABI,
@@ -351,6 +344,7 @@ async function cmdSend(slug: string, message: string) {
     args: [slug],
   });
 
+  // Verify channel exists
   const channel = await client.readContract({
     address: ONCHAT_ADDRESS,
     abi: ONCHAT_ABI,
@@ -425,6 +419,73 @@ async function cmdSend(slug: string, message: string) {
   }
 }
 
+async function cmdRecent(blocks: number, limit: number) {
+  const client = getPublicClient();
+  
+  // Get current block
+  const currentBlock = await client.getBlockNumber();
+  const fromBlock = currentBlock - BigInt(blocks);
+  
+  console.log(`🔍 Fetching MessageSent events from block ${fromBlock} to ${currentBlock}...\n`);
+  
+  // Fetch MessageSent events
+  const logs = await client.getLogs({
+    address: ONCHAT_ADDRESS,
+    event: {
+      type: "event",
+      name: "MessageSent",
+      inputs: [
+        { name: "slugHash", type: "bytes32", indexed: true },
+        { name: "sender", type: "address", indexed: true },
+        { name: "messageIndex", type: "uint256", indexed: true },
+        { name: "content", type: "string", indexed: false }
+      ]
+    },
+    fromBlock,
+    toBlock: currentBlock,
+  });
+  
+  if (logs.length === 0) {
+    console.log("(no recent messages)");
+    return;
+  }
+  
+  // Get unique slugHashes and resolve them to slugs
+  const slugHashes = [...new Set(logs.map(log => log.args.slugHash as string))];
+  const slugMap = new Map<string, string>();
+  
+  for (const hash of slugHashes) {
+    try {
+      const slug = await client.readContract({
+        address: ONCHAT_ADDRESS,
+        abi: ONCHAT_ABI,
+        functionName: "getSlug",
+        args: [hash as `0x${string}`],
+      });
+      slugMap.set(hash, slug);
+    } catch {
+      slugMap.set(hash, hash.slice(0, 10) + "...");
+    }
+  }
+  
+  // Sort by block number descending (most recent first) and limit
+  const sorted = [...logs].sort((a, b) => Number(b.blockNumber) - Number(a.blockNumber)).slice(0, limit);
+  
+  console.log(`📬 Recent Messages (${sorted.length} of ${logs.length} in last ${blocks} blocks)\n`);
+  
+  for (const log of sorted) {
+    const slug = slugMap.get(log.args.slugHash as string) || "unknown";
+    const sender = log.args.sender as string;
+    const content = log.args.content as string;
+    const msgId = Number(log.args.messageIndex);
+    
+    // Truncate long messages
+    const displayContent = content.length > 100 ? content.slice(0, 100) + "..." : content;
+    
+    console.log(`#${slug} [#${msgId}] ${shortAddr(sender)}: ${displayContent}`);
+  }
+}
+
 // ─── Main ────────────────────────────────────────────────────────────────────
 
 async function main() {
@@ -443,6 +504,12 @@ async function main() {
       case "channels":
         await cmdChannels(limit);
         break;
+
+      case "recent": {
+        const blocks = flags.blocks ? parseInt(flags.blocks, 10) : 1000;
+        await cmdRecent(blocks, limit);
+        break;
+      }
 
       case "read": {
         const slug = positional[0];
@@ -523,15 +590,16 @@ Usage: npx tsx onchat.ts <command> [options]
 
 Commands:
   channels [--limit N]              List channels sorted by message count
+  recent [--blocks N] [--limit N]   Fetch recent messages across ALL channels
   read <channel-slug> [--limit N]   Read latest messages from a channel
-  send <channel-slug> "<message>"   Send a message (needs ONCHAT_PRIVATE_KEY)
-  join <channel-slug>               Join a channel (needs ONCHAT_PRIVATE_KEY)
+  send <channel-slug> "<message>"   Send a message (needs BASE_PRIVATE_KEY)
+  join <channel-slug>               Join a channel (needs BASE_PRIVATE_KEY)
   info <channel-slug>               Get channel info
   balance                           Check wallet ETH balance
   fee "<message>"                   Calculate message fee
 
 Environment:
-  ONCHAT_PRIVATE_KEY               Wallet private key for on-chain operations`);
+  BASE_PRIVATE_KEY                 Wallet private key for on-chain operations`);
 }
 
 main();
