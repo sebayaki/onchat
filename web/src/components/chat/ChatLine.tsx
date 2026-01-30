@@ -6,9 +6,36 @@ import { ExternalLink } from "../ExternalLink";
 import { ReplyIcon } from "../Icons";
 import { type ChatLine, type ChannelListItem } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
-import { formatTime, formatAddress } from "@/helpers/format";
+import {
+  formatTime,
+  formatAddress,
+  formatFullDateTime,
+} from "@/helpers/format";
 import { MESSAGES_PER_PAGE } from "@/configs/constants";
 import { parseReplyContent } from "@/helpers/chat";
+
+function Timestamp({ date }: { date: Date }) {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const timeStr = formatTime(date);
+  const fullDateTime = formatFullDateTime(date);
+
+  return (
+    <span
+      className="chat-timestamp relative cursor-default"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+      onTouchStart={() => setShowTooltip(true)}
+      onTouchEnd={() => setShowTooltip(false)}
+    >
+      [{timeStr}]
+      {showTooltip && (
+        <span className="absolute left-0 bottom-full mb-1 px-2 py-1 bg-[var(--bg-tertiary)] text-[var(--primary)] text-[0.75rem] rounded shadow-lg whitespace-nowrap z-50 pointer-events-none">
+          {fullDateTime}
+        </span>
+      )}
+    </span>
+  );
+}
 
 type ProfilesRecord = Record<string, FarcasterUserProfile | null>;
 
@@ -105,8 +132,8 @@ export function UserDisplay({
     showFullAddress && address
       ? address
       : address
-      ? formatAddress(address, !!profile)
-      : formattedAddress;
+        ? formatAddress(address, !!profile)
+        : formattedAddress;
 
   if (!profile) {
     return (
@@ -208,7 +235,7 @@ function MessageContent({
   // Channel: #[a-z][a-z-]{0,19} (1-20 chars, starts with letter, contains only a-z and -)
   // URL: https?://[^\s]+
   const parts = content.split(
-    /(https?:\/\/[^\s]+|#[a-z][a-z-]{0,19}(?![a-z-]))/g
+    /(https?:\/\/[^\s]+|#[a-z][a-z-]{0,19}(?![a-z-]))/g,
   );
 
   return (
@@ -249,13 +276,13 @@ const ITEMS_PER_PAGE = MESSAGES_PER_PAGE;
 function PaginatedList<T>({
   items,
   title,
-  timeStr,
+  date,
   renderItem,
   getKey,
 }: {
   items: T[];
   title: string;
-  timeStr: string;
+  date: Date;
   renderItem: (item: T) => ReactNode;
   getKey: (item: T) => string;
 }) {
@@ -266,7 +293,7 @@ function PaginatedList<T>({
   return (
     <div className="chat-line text-[var(--color-info)] flex flex-col items-start px-2 -mx-2">
       <div className="flex items-start min-w-0 w-full">
-        <span className="chat-timestamp">[{timeStr}]</span>
+        <Timestamp date={date} />
         <span className="chat-prefix text-[var(--color-info)]">*</span>
         <span className="chat-content truncate flex-1">{title}</span>
       </div>
@@ -296,17 +323,17 @@ function PaginatedList<T>({
 function ChannelListDisplay({
   channels,
   title,
-  timeStr,
+  date,
 }: {
   channels: ChannelListItem[];
   title: string;
-  timeStr: string;
+  date: Date;
 }) {
   return (
     <PaginatedList
       items={channels}
       title={title}
-      timeStr={timeStr}
+      date={date}
       getKey={(ch) => ch.slug}
       renderItem={(ch) => (
         <span className="chat-content">
@@ -321,19 +348,19 @@ function ChannelListDisplay({
 function UserListDisplay({
   users,
   title,
-  timeStr,
+  date,
   profiles,
 }: {
   users: string[];
   title: string;
-  timeStr: string;
+  date: Date;
   profiles: ProfilesRecord;
 }) {
   return (
     <PaginatedList
       items={users}
       title={title}
-      timeStr={timeStr}
+      date={date}
       getKey={(address) => address}
       renderItem={(address) => (
         <div className="min-w-0">
@@ -371,15 +398,13 @@ export function ChatLineComponent({
   onReply?: (
     messageIndex: number,
     content: string,
-    senderAddress?: string
+    senderAddress?: string,
   ) => void;
   isReply?: boolean;
   replyDepth?: number;
   onChannelClick?: (slug: string) => void;
 }) {
   const { isConnected } = useAppKitAccount();
-  const timeStr = formatTime(line.timestamp);
-
   // Parse reply content for display
   const { replyToIndex, displayContent } = parseReplyContent(line.content);
   const effectiveContent = isReply ? displayContent : line.content;
@@ -397,7 +422,7 @@ export function ChatLineComponent({
               : "text-[var(--color-system)]"
           }`}
         >
-          <span className="chat-timestamp">[{timeStr}]</span>
+          <Timestamp date={line.timestamp} />
           <span className="chat-content">
             <MessageContent
               content={line.content}
@@ -410,7 +435,7 @@ export function ChatLineComponent({
     case "error":
       return (
         <div className="chat-line text-[var(--color-error)] px-2 -mx-2">
-          <span className="chat-timestamp">[{timeStr}]</span>
+          <Timestamp date={line.timestamp} />
           <span className="chat-prefix font-bold text-[var(--color-error)]">
             !
           </span>
@@ -429,7 +454,7 @@ export function ChatLineComponent({
       return (
         <div className="chat-line text-[var(--color-info)] flex flex-col items-start px-2 -mx-2">
           <div className="flex items-start">
-            <span className="chat-timestamp">[{timeStr}]</span>
+            <Timestamp date={line.timestamp} />
             <span className="chat-prefix text-[var(--color-info)]">*</span>
             <span className="chat-content min-w-0">
               <MessageContent
@@ -445,7 +470,7 @@ export function ChatLineComponent({
     case "action":
       return (
         <div className="chat-line text-[var(--color-action)] px-2 -mx-2">
-          <span className="chat-timestamp">[{timeStr}]</span>
+          <Timestamp date={line.timestamp} />
           <span className="chat-prefix text-[var(--color-action)]">→</span>
           <span className="chat-content">
             <MessageContent
@@ -458,7 +483,7 @@ export function ChatLineComponent({
     case "command":
       return (
         <div className="chat-line text-[var(--color-content)] font-mono px-2 -mx-2">
-          <span className="chat-timestamp">[{timeStr}]</span>
+          <Timestamp date={line.timestamp} />
           <span className="text-[var(--color-channel)] mr-1">
             {line.channel ? `#${line.channel}>` : ">"}
           </span>
@@ -497,7 +522,7 @@ export function ChatLineComponent({
             replyDepth > 0 ? { marginLeft: `${replyDepth * 16}px` } : undefined
           }
         >
-          <span className="chat-timestamp">[{timeStr}]</span>
+          <Timestamp date={line.timestamp} />
           <span
             className="chat-sender inline-flex items-center gap-0"
             style={{ verticalAlign: "middle" }}
@@ -553,7 +578,7 @@ export function ChatLineComponent({
               <button
                 onClick={() =>
                   processCommand(
-                    `/mode ${isHidden ? "-h" : "+h"} ${line.messageIndex}`
+                    `/mode ${isHidden ? "-h" : "+h"} ${line.messageIndex}`,
                   )
                 }
                 className="ml-2 text-[0.6rem] bg-transparent border border-[var(--bg-tertiary)] px-1 rounded hover:bg-[var(--bg-hover)] cursor-pointer align-middle transition-colors uppercase font-bold"
@@ -568,7 +593,7 @@ export function ChatLineComponent({
     case "user":
       return (
         <div className="chat-line text-[var(--color-info)] flex items-start px-2 -mx-2">
-          <span className="chat-timestamp">[{timeStr}]</span>
+          <Timestamp date={line.timestamp} />
           <span className="chat-prefix text-[var(--color-info)]">*</span>
           <div className="min-w-0">
             <UserDisplay
@@ -586,7 +611,7 @@ export function ChatLineComponent({
         <ChannelListDisplay
           channels={line.channels}
           title={typeof line.content === "string" ? line.content : "Channels"}
-          timeStr={timeStr}
+          date={line.timestamp}
         />
       ) : null;
     case "userList":
@@ -594,7 +619,7 @@ export function ChatLineComponent({
         <UserListDisplay
           users={line.users}
           title={typeof line.content === "string" ? line.content : "Users"}
-          timeStr={timeStr}
+          date={line.timestamp}
           profiles={profiles}
         />
       ) : null;

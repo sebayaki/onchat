@@ -24,7 +24,7 @@ export function formatAddress(address: string, prefixOnly = false): string {
  */
 export function formatNumber(
   value: number | bigint,
-  options?: { decimals?: number; fromDecimals?: number }
+  options?: { decimals?: number; fromDecimals?: number },
 ): string {
   const { decimals: outputDecimals, fromDecimals } = options ?? {};
 
@@ -82,6 +82,22 @@ export function formatTime(date: Date): string {
   return date.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
+    hour12: false,
+  });
+}
+
+/**
+ * Format full date/time for tooltip display
+ */
+export function formatFullDateTime(date: Date): string {
+  return date.toLocaleString("en-US", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   });
 }
