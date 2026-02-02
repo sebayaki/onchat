@@ -419,6 +419,71 @@ async function cmdSend(slug: string, message: string) {
   }
 }
 
+async function cmdCreate(slug: string) {
+  const client = getPublicClient();
+  const wallet = getWalletClient();
+  const address = wallet.account!.address;
+
+  // Check if channel already exists
+  const slugHash = await client.readContract({
+    address: ONCHAT_ADDRESS,
+    abi: ONCHAT_ABI,
+    functionName: "computeSlugHash",
+    args: [slug],
+  });
+
+  try {
+    const channel = await client.readContract({
+      address: ONCHAT_ADDRESS,
+      abi: ONCHAT_ABI,
+      functionName: "getChannel",
+      args: [slugHash],
+    });
+
+    if (channel.slug) {
+      console.error(`Error: Channel #${slug} already exists (owner: ${shortAddr(channel.owner)})`);
+      process.exit(1);
+    }
+  } catch {
+    // Channel doesn't exist - this is expected for creation
+  }
+
+  // Get creation fee
+  const fee = await client.readContract({
+    address: ONCHAT_ADDRESS,
+    abi: ONCHAT_ABI,
+    functionName: "channelCreationFee",
+  });
+
+  // Check balance
+  const balance = await client.getBalance({ address });
+  if (balance < fee) {
+    console.error(`❌ Insufficient balance. Need ${formatEther(fee)} ETH, have ${formatEther(balance)} ETH.`);
+    process.exit(1);
+  }
+
+  console.log(`Creating #${slug} (fee: ${formatEther(fee)} ETH)...`);
+
+  const hash = await wallet.writeContract({
+    address: ONCHAT_ADDRESS,
+    abi: ONCHAT_ABI,
+    functionName: "createChannel",
+    args: [slug],
+    value: fee,
+    chain: base,
+  });
+
+  console.log(`⏳ Transaction sent: ${hash}`);
+  const receipt = await client.waitForTransactionReceipt({ hash });
+  if (receipt.status === "success") {
+    console.log(`✅ Channel #${slug} created successfully!`);
+    console.log(`   View: https://onchat.sebayaki.com/${slug}`);
+  } else {
+    console.error(`❌ Transaction failed.`);
+    process.exit(1);
+  }
+}
+
 async function cmdRecent(blocks: number, limit: number) {
   const client = getPublicClient();
   
@@ -566,6 +631,16 @@ async function main() {
         break;
       }
 
+      case "create": {
+        const slug = positional[0];
+        if (!slug) {
+          console.error("Usage: onchat.ts create <channel-slug>");
+          process.exit(1);
+        }
+        await cmdCreate(slug);
+        break;
+      }
+
       default:
         console.error(`Unknown command: ${command}`);
         printUsage();
@@ -594,6 +669,7 @@ Commands:
   read <channel-slug> [--limit N]   Read latest messages from a channel
   send <channel-slug> "<message>"   Send a message (needs BASE_PRIVATE_KEY)
   join <channel-slug>               Join a channel (needs BASE_PRIVATE_KEY)
+  create <channel-slug>             Create a new channel (needs BASE_PRIVATE_KEY)
   info <channel-slug>               Get channel info
   balance                           Check wallet ETH balance
   fee "<message>"                   Calculate message fee
