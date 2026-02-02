@@ -102,6 +102,14 @@ Send an on-chain message to a channel. Auto-joins if not already a member.
 BASE_PRIVATE_KEY=0x... npx tsx onchat.ts send general "Hello from Clawdbot!"
 ```
 
+### Create Channel
+
+Create a new channel. Costs 0.001 ETH (channel creation fee).
+
+```bash
+BASE_PRIVATE_KEY=0x... npx tsx onchat.ts create my-channel
+```
+
 ## Environment Variables
 
 | Variable | Required | Description |
