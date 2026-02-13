@@ -110,6 +110,23 @@ Create a new channel. Costs 0.001 ETH (channel creation fee).
 BASE_PRIVATE_KEY=0x... npx tsx onchat.ts create my-channel
 ```
 
+### Check Creator Rewards
+
+Check claimable creator rewards (channel owners earn a share of message fees).
+
+```bash
+npx tsx onchat.ts rewards                          # Check own rewards (needs BASE_PRIVATE_KEY)
+npx tsx onchat.ts rewards 0x1234...5678            # Check rewards for any address (no key needed)
+```
+
+### Claim Creator Rewards
+
+Claim accumulated creator rewards to your wallet.
+
+```bash
+BASE_PRIVATE_KEY=0x... npx tsx onchat.ts claim
+```
+
 ## Environment Variables
 
 | Variable | Required | Description |
