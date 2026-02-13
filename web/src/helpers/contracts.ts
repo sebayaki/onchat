@@ -459,6 +459,28 @@ export async function getOwnerBalance(owner: `0x${string}`): Promise<bigint> {
 }
 
 /**
+ * Get total amount claimed by an owner (sum of OwnerBalanceClaimed events)
+ */
+export async function getTotalClaimed(owner: `0x${string}`): Promise<bigint> {
+  const logs = await basePublicClient.getLogs({
+    address: CONTRACTS.ONCHAT_ADDRESS,
+    event: {
+      type: "event",
+      name: "OwnerBalanceClaimed",
+      inputs: [
+        { name: "owner", type: "address", indexed: true },
+        { name: "amount", type: "uint256", indexed: false },
+      ],
+    },
+    args: { owner },
+    fromBlock: BigInt(0),
+    toBlock: "latest",
+  });
+
+  return logs.reduce((sum, log) => sum + ((log.args as any).amount as bigint || BigInt(0)), BigInt(0));
+}
+
+/**
  * Get protocol treasury balance
  */
 export async function getTreasuryBalance(): Promise<bigint> {

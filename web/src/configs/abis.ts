@@ -112,6 +112,15 @@ export const ONCHAT_ABI = [
     ],
   },
 
+  {
+    type: "event",
+    name: "OwnerBalanceClaimed",
+    inputs: [
+      { name: "owner", type: "address", indexed: true },
+      { name: "amount", type: "uint256", indexed: false },
+    ],
+  },
+
   // Read Functions
   {
     type: "function",

@@ -9,8 +9,9 @@ import {
   type BurnStats,
   burnProtocolFees,
   waitForTransaction,
+  getTotalClaimed,
 } from "@/helpers/contracts";
-import { useWalletClient } from "wagmi";
+import { useWalletClient, useAccount } from "wagmi";
 
 export function RewardsView({
   ownerBalance,
@@ -22,6 +23,8 @@ export function RewardsView({
   handleClaim: () => Promise<void>;
 }) {
   const { data: walletClient } = useWalletClient();
+  const { address } = useAccount();
+  const [totalClaimed, setTotalClaimed] = useState<bigint>(BigInt(0));
   const [fees, setFees] = useState<{ base: bigint; perChar: bigint }>({
     base: BigInt(10000000000000), // 0.00001 ETH
     perChar: BigInt(200000000000), // 0.0000002 ETH
@@ -61,6 +64,12 @@ export function RewardsView({
     loadProtocolInfo();
   }, []);
 
+  useEffect(() => {
+    if (address) {
+      getTotalClaimed(address).then(setTotalClaimed).catch(console.error);
+    }
+  }, [address, claimingBalance]);
+
   const handleBurn = async () => {
     if (!walletClient) return;
     try {
@@ -85,12 +94,25 @@ export function RewardsView({
               Creator Rewards
             </h2>
             <div className="bg-[var(--bg-secondary)] border border-[var(--primary-muted)] p-8 rounded-sm mb-8">
-              <p className="text-[var(--text-dim)] text-[0.85rem] mb-4 uppercase tracking-[1px]">
-                Claimable Balance
-              </p>
-              <div className="text-2xl md:text-4xl font-bold text-[var(--primary)] mb-8">
-                {formatNumber(ownerBalance, { fromDecimals: 18 })}{" "}
-                <span className="text-xl font-normal opacity-70">ETH</span>
+              <div className="grid grid-cols-2 gap-6 mb-8">
+                <div>
+                  <p className="text-[var(--text-dim)] text-[0.85rem] mb-4 uppercase tracking-[1px]">
+                    Claimable Balance
+                  </p>
+                  <div className="text-2xl md:text-4xl font-bold text-[var(--primary)]">
+                    {formatNumber(ownerBalance, { fromDecimals: 18 })}{" "}
+                    <span className="text-xl font-normal opacity-70">ETH</span>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-[var(--text-dim)] text-[0.85rem] mb-4 uppercase tracking-[1px]">
+                    Total Claimed
+                  </p>
+                  <div className="text-2xl md:text-4xl font-bold text-[var(--primary)] opacity-60">
+                    {formatNumber(totalClaimed, { fromDecimals: 18 })}{" "}
+                    <span className="text-xl font-normal opacity-70">ETH</span>
+                  </div>
+                </div>
               </div>
               <button
                 className="w-full bg-[var(--primary)] text-[var(--bg-primary)] border-none py-4 text-lg font-bold cursor-pointer transition-all hover:bg-[var(--primary)] disabled:opacity-50 disabled:cursor-not-allowed uppercase tracking-wider"
