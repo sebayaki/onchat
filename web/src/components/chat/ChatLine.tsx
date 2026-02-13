@@ -22,7 +22,7 @@ import { parseReplyContent } from "@/helpers/chat";
 function ERC8004Badge() {
   return (
     <ExternalLink
-      href="https://eips.ethereum.org/EIPS/eip-8004"
+      href="https://www.8004scan.io/agents?search=0x5831E037E83245BDA662766553bDcb6eCf63E316"
       className="inline-flex items-center gap-0.5 px-1 py-0 text-[0.65rem] font-medium bg-blue-900/40 border border-blue-500/50 text-blue-400! rounded-sm hover:bg-blue-900/60 transition-colors shrink-0"
       title="ERC-8004 Verified Agent"
     >
