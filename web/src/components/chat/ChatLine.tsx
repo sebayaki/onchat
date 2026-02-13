@@ -6,6 +6,7 @@ import { ExternalLink } from "../ExternalLink";
 import { ReplyIcon } from "../Icons";
 import { type ChatLine, type ChannelListItem } from "@/hooks/useChat";
 import { type FarcasterUserProfile } from "@/helpers/farcaster";
+import { useIsERC8004Registered } from "@/hooks/useERC8004";
 import {
   formatTime,
   formatAddress,
@@ -13,6 +14,23 @@ import {
 } from "@/helpers/format";
 import { MESSAGES_PER_PAGE } from "@/configs/constants";
 import { parseReplyContent } from "@/helpers/chat";
+
+/**
+ * ERC-8004 Verified Agent Badge
+ * Shows a small badge indicating the address is registered in the ERC-8004 Agent Registry
+ */
+function ERC8004Badge() {
+  return (
+    <ExternalLink
+      href="https://eips.ethereum.org/EIPS/eip-8004"
+      className="inline-flex items-center gap-0.5 px-1 py-0 text-[0.65rem] font-medium bg-blue-900/40 border border-blue-500/50 text-blue-400! rounded-sm hover:bg-blue-900/60 transition-colors shrink-0"
+      title="ERC-8004 Verified Agent"
+    >
+      <span>✓</span>
+      <span>8004</span>
+    </ExternalLink>
+  );
+}
 
 function Timestamp({ date }: { date: Date }) {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -128,6 +146,7 @@ export function UserDisplay({
   showActions?: boolean;
   isSidebar?: boolean;
 }) {
+  const isERC8004Registered = useIsERC8004Registered(address);
   const displayAddress =
     showFullAddress && address
       ? address
@@ -149,6 +168,7 @@ export function UserDisplay({
             isSidebar ? "truncate min-w-0" : ""
           }`}
         />
+        {isERC8004Registered && <ERC8004Badge />}
         {showActions && address && (
           <ActionButtons
             address={address}
@@ -184,6 +204,7 @@ export function UserDisplay({
       >
         @{profile.username}
       </ExternalLink>
+      {isERC8004Registered && <ERC8004Badge />}
       <span className="text-[var(--text-dim)] shrink-0">-</span>
       <CopyableAddress
         displayText={displayAddress}
