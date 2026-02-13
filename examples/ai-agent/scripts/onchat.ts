@@ -484,6 +484,73 @@ async function cmdCreate(slug: string) {
   }
 }
 
+async function cmdRewards(address?: string) {
+  const client = getPublicClient();
+
+  // If no address provided, use wallet
+  let target: Address;
+  if (address) {
+    target = address as Address;
+  } else {
+    const wallet = getWalletClient();
+    target = wallet.account!.address;
+  }
+
+  const balance = await client.readContract({
+    address: ONCHAT_ADDRESS,
+    abi: ONCHAT_ABI,
+    functionName: "ownerBalances",
+    args: [target],
+  });
+
+  console.log(`🏆 Creator Rewards`);
+  console.log(`   Address:    ${target}`);
+  console.log(`   Claimable:  ${formatEther(balance)} ETH`);
+
+  if (balance === 0n) {
+    console.log(`\n   No rewards to claim.`);
+  } else {
+    console.log(`\n   Run "onchat.ts claim" to claim your rewards.`);
+  }
+}
+
+async function cmdClaim() {
+  const client = getPublicClient();
+  const wallet = getWalletClient();
+  const address = wallet.account!.address;
+
+  // Check claimable balance first
+  const balance = await client.readContract({
+    address: ONCHAT_ADDRESS,
+    abi: ONCHAT_ABI,
+    functionName: "ownerBalances",
+    args: [address],
+  });
+
+  if (balance === 0n) {
+    console.log(`💰 No rewards to claim for ${shortAddr(address)}.`);
+    return;
+  }
+
+  console.log(`Claiming ${formatEther(balance)} ETH in creator rewards...`);
+
+  const hash = await wallet.writeContract({
+    address: ONCHAT_ADDRESS,
+    abi: ONCHAT_ABI,
+    functionName: "claimOwnerBalance",
+    chain: base,
+  });
+
+  console.log(`⏳ Transaction sent: ${hash}`);
+  const receipt = await client.waitForTransactionReceipt({ hash });
+  if (receipt.status === "success") {
+    console.log(`✅ Claimed ${formatEther(balance)} ETH!`);
+  } else {
+    console.error(`❌ Transaction failed.`);
+    process.exit(1);
+  }
+}
+
 async function cmdRecent(blocks: number, limit: number) {
   const client = getPublicClient();
   
@@ -641,6 +708,16 @@ async function main() {
         break;
       }
 
+      case "rewards": {
+        const addr = positional[0];
+        await cmdRewards(addr);
+        break;
+      }
+
+      case "claim":
+        await cmdClaim();
+        break;
+
       default:
         console.error(`Unknown command: ${command}`);
         printUsage();
@@ -673,6 +750,8 @@ Commands:
   info <channel-slug>               Get channel info
   balance                           Check wallet ETH balance
   fee "<message>"                   Calculate message fee
+  rewards [address]                 Check claimable creator rewards
+  claim                             Claim creator rewards (needs BASE_PRIVATE_KEY)
 
 Environment:
   BASE_PRIVATE_KEY                 Wallet private key for on-chain operations`);
