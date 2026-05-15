@@ -122,11 +122,26 @@ export default defineConfig(({ mode }) => {
       target: "es2020",
       rollupOptions: {
         output: {
-          manualChunks: {
-            // Split vendor chunks for better caching
-            "vendor-react": ["react", "react-dom"],
-            "vendor-wagmi": ["wagmi", "viem", "@tanstack/react-query"],
-            "vendor-appkit": ["@reown/appkit", "@reown/appkit-adapter-wagmi"],
+          // Function form: routes by *package id* so deep sub-paths
+          // (e.g. viem/zksync/...) end up in the same chunk as their
+          // package root. The object form only matches the entry,
+          // which let viem/zksync get pulled into vendor-appkit while
+          // viem/constants stayed in vendor-wagmi — that cross-chunk
+          // module split caused a TDZ ('Cannot access X before
+          // initialization') under rollup 4.60's new eval ordering.
+          manualChunks(id) {
+            if (!id.includes("/node_modules/")) return;
+            if (/\/node_modules\/(?:react|react-dom|scheduler)\//.test(id)) {
+              return "vendor-react";
+            }
+            if (
+              /\/node_modules\/(?:viem|wagmi|@wagmi|@tanstack)\//.test(id)
+            ) {
+              return "vendor-wagmi";
+            }
+            if (/\/node_modules\/@reown\//.test(id)) {
+              return "vendor-appkit";
+            }
           },
         },
       },
