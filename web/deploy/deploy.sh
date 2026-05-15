@@ -1,6 +1,11 @@
 #!/bin/bash
 set -e # script will exit if any command fails
 
+# Prevent macOS bsdtar from embedding com.apple.* xattrs (Gatekeeper provenance,
+# resource forks) into archives, which trigger "Ignoring unknown extended header
+# keyword" warnings when GNU tar extracts them on Linux.
+export COPYFILE_DISABLE=1
+
 # To setup SSL certificate:
 # sudo certbot certonly --email seb@hunt.town --agree-tos -d onchat.sebayaki.com
 
