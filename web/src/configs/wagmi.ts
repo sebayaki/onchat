@@ -1,12 +1,21 @@
+import { guardedFarcasterMiniApp } from "@/configs/connectors";
+import { APP_URL } from "@/configs/constants";
 import { BASE_RPC_ENDPOINTS } from "@/configs/rpcs";
-import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
 import { createConfig, fallback, http, injected, type Config } from "wagmi";
+import { baseAccount } from "wagmi/connectors";
 import { createClient } from "viem";
 import { base } from "viem/chains";
 
 export const config: Config = createConfig({
   chains: [base],
-  connectors: [injected({ shimDisconnect: true }), farcasterMiniApp()],
+  connectors: [
+    injected({ shimDisconnect: true }),
+    baseAccount({
+      appName: "OnChat",
+      appLogoUrl: `${APP_URL}/app-icon-200x200.png`,
+    }),
+    guardedFarcasterMiniApp(),
+  ],
   client({ chain }) {
     const transport = fallback(
       BASE_RPC_ENDPOINTS.map((url) =>

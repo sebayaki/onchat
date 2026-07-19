@@ -1,18 +1,44 @@
-import { useCallback } from "react";
-import { useAccount, useConnect } from "wagmi";
+import { useCallback, useState } from "react";
+import { sdk } from "@farcaster/miniapp-sdk";
+import { getConnection } from "@wagmi/core";
+import { useAccount, useConfig, useConnect } from "wagmi";
+import { base } from "viem/chains";
+
+let isConnectionRequestInFlight = false;
 
 export function useBrowserWallet() {
+  const config = useConfig();
   const { connectors, connectAsync, isPending } = useConnect();
   const { status } = useAccount();
-  const isAccountPending =
-    status === "connecting" || status === "reconnecting";
+  const [isSelectingConnector, setIsSelectingConnector] = useState(false);
 
   const connectWallet = useCallback(async () => {
-    if (status !== "disconnected") return;
+    if (
+      isConnectionRequestInFlight ||
+      status === "connected" ||
+      status === "connecting"
+    ) {
+      return;
+    }
+
+    isConnectionRequestInFlight = true;
+    setIsSelectingConnector(true);
 
     try {
-      let connector = null;
+      const isFarcasterMiniApp = await sdk.isInMiniApp();
+      let connector = isFarcasterMiniApp
+        ? connectors.find((candidate) => candidate.id === "farcaster")
+        : undefined;
+
       for (const candidate of connectors) {
+        if (
+          connector ||
+          candidate.id === "farcaster" ||
+          candidate.id === "baseAccount"
+        ) {
+          continue;
+        }
+
         const provider = await candidate.getProvider().catch(() => undefined);
         if (provider) {
           connector = candidate;
@@ -20,14 +46,23 @@ export function useBrowserWallet() {
         }
       }
 
+      connector ??= connectors.find(
+        (candidate) => candidate.id === "baseAccount"
+      );
+
       if (!connector) {
         window.alert(
-          "No wallet provider found. Open this page in a Farcaster Mini App or install a browser wallet extension."
+          "No wallet provider found. Install a browser wallet or use Base Account."
         );
         return;
       }
 
-      await connectAsync({ connector });
+      const currentStatus = getConnection(config).status;
+      if (currentStatus === "connected" || currentStatus === "connecting") {
+        return;
+      }
+
+      await connectAsync({ connector, chainId: base.id });
     } catch (error) {
       if (
         (error as { name?: string }).name === "ConnectorAlreadyConnectedError"
@@ -40,11 +75,14 @@ export function useBrowserWallet() {
           error instanceof Error ? error.message : "Failed to connect wallet."
         );
       }
+    } finally {
+      isConnectionRequestInFlight = false;
+      setIsSelectingConnector(false);
     }
-  }, [connectAsync, connectors, status]);
+  }, [config, connectAsync, connectors, status]);
 
   return {
     connectWallet,
-    isConnecting: isPending || isAccountPending,
+    isConnecting: isSelectingConnector || isPending,
   };
 }

@@ -51,9 +51,8 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
 
     const initFarcaster = async () => {
       try {
-        // Get the Farcaster context to check if we're in a Mini App
-        const context = await sdk.context;
-        const isInMiniApp = !!context;
+        const isInMiniApp = await sdk.isInMiniApp();
+        const context = isInMiniApp ? await sdk.context : null;
 
         if (mounted) {
           setFarcasterState({
@@ -61,9 +60,7 @@ function FarcasterMiniAppHandler({ children }: { children: ReactNode }) {
             isSDKLoaded: true,
           });
 
-          // Call ready() to hide the splash screen
-          // Safe to call even outside Mini App context
-          await sdk.actions.ready();
+          if (isInMiniApp) await sdk.actions.ready();
 
           // Prompt user to add mini app if in Farcaster context but not yet added
           if (
