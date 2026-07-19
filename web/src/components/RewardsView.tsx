@@ -10,7 +10,7 @@ import {
   burnProtocolFees,
   waitForTransaction,
 } from "@/helpers/contracts";
-import { useWalletClient } from "wagmi";
+import { useSyncedWalletClient } from "@/hooks/useSyncedWalletClient";
 
 export function RewardsView({
   ownerBalance,
@@ -21,7 +21,7 @@ export function RewardsView({
   claimingBalance: boolean;
   handleClaim: () => Promise<void>;
 }) {
-  const { data: walletClient } = useWalletClient();
+  const { getWalletClient } = useSyncedWalletClient();
   const [fees, setFees] = useState<{ base: bigint; perChar: bigint }>({
     base: BigInt(10000000000000), // 0.00001 ETH
     perChar: BigInt(200000000000), // 0.0000002 ETH
@@ -62,6 +62,7 @@ export function RewardsView({
   }, []);
 
   const handleBurn = async () => {
+    const walletClient = await getWalletClient();
     if (!walletClient) return;
     try {
       setBurning(true);

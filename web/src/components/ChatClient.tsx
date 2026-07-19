@@ -11,7 +11,7 @@ import {
   waitForTransaction,
   type ChannelInfo,
 } from "@/helpers/contracts";
-import { useWalletClient } from "wagmi";
+import { useSyncedWalletClient } from "@/hooks/useSyncedWalletClient";
 
 // Sub-components
 import { Header } from "./Header";
@@ -52,7 +52,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
   const { connectWallet } = useBrowserWallet();
   const { currentBlock } = useEvents();
-  const { data: walletClient } = useWalletClient();
+  const { getWalletClient } = useSyncedWalletClient();
   const { hideMobileTabs, hideBrand, isWidget } = useTheme();
 
   // Mobile state
@@ -297,6 +297,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
 
   // Claim handler
   const handleClaim = async () => {
+    const walletClient = await getWalletClient();
     if (!walletClient) return;
 
     setClaimingBalance(true);

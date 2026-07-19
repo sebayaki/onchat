@@ -5,7 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount } from "wagmi";
 import { formatAddress, formatNumber } from "@/helpers/format";
 import {
   type ChannelInfo,
@@ -48,6 +48,7 @@ import {
 import { fetchUserProfilesBulk } from "@/helpers/farcaster";
 import { WhoisChannels } from "@/components/WhoisChannels";
 import { STORAGE_KEYS, MESSAGES_PER_PAGE } from "@/configs/constants";
+import { useSyncedWalletClient } from "@/hooks/useSyncedWalletClient";
 
 export interface ChannelListItem {
   slug: string;
@@ -110,9 +111,10 @@ interface UseChatReturn {
 
 export function useChat(initialChannelSlug?: string): UseChatReturn {
   const { address, isConnected, status: accountStatus } = useAccount();
+  const { getWalletClient } = useSyncedWalletClient();
   const isWalletLoading =
-    accountStatus === "connecting" || accountStatus === "reconnecting";
-  const { data: walletClient } = useWalletClient();
+    accountStatus === "connecting" ||
+    accountStatus === "reconnecting";
   const { onMessageSent, onChannelEvent, onModerationEvent } = useEvents();
 
   const [lines, setLines] = useState<ChatLine[]>([]);
@@ -672,8 +674,14 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             break;
 
           case "join": {
-            if (!isConnected || !walletClient) {
+            if (!isConnected || !address) {
               addLine("error", "Please connect your wallet first");
+              break;
+            }
+
+            const activeWalletClient = await getWalletClient();
+            if (!activeWalletClient) {
+              addLine("error", "Wallet connection is still syncing. Try again.");
               break;
             }
 
@@ -696,7 +704,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
               if (!alreadyMember) {
                 addLine("action", `Joining #${channelToJoin}...`);
-                const tx = await joinChannel(walletClient, slugHash);
+                const tx = await joinChannel(activeWalletClient, slugHash);
                 addLine(
                   "info",
                   "Transaction sent, waiting for confirmation...",
@@ -730,14 +738,20 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
           }
 
           case "part":
-          case "leave":
+          case "leave": {
             if (!currentChannel) {
               addLine("error", "You are not in a channel");
               break;
             }
 
-            if (!walletClient) {
-              addLine("error", "Wallet not connected");
+            if (!isConnected || !address) {
+              addLine("error", "Please connect your wallet first");
+              break;
+            }
+
+            const leaveWalletClient = await getWalletClient();
+            if (!leaveWalletClient) {
+              addLine("error", "Wallet connection is still syncing. Try again.");
               break;
             }
 
@@ -751,7 +765,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
 
               addLine("action", `Leaving #${currentChannel.slug}...`);
               const tx = await leaveChannel(
-                walletClient,
+                leaveWalletClient,
                 currentChannel.slugHash,
               );
               await waitForTransaction(tx);
@@ -771,10 +785,17 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             }
             setIsLoading(false);
             break;
+          }
 
           case "create": {
-            if (!isConnected || !walletClient) {
+            if (!isConnected || !address) {
               addLine("error", "Please connect your wallet first");
+              break;
+            }
+
+            const activeWalletClient = await getWalletClient();
+            if (!activeWalletClient) {
+              addLine("error", "Wallet connection is still syncing. Try again.");
               break;
             }
 
@@ -803,7 +824,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             setIsLoading(true);
             try {
               addLine("action", `Creating #${newChannel}...`);
-              const tx = await createChannel(walletClient, newChannel);
+              const tx = await createChannel(activeWalletClient, newChannel);
               addLine("info", "Transaction sent, waiting for confirmation...");
               await waitForTransaction(tx);
               addLine("system", `* Channel #${newChannel} created!`);
@@ -941,11 +962,18 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             setIsLoading(false);
             break;
 
-          case "claim":
-            if (!isConnected || !walletClient) {
+          case "claim": {
+            if (!isConnected || !address) {
               addLine("error", "Connect your wallet first");
               break;
             }
+
+            const claimWalletClient = await getWalletClient();
+            if (!claimWalletClient) {
+              addLine("error", "Wallet connection is still syncing. Try again.");
+              break;
+            }
+
             setIsLoading(true);
             try {
               const ownerBal = await getOwnerBalance(address as `0x${string}`);
@@ -956,7 +984,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                     fromDecimals: 18,
                   })} ETH...`,
                 );
-                const tx = await claimOwnerBalance(walletClient);
+                const tx = await claimOwnerBalance(claimWalletClient);
                 await waitForTransaction(tx);
                 addLine(
                   "system",
@@ -979,6 +1007,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
             }
             setIsLoading(false);
             break;
+          }
 
           case "mode": {
             // Parse mode command: /mode [#channel] [+o|-o|+b|-b] [wallet]
@@ -1070,8 +1099,18 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
               }
 
               // Mode operations require wallet connection
-              if (!isConnected || !walletClient) {
+              if (!isConnected || !address) {
                 addLine("error", "Connect your wallet first");
+                setIsLoading(false);
+                break;
+              }
+
+              const modeWalletClient = await getWalletClient();
+              if (!modeWalletClient) {
+                addLine(
+                  "error",
+                  "Wallet connection is still syncing. Try again.",
+                );
                 setIsLoading(false);
                 break;
               }
@@ -1095,7 +1134,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                     )} to #${channelSlug}...`,
                   );
                   const tx = await addModerator(
-                    walletClient,
+                    modeWalletClient,
                     slugHash,
                     targetAddr,
                   );
@@ -1122,7 +1161,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                     )} from #${channelSlug}...`,
                   );
                   const tx = await removeModerator(
-                    walletClient,
+                    modeWalletClient,
                     slugHash,
                     targetAddr,
                   );
@@ -1148,7 +1187,11 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                       targetAddr,
                     )} from #${channelSlug}...`,
                   );
-                  const tx = await banUser(walletClient, slugHash, targetAddr);
+                  const tx = await banUser(
+                    modeWalletClient,
+                    slugHash,
+                    targetAddr,
+                  );
                   addLine(
                     "info",
                     "Transaction sent, waiting for confirmation...",
@@ -1172,7 +1215,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                     )} from #${channelSlug}...`,
                   );
                   const tx = await unbanUser(
-                    walletClient,
+                    modeWalletClient,
                     slugHash,
                     targetAddr,
                   );
@@ -1197,7 +1240,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                     `Hiding message ${msgIndex} in #${channelSlug}...`,
                   );
                   const tx = await hideMessage(
-                    walletClient,
+                    modeWalletClient,
                     slugHash,
                     msgIndex,
                   );
@@ -1217,7 +1260,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
                     `Unhiding message ${msgIndex} in #${channelSlug}...`,
                   );
                   const tx = await unhideMessage(
-                    walletClient,
+                    modeWalletClient,
                     slugHash,
                     msgIndex,
                   );
@@ -1295,8 +1338,14 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
           return;
         }
 
-        if (!walletClient) {
-          addLine("error", "Wallet not connected");
+        if (!isConnected || !address) {
+          addLine("error", "Please connect your wallet first");
+          return;
+        }
+
+        const activeWalletClient = await getWalletClient();
+        if (!activeWalletClient) {
+          addLine("error", "Wallet connection is still syncing. Try again.");
           return;
         }
 
@@ -1317,7 +1366,7 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
           );
 
           const tx = await sendMessage(
-            walletClient,
+            activeWalletClient,
             currentChannel.slugHash,
             content,
           );
@@ -1360,11 +1409,11 @@ export function useChat(initialChannelSlug?: string): UseChatReturn {
     },
     [
       isConnected,
-      walletClient,
       address,
       currentChannel,
       members,
       addLine,
+      getWalletClient,
       loadJoinedChannels,
       loadMembers,
       enterChannel,
