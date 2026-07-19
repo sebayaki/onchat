@@ -112,7 +112,9 @@ interface UseChatReturn {
 export function useChat(initialChannelSlug?: string): UseChatReturn {
   const { address, isConnected, status: accountStatus } = useAccount();
   const { getWalletClient } = useSyncedWalletClient();
-  const isWalletLoading = accountStatus === "connecting";
+  const isWalletLoading =
+    accountStatus === "connecting" ||
+    accountStatus === "reconnecting";
   const { onMessageSent, onChannelEvent, onModerationEvent } = useEvents();
 
   const [lines, setLines] = useState<ChatLine[]>([]);
