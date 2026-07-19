@@ -1,5 +1,4 @@
-import { wagmiAdapter } from "@/configs/wagmi";
-import { initializeAppKit } from "@/configs/appkit";
+import { config } from "@/configs/wagmi";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   type ReactNode,
@@ -10,13 +9,10 @@ import {
   createContext,
   useContext,
 } from "react";
-import { WagmiProvider, type Config } from "wagmi";
+import { WagmiProvider } from "wagmi";
 import { EventProvider } from "./EventContext";
 import { ThemeProvider } from "./ThemeContext";
 import { sdk } from "@farcaster/miniapp-sdk";
-
-// Initialize AppKit
-initializeAppKit();
 
 // Farcaster context type
 interface FarcasterContextType {
@@ -109,7 +105,7 @@ function ContextProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <WagmiProvider config={wagmiAdapter.wagmiConfig as Config}>
+    <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <FarcasterMiniAppHandler>
           <ThemeProvider>

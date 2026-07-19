@@ -4,8 +4,8 @@ The web client for OnChat, a decentralized messaging platform on Base.
 
 ## Tech Stack
 
-- **Framework**: [Next.js 16](https://nextjs.org) (App Router)
-- **Web3**: [Wagmi](https://wagmi.sh), [Viem](https://viem.sh), and [Reown AppKit](https://reown.com/appkit)
+- **Framework**: [Vite](https://vite.dev) and React
+- **Web3**: [Wagmi](https://wagmi.sh) and [Viem](https://viem.sh)
 - **Styling**: [Tailwind CSS 4](https://tailwindcss.com)
 
 ## Getting Started
@@ -21,11 +21,6 @@ The web client for OnChat, a decentralized messaging platform on Base.
 
    ```bash
    npm install
-   ```
-
-2. Set up environment variables in `.env.local`:
-   ```env
-   NEXT_PUBLIC_REOWN_PROJECT_ID=your_reown_project_id
    ```
 
 ### Development

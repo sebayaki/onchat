@@ -1,5 +1,6 @@
 import { useState, ReactNode } from "react";
-import { useAppKit, useAppKitAccount } from "@reown/appkit/react";
+import { useBrowserWallet } from "@/hooks/useBrowserWallet";
+import { useAccount } from "wagmi";
 import BaseScanIcon from "@/assets/logos/basescan.svg?url";
 import CopyButton from "../CopyButton";
 import { ExternalLink } from "../ExternalLink";
@@ -225,15 +226,15 @@ export function UserDisplay({
 }
 
 function ConnectButton() {
-  const { open } = useAppKit();
-  const { isConnected } = useAppKitAccount();
+  const { connectWallet } = useBrowserWallet();
+  const { isConnected } = useAccount();
 
   if (isConnected) return null;
 
   return (
     <button
       className="mt-2 bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--primary)]"
-      onClick={() => open()}
+      onClick={connectWallet}
     >
       <div className="w-2 h-2 rounded-full bg-[var(--primary)] opacity-50" />
       Connect Wallet
@@ -425,7 +426,7 @@ export function ChatLineComponent({
   replyDepth?: number;
   onChannelClick?: (slug: string) => void;
 }) {
-  const { isConnected } = useAppKitAccount();
+  const { isConnected } = useAccount();
   // Parse reply content for display
   const { replyToIndex, displayContent } = parseReplyContent(line.content);
   const effectiveContent = isReply ? displayContent : line.content;

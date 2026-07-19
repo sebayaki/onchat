@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useChat, type ChatLine } from "@/hooks/useChat";
 import { useFarcasterProfiles } from "@/hooks/useFarcasterProfiles";
-import { useAppKit } from "@reown/appkit/react";
+import { useBrowserWallet } from "@/hooks/useBrowserWallet";
 import { useEvents } from "@/context/EventContext";
 import { useTheme } from "@/context/ThemeContext";
 import {
@@ -50,7 +50,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     loadMoreMessages,
   } = useChat(channelSlug);
 
-  const { open } = useAppKit();
+  const { connectWallet } = useBrowserWallet();
   const { currentBlock } = useEvents();
   const { data: walletClient } = useWalletClient();
   const { hideMobileTabs, hideBrand, isWidget } = useTheme();
@@ -440,7 +440,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
         address={address}
         ownerBalance={ownerBalance}
         onRewardsClick={() => setActiveTab("rewards")}
-        openWalletModal={() => open()}
+        openWalletModal={connectWallet}
         profiles={profiles}
         onShareClick={() => setShowShareModal(true)}
         hideBrand={hideBrand}

@@ -3,7 +3,6 @@ import { StrictMode, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider, type Config } from "wagmi";
-import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 
 import ChatClient from "../components/ChatClient";
 import { EventProvider } from "../context/EventContext";
@@ -26,15 +25,15 @@ export interface OnChatWidgetOptions {
 
 function WidgetProvider({
   children,
-  wagmiAdapter,
+  config,
 }: {
   children: React.ReactNode;
-  wagmiAdapter: WagmiAdapter;
+  config: Config;
 }) {
   const [queryClient] = useState(() => new QueryClient());
 
   return (
-    <WagmiProvider config={wagmiAdapter.wagmiConfig as Config}>
+    <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
         <ThemeProvider>
           <EventProvider>{children}</EventProvider>
@@ -46,13 +45,13 @@ function WidgetProvider({
 
 function OnChatWidget({
   options,
-  wagmiAdapter,
+  config,
 }: {
   options: OnChatWidgetOptions;
-  wagmiAdapter: WagmiAdapter;
+  config: Config;
 }) {
   return (
-    <WidgetProvider wagmiAdapter={wagmiAdapter}>
+    <WidgetProvider config={config}>
       <div
         className="onchat-widget-root"
         style={{
@@ -72,12 +71,12 @@ function OnChatWidget({
 export function renderWidget(
   mountPoint: HTMLElement,
   options: OnChatWidgetOptions,
-  wagmiAdapter: WagmiAdapter
+  config: Config
 ): Root {
   const root = createRoot(mountPoint);
   root.render(
     <StrictMode>
-      <OnChatWidget options={options} wagmiAdapter={wagmiAdapter} />
+      <OnChatWidget options={options} config={config} />
     </StrictMode>
   );
   return root;

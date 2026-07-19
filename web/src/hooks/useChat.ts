@@ -5,8 +5,7 @@ import React, {
   useEffect,
   ReactNode,
 } from "react";
-import { useAppKitAccount } from "@reown/appkit/react";
-import { useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 import { formatAddress, formatNumber } from "@/helpers/format";
 import {
   type ChannelInfo,
@@ -110,7 +109,7 @@ interface UseChatReturn {
 }
 
 export function useChat(initialChannelSlug?: string): UseChatReturn {
-  const { address, isConnected, status: accountStatus } = useAppKitAccount();
+  const { address, isConnected, status: accountStatus } = useAccount();
   const isWalletLoading =
     accountStatus === "connecting" || accountStatus === "reconnecting";
   const { data: walletClient } = useWalletClient();

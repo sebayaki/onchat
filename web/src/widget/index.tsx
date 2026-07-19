@@ -20,28 +20,9 @@
  *   </script>
  */
 
-// Patch customElements.define to prevent duplicate registration errors
-// This is needed because @reown/appkit uses Phosphor Icons web components,
-// and if the host page already has AppKit loaded, the icons will already be registered
-if (typeof window !== "undefined" && window.customElements) {
-  const originalDefine = window.customElements.define.bind(
-    window.customElements
-  );
-  window.customElements.define = function (
-    name: string,
-    constructor: CustomElementConstructor,
-    options?: ElementDefinitionOptions
-  ) {
-    if (!window.customElements.get(name)) {
-      originalDefine(name, constructor, options);
-    }
-  };
-}
-
 import type { Root } from "react-dom/client";
-import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
-import { wagmiAdapter as globalWagmiAdapter } from "../configs/wagmi";
-import { initializeAppKit } from "../configs/appkit";
+import type { Config } from "wagmi";
+import { config } from "../configs/wagmi";
 
 import { setWidgetThemeOptions } from "./ThemeContext";
 import { themes, type Theme } from "../helpers/themes";
@@ -97,7 +78,7 @@ const widgetInstances = new Map<
     container: HTMLElement;
     shadowRoot: ShadowRoot;
     root: Root;
-    wagmiAdapter: WagmiAdapter;
+    config: Config;
   }
 >();
 
@@ -159,19 +140,15 @@ export function mount(
   mountPoint.style.height = "100%";
   shadowRoot.appendChild(mountPoint);
 
-  // Initialize AppKit and get adapter
-  initializeAppKit(true);
-  const wagmiAdapter = globalWagmiAdapter;
-
   // Apply theme CSS variables to shadow root
   const theme = themes.find((t) => t.id === options.theme) || themes[0];
   applyThemeToShadow(shadowRoot, theme, options.colors);
 
   // Render widget
-  const root = renderWidget(mountPoint, options, wagmiAdapter);
+  const root = renderWidget(mountPoint, options, config);
 
   // Store instance in Map
-  widgetInstances.set(container, { container, shadowRoot, root, wagmiAdapter });
+  widgetInstances.set(container, { container, shadowRoot, root, config });
 
   return { unmount: () => unmount(container) };
 }
