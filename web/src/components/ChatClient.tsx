@@ -50,7 +50,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
     loadMoreMessages,
   } = useChat(channelSlug);
 
-  const { connectWallet } = useBrowserWallet();
+  const { connectWallet, isConnecting } = useBrowserWallet();
   const { currentBlock } = useEvents();
   const { getWalletClient } = useSyncedWalletClient();
   const { hideMobileTabs, hideBrand, isWidget } = useTheme();
@@ -437,7 +437,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
       <Header
         currentChannel={currentChannel}
         isConnected={isConnected}
-        isWalletLoading={isWalletLoading}
+        isWalletLoading={isConnecting}
         address={address}
         ownerBalance={ownerBalance}
         onRewardsClick={() => setActiveTab("rewards")}
