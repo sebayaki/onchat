@@ -436,7 +436,7 @@ export default function ChatClient({ channelSlug }: { channelSlug?: string }) {
       <Header
         currentChannel={currentChannel}
         isConnected={isConnected}
-        hasWalletClient={!!walletClient}
+        isWalletLoading={isWalletLoading}
         address={address}
         ownerBalance={ownerBalance}
         onRewardsClick={() => setActiveTab("rewards")}

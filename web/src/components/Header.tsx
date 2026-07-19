@@ -14,7 +14,7 @@ const getShareMessage = (channelSlug: string) =>
 export function Header({
   currentChannel,
   isConnected,
-  hasWalletClient,
+  isWalletLoading,
   address,
   ownerBalance,
   onRewardsClick,
@@ -26,7 +26,7 @@ export function Header({
 }: {
   currentChannel: ChannelInfo | null;
   isConnected: boolean;
-  hasWalletClient: boolean;
+  isWalletLoading: boolean;
   address?: string;
   ownerBalance: bigint;
   onRewardsClick: () => void;
@@ -99,7 +99,7 @@ export function Header({
         </div>
       </div>
       <div className="flex items-center gap-3">
-        {isConnected && hasWalletClient && address ? (
+        {isConnected && address ? (
           <>
             <button
               onClick={onRewardsClick}
@@ -120,11 +120,12 @@ export function Header({
           </>
         ) : (
           <button
-            className="bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--primary)]"
+            className="bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--primary)] disabled:cursor-wait disabled:opacity-60"
             onClick={openWalletModal}
+            disabled={isWalletLoading}
           >
             <div className="w-2 h-2 rounded-full bg-[var(--primary)] opacity-50" />
-            Connect
+            {isWalletLoading ? "Connecting..." : "Connect"}
           </button>
         )}
       </div>

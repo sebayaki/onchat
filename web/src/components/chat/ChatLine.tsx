@@ -226,18 +226,19 @@ export function UserDisplay({
 }
 
 function ConnectButton() {
-  const { connectWallet } = useBrowserWallet();
+  const { connectWallet, isConnecting } = useBrowserWallet();
   const { isConnected } = useAccount();
 
   if (isConnected) return null;
 
   return (
     <button
-      className="mt-2 bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--primary)]"
+      className="mt-2 bg-transparent border border-[var(--primary-muted)] text-[var(--primary)] px-[0.8rem] py-[0.4rem] font-mono text-[0.8rem] cursor-pointer flex items-center gap-2 transition-all hover:bg-[var(--bg-hover)] hover:border-[var(--primary)] disabled:cursor-wait disabled:opacity-60"
       onClick={connectWallet}
+      disabled={isConnecting}
     >
       <div className="w-2 h-2 rounded-full bg-[var(--primary)] opacity-50" />
-      Connect Wallet
+      {isConnecting ? "Connecting Wallet..." : "Connect Wallet"}
     </button>
   );
 }
